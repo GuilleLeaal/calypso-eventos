@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
+  Info,
 } from "lucide-react";
 
 import parrillero from "../assets/sector-parrillero.jpg";
@@ -25,6 +26,7 @@ type Sector = {
   tag: string;
   gallery: string[];
   features: string[];
+  illustrative?: boolean; // ✅ NUEVO: indica si las fotos son de ejemplo
 };
 
 const items: Sector[] = [
@@ -35,6 +37,7 @@ const items: Sector[] = [
     tag: "Reuniones",
     gallery: [parrillero, parrillero2, parrillero3],
     features: ["Ambiente cálido", "Ideal para grupos", "Zona flexible"],
+    illustrative: true,
   },
   {
     title: "Zona Adultos",
@@ -43,6 +46,7 @@ const items: Sector[] = [
     tag: "Comodidad",
     gallery: [adultos],
     features: ["Mesas amplias", "Circulación cómoda", "Espacio social"],
+    illustrative: true,
   },
   {
     title: "Zona Niños",
@@ -51,6 +55,7 @@ const items: Sector[] = [
     tag: "Familias",
     gallery: [ninos],
     features: ["Pensado para niños", "Más tranquilidad", "Zona dedicada"],
+    illustrative: true,
   },
   {
     title: "Cocina",
@@ -59,6 +64,7 @@ const items: Sector[] = [
     tag: "Soporte",
     gallery: [cocina, cocina2, cocina3],
     features: ["Área funcional", "Apoyo para catering", "Organización"],
+    illustrative: true,
   },
 ];
 
@@ -127,7 +133,6 @@ export default function Sectores() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedIndex(null);
-
       if (!selected) return;
 
       // Flechas: imágenes
@@ -168,13 +173,24 @@ export default function Sectores() {
               Explorá cada sector del salón. Tocá una tarjeta para ver fotos y
               detalles.
             </p>
+
+            {/* ✅ Aviso premium para transpariencia */}
+            <div className="mt-5 inline-flex items-start gap-3 rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+              <div className="mt-0.5 h-9 w-9 rounded-xl bg-black/5 text-black flex items-center justify-center">
+                <Info size={18} />
+              </div>
+              <div className="text-sm text-black/70 leading-relaxed">
+                <b>Nota:</b> Algunas imágenes pueden ser <b>ilustrativas</b>.
+                Próximamente se actualizarán con fotos reales del salón.
+              </div>
+            </div>
           </div>
 
           <a
             href="#contact"
             className="inline-flex rounded-2xl border border-black/10 bg-white px-5 py-2.5 text-sm hover:border-black/20 transition"
           >
-            Consultar disponibilidad
+            Consultar apertura
           </a>
         </div>
 
@@ -221,12 +237,18 @@ export default function Sectores() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-[radial-gradient(600px_220px_at_20%_20%,rgba(11,179,166,0.25),transparent)]" />
 
-                  {/* tag */}
-                  <div className="absolute left-5 top-5">
+                  {/* tag + illustrative */}
+                  <div className="absolute left-5 top-5 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] tracking-[0.22em] uppercase text-white/75 backdrop-blur">
                       <span className="h-1.5 w-1.5 rounded-full bg-calypso" />
                       {x.tag}
                     </span>
+
+                    {x.illustrative && (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-3 py-1 text-[11px] tracking-[0.22em] uppercase text-white/70 backdrop-blur">
+                        Ilustrativo
+                      </span>
+                    )}
                   </div>
 
                   {/* content */}
@@ -247,7 +269,9 @@ export default function Sectores() {
 
                     <div className="mt-4 inline-flex items-center gap-2 text-[11px] tracking-[0.22em] uppercase text-white/60">
                       <ImageIcon size={14} />
-                      {x.gallery.length} fotos
+                      {x.illustrative
+                        ? `Fotos (ilustrativas)`
+                        : `${x.gallery.length} fotos`}
                     </div>
                   </div>
                 </motion.button>
@@ -330,20 +354,26 @@ export default function Sectores() {
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-[0_40px_160px_rgba(0,0,0,0.55)]"
             >
-              {/* top bar (más calypso) */}
+              {/* top bar */}
               <div className="relative flex items-center justify-between gap-4 px-6 py-4">
-                {/* base calypso más fuerte */}
                 <div className="absolute inset-0 bg-calypso/45" />
-                {/* contraste y profundidad */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/35" />
-                {/* brillo superior sutil */}
                 <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 h-px bg-white/15" />
 
                 <div className="relative min-w-0">
-                  <div className="text-[11px] tracking-[0.22em] uppercase text-white/85">
-                    {selected.tag}
+                  <div className="flex items-center gap-2">
+                    <div className="text-[11px] tracking-[0.22em] uppercase text-white/85">
+                      {selected.tag}
+                    </div>
+
+                    {selected.illustrative && (
+                      <span className="inline-flex items-center rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[10px] tracking-[0.22em] uppercase text-white/80 backdrop-blur">
+                        Ilustrativo
+                      </span>
+                    )}
                   </div>
+
                   <div className="font-display text-2xl text-white truncate">
                     {selected.title}
                     <span className="text-white/90">.</span>
@@ -372,7 +402,7 @@ export default function Sectores() {
 
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
 
-                  {/* Flechas de IMÁGENES (más visibles) */}
+                  {/* Flechas de IMÁGENES */}
                   {selected.gallery.length > 1 && (
                     <>
                       <button
@@ -408,44 +438,54 @@ export default function Sectores() {
                     {activeIndex + 1}/{selected.gallery.length}
                   </div>
 
-                  {/* thumbs: más margen al borde + base */}
-                  <div className="hidden md:block absolute bottom-5 left-6 right-6">
-                    <div className="rounded-2xl border border-white/10 bg-black/35 backdrop-blur-md px-3 py-3">
-                      <div className="flex gap-2 overflow-x-auto">
-                        {selected.gallery.map((g, i) => {
-                          const isActive = (activeImg || selected.img) === g;
-                          return (
-                            <button
-                              key={`${selected.title}-g-${i}`}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveImg(g);
-                              }}
-                              className={[
-                                "shrink-0 overflow-hidden rounded-xl border transition",
-                                isActive
-                                  ? "border-calypso/80"
-                                  : "border-white/15 hover:border-white/30",
-                              ].join(" ")}
-                              aria-label={`Ver foto ${i + 1}`}
-                              title={`Foto ${i + 1}`}
-                            >
-                              <img
-                                src={g}
-                                alt={`Foto ${i + 1}`}
-                                className="h-14 w-20 object-cover opacity-95"
-                              />
-                            </button>
-                          );
-                        })}
+                  {/* thumbs (ocultas si es ilustrativo para no “vender” algo falso) */}
+                  {!selected.illustrative && (
+                    <div className="hidden md:block absolute bottom-5 left-6 right-6">
+                      <div className="rounded-2xl border border-white/10 bg-black/35 backdrop-blur-md px-3 py-3">
+                        <div className="flex gap-2 overflow-x-auto">
+                          {selected.gallery.map((g, i) => {
+                            const isActive = (activeImg || selected.img) === g;
+                            return (
+                              <button
+                                key={`${selected.title}-g-${i}`}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImg(g);
+                                }}
+                                className={[
+                                  "shrink-0 overflow-hidden rounded-xl border transition",
+                                  isActive
+                                    ? "border-calypso/80"
+                                    : "border-white/15 hover:border-white/30",
+                                ].join(" ")}
+                                aria-label={`Ver foto ${i + 1}`}
+                                title={`Foto ${i + 1}`}
+                              >
+                                <img
+                                  src={g}
+                                  alt={`Foto ${i + 1}`}
+                                  className="h-14 w-20 object-cover opacity-95"
+                                />
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* details */}
                 <div className="bg-white p-6 sm:p-7 overflow-auto">
+                  {/* ✅ Aviso dentro del modal */}
+                  {selected.illustrative && (
+                    <div className="mb-4 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-black/70">
+                      <b>Imágenes ilustrativas.</b> Próximamente se actualizarán
+                      con fotos reales del salón.
+                    </div>
+                  )}
+
                   <p className="text-black/75 leading-relaxed">
                     {selected.desc}
                   </p>
@@ -473,7 +513,9 @@ export default function Sectores() {
                       onClick={() => setSelectedIndex(null)}
                       className="inline-flex items-center justify-center rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white hover:bg-black/90 transition"
                     >
-                      Consultar por este sector{" "}
+                      {selected.illustrative
+                        ? "Quiero que me avisen al abrir"
+                        : "Consultar por este sector"}{" "}
                       <span className="ml-2 text-calypso">●</span>
                     </a>
 
