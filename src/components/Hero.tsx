@@ -8,7 +8,7 @@ export default function Hero() {
       <div className="absolute inset-0">
         <img
           src={heroImg}
-          alt="Calypso Eventos - Salón"
+          alt="Salón de eventos en El Pinar - Calypso Eventos"
           className="h-full w-full object-cover"
         />
         {/* Dark overlay */}
@@ -21,6 +21,7 @@ export default function Hero() {
 
       <div className="relative mx-auto max-w-6xl px-4 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="max-w-2xl">
+          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -29,10 +30,11 @@ export default function Hero() {
           >
             <span className="h-2 w-2 rounded-full bg-calypso" />
             <span className="text-xs tracking-[0.22em] text-white/80 uppercase">
-              Salón para eventos
+              Salón de eventos en El Pinar
             </span>
           </motion.div>
 
+          {/* H1 SEO fuerte */}
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -41,12 +43,13 @@ export default function Hero() {
               delay: 0.05,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="mt-6 font-display text-5xl leading-[1.02] text-white md:text-6xl"
+            className="mt-6 font-display text-4xl leading-[1.05] text-white md:text-6xl"
           >
-            Un espacio elegante para celebrar{" "}
-            <span className="text-calypso">momentos</span> inolvidables
+            Calypso Eventos: el lugar ideal para celebrar en{" "}
+            <span className="text-calypso">El Pinar</span>
           </motion.h1>
 
+          {/* Subtexto optimizado */}
           <motion.p
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -57,10 +60,12 @@ export default function Hero() {
             }}
             className="mt-5 text-base leading-relaxed text-white/80 md:text-lg"
           >
-            Cumpleaños, reuniones, eventos corporativos y celebraciones.
-            Consultá disponibilidad y armamos el evento a tu medida.
+            Espacio para cumpleaños, casamientos, 15 años y eventos sociales en
+            Ciudad de la Costa. Consultá disponibilidad y reservá tu fecha por
+            WhatsApp.
           </motion.p>
 
+          {/* Botones */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -94,9 +99,9 @@ export default function Hero() {
             className="mt-10 grid max-w-xl grid-cols-3 gap-3"
           >
             {[
-              { k: "Capacidad", v: "+30 adulos +50 niños " },
-              { k: "Ubicación", v: "El pinar" },
-              { k: "Atención", v: "Rápida" },
+              { k: "Capacidad", v: "+30 adultos +50 niños" },
+              { k: "Ubicación", v: "El Pinar, Ciudad de la Costa" },
+              { k: "Reservas", v: "Vía WhatsApp" },
             ].map((x) => (
               <div
                 key={x.k}

@@ -2,12 +2,15 @@
 import { motion, circOut } from "framer-motion";
 import {
   Instagram,
-  Mail,
   Phone,
   MapPin,
   ArrowUpRight,
   ChevronUp,
 } from "lucide-react";
+import { useState } from "react";
+import LegalModal from "./LegalModal";
+import TerminosContent from "./legal/TerminosContent";
+import PrivacidadContent from "./legal/PrivacidadContent";
 
 const fadeUp1 = {
   hidden: { opacity: 0, y: 14 },
@@ -42,6 +45,9 @@ export default function Footer() {
   const scrollTop = () => {
     document.getElementById("top")?.scrollIntoView({ behavior: "smooth" });
   };
+  const [legalOpen, setLegalOpen] = useState<"terminos" | "privacidad" | null>(
+    null,
+  );
 
   return (
     <footer className="relative mt-24">
@@ -157,15 +163,6 @@ export default function Footer() {
                   <ArrowUpRight className="ml-auto h-4 w-4 opacity-60 transition group-hover:opacity-100" />
                 </a>
 
-                <a
-                  href="mailto:calypsoeventos@email.com"
-                  className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/70 transition hover:border-white/20 hover:bg-white/10"
-                >
-                  <Mail className="h-4 w-4 text-[#11c5b7]" />
-                  <span>calypsoeventos@email.com</span>
-                  <ArrowUpRight className="ml-auto h-4 w-4 opacity-60 transition group-hover:opacity-100" />
-                </a>
-
                 <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/70">
                   <MapPin className="h-4 w-4 text-[#11c5b7]" />
                   <span>El Pinar, Canelones, Uruguay</span>
@@ -193,12 +190,19 @@ export default function Footer() {
             </p>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-              <a href="#" className="text-white/45 transition hover:text-white">
+              <button
+                onClick={() => setLegalOpen("terminos")}
+                className="text-white/45 transition hover:text-white"
+              >
                 Términos
-              </a>
-              <a href="#" className="text-white/45 transition hover:text-white">
+              </button>
+
+              <button
+                onClick={() => setLegalOpen("privacidad")}
+                className="text-white/45 transition hover:text-white"
+              >
                 Privacidad
-              </a>
+              </button>
               <span className="hidden sm:inline text-white/25">•</span>
               <p className="text-white/45">
                 Sitio por{" "}
@@ -217,6 +221,21 @@ export default function Footer() {
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-24 w-[80%] rounded-full bg-[#11c5b7]/10 blur-3xl" />
       </div>
+      <LegalModal
+        open={legalOpen === "terminos"}
+        title="Términos y Condiciones"
+        onClose={() => setLegalOpen(null)}
+      >
+        <TerminosContent />
+      </LegalModal>
+
+      <LegalModal
+        open={legalOpen === "privacidad"}
+        title="Política de Privacidad"
+        onClose={() => setLegalOpen(null)}
+      >
+        <PrivacidadContent />
+      </LegalModal>
     </footer>
   );
 }
