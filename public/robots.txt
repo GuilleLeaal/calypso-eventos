@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://calypsoeventos.com.uy/sitemap.xml
