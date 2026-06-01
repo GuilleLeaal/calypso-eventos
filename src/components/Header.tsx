@@ -269,7 +269,7 @@ export default function Header() {
                   </div>
 
                   <a
-                    href="/#Contact"
+                    href="/reservar"
                     onClick={() => setOpen(false)}
                     className="mt-6 inline-flex items-center justify-center gap-3 rounded-full bg-[#4a2b17] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_16px_35px_rgba(74,43,23,0.24)] transition hover:bg-[#351f12]"
                   >
