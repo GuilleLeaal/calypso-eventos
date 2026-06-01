@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -114,6 +115,19 @@ export default function Hero() {
               }}
               className="mt-8 flex flex-col gap-3 sm:flex-row"
             >
+              {/* Botón solo mobile */}
+              <Link
+                to="/reservar"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.09em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.34)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#099f94] sm:hidden"
+              >
+                <CalendarCheck size={18} className="text-white" />
+                Reservar fecha
+                <ArrowUpRight
+                  size={16}
+                  className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
+              </Link>
+
               <a
                 href={`https://wa.me/59899372068?text=${whatsappMessage}`}
                 target="_blank"
