@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, circOut } from "framer-motion";
 import {
-  ArrowUpRight,
   MessageCircle,
   Quote,
   RefreshCw,

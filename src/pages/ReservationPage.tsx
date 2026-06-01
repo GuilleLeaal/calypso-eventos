@@ -387,6 +387,7 @@ export default function ReservationPage() {
                   </div>
                 )}
               </div>
+              
 
               {!loadingSlots &&
                 allSlots.length > 0 &&
@@ -424,6 +425,16 @@ export default function ReservationPage() {
                   )}
                 </div>
               )}
+              <div className="mt-5 rounded-[1.2rem] border border-[#e4cfad] bg-white/45 p-4">
+              <div className="flex items-start gap-3">
+                <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
+                <p className="text-sm leading-relaxed text-[#5c473b]">
+                    Se tachan los horarios que se superponen con reservas
+                    aprobadas o pendientes vigentes, respetando la ventana de
+                    1:30 h.
+                  </p>
+              </div>
+            </div>
             </div>
           </motion.div>
 
