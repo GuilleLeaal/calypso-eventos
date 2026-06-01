@@ -9,7 +9,7 @@ import {
   ChevronUp,
   MessageCircle,
 } from "lucide-react";
-import logo from "../assets/logo2.png";
+import logo from "../assets/Logo2.png";
 import LegalModal from "./LegalModal";
 import TerminosContent from "./legal/TerminosContent";
 import PrivacidadContent from "./legal/PrivacidadContent";
