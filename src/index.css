@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 html,
-body {
-  height: 100%;
+body,
+#root {
+  min-height: 100%;
   overflow-x: hidden;
 }
 
@@ -12,8 +13,62 @@ html {
   scroll-behavior: smooth;
 }
 
-
 body {
   font-family: Inter, system-ui, sans-serif;
   position: relative;
+  background: #f6f0e7;
+  color: #2e211b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(11, 179, 166, 0.18);
+  color: #2e211b;
+}
+
+.input-calypso {
+  width: 100%;
+  border-radius: 0.9rem;
+  border: 1px solid #dfc8ab;
+  background: rgba(255, 249, 240, 0.9);
+  padding: 0.85rem 1rem;
+  color: #2f241e;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.input-calypso::placeholder {
+  color: #9b8a7c;
+}
+
+.input-calypso:focus {
+  border-color: #0bb3a6;
+  background: #fff9f0;
+  box-shadow: 0 0 0 4px rgba(11, 179, 166, 0.14);
+}
+
+.input-contact {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(196, 154, 91, 0.35);
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0.95rem 1rem;
+  color: #2f241e;
+  outline: none;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.input-contact::placeholder {
+  color: rgba(74, 56, 46, 0.48);
+}
+
+.input-contact:focus {
+  border-color: rgba(11, 179, 166, 0.75);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 0 0 4px rgba(11, 179, 166, 0.12);
 }
