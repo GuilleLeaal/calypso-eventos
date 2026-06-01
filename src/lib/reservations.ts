@@ -15,23 +15,93 @@ export type ReservationSlot = {
 };
 
 const WEEKDAY_NIGHT_SLOTS: ReservationSlot[] = [
-  { label: "17:00 a 20:00", startTime: "17:00", endTime: "20:00", period: "night" },
-  { label: "17:30 a 20:30", startTime: "17:30", endTime: "20:30", period: "night" },
-  { label: "18:00 a 21:00", startTime: "18:00", endTime: "21:00", period: "night" },
-  { label: "18:30 a 21:30", startTime: "18:30", endTime: "21:30", period: "night" },
-  { label: "19:00 a 22:00", startTime: "19:00", endTime: "22:00", period: "night" },
-  { label: "19:30 a 22:30", startTime: "19:30", endTime: "22:30", period: "night" },
-  { label: "20:00 a 23:00", startTime: "20:00", endTime: "23:00", period: "night" },
+  {
+    label: "17:00 a 20:00",
+    startTime: "17:00",
+    endTime: "20:00",
+    period: "night",
+  },
+  {
+    label: "17:30 a 20:30",
+    startTime: "17:30",
+    endTime: "20:30",
+    period: "night",
+  },
+  {
+    label: "18:00 a 21:00",
+    startTime: "18:00",
+    endTime: "21:00",
+    period: "night",
+  },
+  {
+    label: "18:30 a 21:30",
+    startTime: "18:30",
+    endTime: "21:30",
+    period: "night",
+  },
+  {
+    label: "19:00 a 22:00",
+    startTime: "19:00",
+    endTime: "22:00",
+    period: "night",
+  },
+  {
+    label: "19:30 a 22:30",
+    startTime: "19:30",
+    endTime: "22:30",
+    period: "night",
+  },
+  {
+    label: "20:00 a 23:00",
+    startTime: "20:00",
+    endTime: "23:00",
+    period: "night",
+  },
 ];
 
 const WEEKEND_DAY_SLOTS: ReservationSlot[] = [
-  { label: "11:00 a 14:00", startTime: "11:00", endTime: "14:00", period: "day" },
-  { label: "11:30 a 14:30", startTime: "11:30", endTime: "14:30", period: "day" },
-  { label: "12:00 a 15:00", startTime: "12:00", endTime: "15:00", period: "day" },
-  { label: "12:30 a 15:30", startTime: "12:30", endTime: "15:30", period: "day" },
-  { label: "13:00 a 16:00", startTime: "13:00", endTime: "16:00", period: "day" },
-  { label: "13:30 a 16:30", startTime: "13:30", endTime: "16:30", period: "day" },
-  { label: "14:00 a 17:00", startTime: "14:00", endTime: "17:00", period: "day" },
+  {
+    label: "11:00 a 14:00",
+    startTime: "11:00",
+    endTime: "14:00",
+    period: "day",
+  },
+  {
+    label: "11:30 a 14:30",
+    startTime: "11:30",
+    endTime: "14:30",
+    period: "day",
+  },
+  {
+    label: "12:00 a 15:00",
+    startTime: "12:00",
+    endTime: "15:00",
+    period: "day",
+  },
+  {
+    label: "12:30 a 15:30",
+    startTime: "12:30",
+    endTime: "15:30",
+    period: "day",
+  },
+  {
+    label: "13:00 a 16:00",
+    startTime: "13:00",
+    endTime: "16:00",
+    period: "day",
+  },
+  {
+    label: "13:30 a 16:30",
+    startTime: "13:30",
+    endTime: "16:30",
+    period: "day",
+  },
+  {
+    label: "14:00 a 17:00",
+    startTime: "14:00",
+    endTime: "17:00",
+    period: "day",
+  },
 ];
 
 const WEEKEND_NIGHT_SLOTS: ReservationSlot[] = WEEKDAY_NIGHT_SLOTS;
@@ -55,19 +125,18 @@ export function getSlotsForDate(dateValue: string): ReservationSlot[] {
 
 export function getAvailableSlots(
   dateValue: string,
-  blocks: ReservationBlock[]
+  blocks: ReservationBlock[],
 ): ReservationSlot[] {
   const slots = getSlotsForDate(dateValue);
 
   return slots.filter((slot) => {
-    return !blocks.some((block) => hasSlotConflict(dateValue, slot, block));
+    return !blocks.some((block) => hasSlotConflict(slot, block));
   });
 }
 
 export function hasSlotConflict(
-  dateValue: string,
   slot: ReservationSlot,
-  block: ReservationBlock
+  block: ReservationBlock,
 ) {
   const bufferMinutes = 90;
 
@@ -76,7 +145,10 @@ export function hasSlotConflict(
   const existingStart = toMinutes(normalizeTime(block.start_time));
   const existingEnd = toMinutes(normalizeTime(block.end_time));
 
-  return newStart < existingEnd + bufferMinutes && newEnd + bufferMinutes > existingStart;
+  return (
+    newStart < existingEnd + bufferMinutes &&
+    newEnd + bufferMinutes > existingStart
+  );
 }
 
 export function formatDateForDisplay(dateValue: string) {
