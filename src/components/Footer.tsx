@@ -1,4 +1,5 @@
 // src/components/Footer.tsx
+import { useState } from "react";
 import { motion, circOut } from "framer-motion";
 import {
   Instagram,
@@ -6,221 +7,204 @@ import {
   MapPin,
   ArrowUpRight,
   ChevronUp,
+  MessageCircle,
 } from "lucide-react";
-import { useState } from "react";
+import logo from "../assets/logo2.png";
 import LegalModal from "./LegalModal";
 import TerminosContent from "./legal/TerminosContent";
 import PrivacidadContent from "./legal/PrivacidadContent";
 
-const fadeUp1 = {
-  hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: 0.0, ease: circOut },
-  },
-};
-
-const fadeUp2 = {
-  hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: 0.06, ease: circOut },
-  },
-};
-
-const fadeUp3 = {
-  hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: 0.12, ease: circOut },
-  },
-};
-
 const year = new Date().getFullYear();
 
+const whatsappMessage = encodeURIComponent(
+  "¡Hola! Me gustaría consultar disponibilidad para un evento en Calypso."
+);
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: circOut },
+  },
+};
+
+const navLinks = [
+  { label: "Servicios", href: "/#services" },
+  { label: "Sectores", href: "/#sectors" },
+  { label: "Nuestra historia", href: "/nuestra-historia" },
+  { label: "Contacto", href: "/#contact" },
+  { label: "Ubicación", href: "/#location" },
+];
+
 export default function Footer() {
-  const scrollTop = () => {
-    document.getElementById("top")?.scrollIntoView({ behavior: "smooth" });
-  };
   const [legalOpen, setLegalOpen] = useState<"terminos" | "privacidad" | null>(
-    null,
+    null
   );
 
+  const scrollTop = () => {
+    const topElement = document.getElementById("top");
+
+    if (topElement) {
+      topElement.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <footer className="relative mt-24">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-[#11c5b7]/50 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 -top-10 mx-auto h-16 w-[70%] rounded-full bg-[#11c5b7]/10 blur-2xl" />
+    <footer className="relative overflow-hidden bg-[#17110d] text-[#f8efe2]">
+      {/* Línea superior */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-calypso/70 to-transparent" />
 
-      <div className="relative bg-[#07090d]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
-            <motion.div
-              className="md:col-span-5"
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.25 }}
-              variants={fadeUp1}
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#11c5b7] to-[#0ea5e9] p-[1px]">
-                  <div className="grid h-full w-full place-items-center rounded-2xl bg-[#0b0f16]">
-                    <span className="text-sm font-semibold text-white">C</span>
-                  </div>
-                </div>
+      {/* Decoración sutil */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-140px] top-[-120px] h-72 w-72 rounded-full bg-calypso/12 blur-3xl" />
+        <div className="absolute right-[-120px] bottom-[-140px] h-72 w-72 rounded-full bg-[#e8c17f]/10 blur-3xl" />
+      </div>
 
-                <div>
-                  <p className="text-lg font-semibold text-white">
-                    Calypso Eventos
-                  </p>
-                  <p className="text-xs text-white/50">
-                    Salón • Eventos • Experiencias
-                  </p>
-                </div>
-              </div>
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.25 }}
+          variants={fadeUp}
+          className="grid gap-10 md:grid-cols-[1.2fr_0.8fr_0.8fr]"
+        >
+          {/* Marca */}
+          <div>
+            <a href="/" aria-label="Ir al inicio" className="inline-flex">
+              <img
+                src={logo}
+                alt="Calypso Eventos"
+                className="h-10 w-auto max-w-[210px] object-contain brightness-0 invert"
+              />
+            </a>
 
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-white/65">
-                Un espacio pensado para vivir momentos únicos: cumpleaños,
-                casamientos, corporativos y celebraciones a medida.
-              </p>
-
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <a
-                  href="https://instagram.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 backdrop-blur transition hover:border-[#11c5b7]/40 hover:bg-white/10"
-                >
-                  <Instagram className="h-4 w-4 text-[#11c5b7]" />
-                  Instagram
-                  <ArrowUpRight className="h-4 w-4 opacity-70 transition group-hover:opacity-100" />
-                </a>
-
-                <button
-                  onClick={scrollTop}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                  Volver arriba
-                </button>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="md:col-span-3"
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.25 }}
-              variants={fadeUp2}
-            >
-              <p className="text-sm font-semibold text-white">Secciones</p>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#services"
-                    className="text-white/65 transition hover:text-white"
-                  >
-                    Servicios
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#sectors"
-                    className="text-white/65 transition hover:text-white"
-                  >
-                    Sectores
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#contact"
-                    className="text-white/65 transition hover:text-white"
-                  >
-                    Contacto
-                  </a>
-                </li>
-              </ul>
-            </motion.div>
-
-            <motion.div
-              className="md:col-span-4"
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.25 }}
-              variants={fadeUp3}
-            >
-              <p className="text-sm font-semibold text-white">Contacto</p>
-
-              <div className="mt-4 space-y-3 text-sm">
-                <a
-                  href="tel:+59899372068"
-                  className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/70 transition hover:border-white/20 hover:bg-white/10"
-                >
-                  <Phone className="h-4 w-4 text-[#11c5b7]" />
-                  <span>+598 99 372 068</span>
-                  <ArrowUpRight className="ml-auto h-4 w-4 opacity-60 transition group-hover:opacity-100" />
-                </a>
-
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/70">
-                  <MapPin className="h-4 w-4 text-[#11c5b7]" />
-                  <span>El Pinar, Canelones, Uruguay</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <a
-                  href="#contact"
-                  className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#11c5b7] to-[#0ea5e9] px-5 py-3 text-sm font-semibold text-[#061016] shadow-lg shadow-[#11c5b7]/10 transition hover:shadow-[#11c5b7]/20"
-                >
-                  Consultar disponibilidad
-                  <ArrowUpRight className="h-4 w-4" />
-                </a>
-                <p className="mt-2 text-xs text-white/45">
-                  Respondemos rápido por Instagram o WhatsApp.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-
-          <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-white/45">
-              © {year} Calypso Eventos. Todos los derechos reservados.
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#f8efe2]/72">
+              Salón de eventos en El Pinar para cumpleaños, reuniones y
+              celebraciones familiares en un entorno cálido y natural.
             </p>
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-              <button
-                onClick={() => setLegalOpen("terminos")}
-                className="text-white/45 transition hover:text-white"
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href={`https://wa.me/59899372068?text=${whatsappMessage}`}
+                target="_blank"
+                rel="noreferrer"
+                className="group inline-flex items-center gap-2 rounded-full bg-calypso px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-white shadow-[0_14px_32px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
               >
-                Términos
-              </button>
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+                <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
 
               <button
-                onClick={() => setLegalOpen("privacidad")}
-                className="text-white/45 transition hover:text-white"
+                onClick={scrollTop}
+                className="inline-flex items-center gap-2 rounded-full border border-[#f8efe2]/18 px-5 py-3 text-sm font-semibold text-[#f8efe2]/82 transition hover:border-[#e8c17f]/55 hover:text-white"
               >
-                Privacidad
+                <ChevronUp className="h-4 w-4 text-[#e8c17f]" />
+                Arriba
               </button>
-              <span className="hidden sm:inline text-white/25">•</span>
-              <p className="text-white/45">
-                Sitio por{" "}
-                <a
-                  href="https://www.instagram.com/calypso.eventos.uy/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-white/70 transition hover:text-white"
-                >
-                  GWeb
-                </a>
-              </p>
             </div>
           </div>
-        </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-24 w-[80%] rounded-full bg-[#11c5b7]/10 blur-3xl" />
+          {/* Navegación */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#e8c17f]">
+              Navegación
+            </p>
+
+            <ul className="mt-5 space-y-3">
+              {navLinks.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className="group inline-flex items-center gap-2 text-sm text-[#f8efe2]/66 transition hover:text-white"
+                  >
+                    <span className="h-px w-4 bg-calypso/80 transition group-hover:w-6" />
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contacto */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#e8c17f]">
+              Contacto
+            </p>
+
+            <div className="mt-5 space-y-4 text-sm">
+              <a
+                href="tel:+59899372068"
+                className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
+              >
+                <Phone className="h-4 w-4 shrink-0 text-[#7ff3e9]" />
+                <span>+598 99 372 068</span>
+              </a>
+
+              <a
+                href="https://www.instagram.com/calypso.eventos.uy/"
+                target="_blank"
+                rel="noreferrer"
+                className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
+              >
+                <Instagram className="h-4 w-4 shrink-0 text-[#7ff3e9]" />
+                <span>Instagram</span>
+                <ArrowUpRight className="h-4 w-4 opacity-60 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+              </a>
+
+              <a
+                href="/#location"
+                className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
+              >
+                <MapPin className="h-4 w-4 shrink-0 text-[#e8c17f]" />
+                <span>El Pinar, Canelones</span>
+              </a>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Bottom */}
+        <div className="mt-10 flex flex-col gap-4 border-t border-[#f8efe2]/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-[#f8efe2]/45">
+            © {year} Calypso Eventos. Todos los derechos reservados.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+            <button
+              onClick={() => setLegalOpen("terminos")}
+              className="text-[#f8efe2]/45 transition hover:text-white"
+            >
+              Términos
+            </button>
+
+            <button
+              onClick={() => setLegalOpen("privacidad")}
+              className="text-[#f8efe2]/45 transition hover:text-white"
+            >
+              Privacidad
+            </button>
+
+            <span className="hidden text-[#f8efe2]/20 sm:inline">•</span>
+
+            <p className="text-[#f8efe2]/45">
+              Sitio por{" "}
+              <a
+                href="https://gweb.com.uy"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-[#f8efe2]/70 transition hover:text-[#7ff3e9]"
+              >
+                GWeb
+              </a>
+            </p>
+          </div>
+        </div>
       </div>
+
       <LegalModal
         open={legalOpen === "terminos"}
         title="Términos y Condiciones"

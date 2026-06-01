@@ -10,488 +10,526 @@ import {
   Info,
 } from "lucide-react";
 
-import parrillero from "../assets/sector-parrillero.jpg";
-import parrillero2 from "../assets/Parrillero2.jpg";
-import parrillero3 from "../assets/Parrillero3.jpg";
-import adultos from "../assets/sector-adultos.jpeg";
-import ninos from "../assets/sector-ninos.jpeg";
-import cocina from "../assets/sector-cocina.jpg";
-import cocina2 from "../assets/cocina2.png";
-import cocina3 from "../assets/Cocina3.jpg";
+// #region FotosParrilleroYCocina
+import ParrilleroYCocina1 from "../assets/Sectores/ParrilleroYCocina/1.jpg";
+import ParrilleroYCocina2 from "../assets/Sectores/ParrilleroYCocina/2.jpg";
+import ParrilleroYCocina3 from "../assets/Sectores/ParrilleroYCocina/3.jpg";
+import ParrilleroYCocina4 from "../assets/Sectores/ParrilleroYCocina/4.jpg";
+import ParrilleroYCocina5 from "../assets/Sectores/ParrilleroYCocina/5.jpg";
+import ParrilleroYCocina6 from "../assets/Sectores/ParrilleroYCocina/6.jpg";
+import ParrilleroYCocina7 from "../assets/Sectores/ParrilleroYCocina/7.jpg";
+import ParrilleroYCocina8 from "../assets/Sectores/ParrilleroYCocina/8.jpg";
+import ParrilleroYCocina9 from "../assets/Sectores/ParrilleroYCocina/9.jpg";
+import ParrilleroYCocina10 from "../assets/Sectores/ParrilleroYCocina/10.jpg";
+import ParrilleroYCocina11 from "../assets/Sectores/ParrilleroYCocina/11.jpg";
+// #endregion
+// #region FotosZonaDeAdultos
+import adultos1 from "../assets/Sectores/ZonaDeAdultos/1.jpg";
+import adultos2 from "../assets/Sectores/ZonaDeAdultos/2.jpg";
+import adultos3 from "../assets/Sectores/ZonaDeAdultos/3.jpg";
+import adultos4 from "../assets/Sectores/ZonaDeAdultos/4.jpg";
+import adultos5 from "../assets/Sectores/ZonaDeAdultos/5.jpg";
+// #endregion
+// #region FotosZonaDeNinos
+import ninos1 from "../assets/Sectores/ZonaDeNinos/1.jpg";
+import ninos2 from "../assets/Sectores/ZonaDeNinos/2.jpg";
+import ninos3 from "../assets/Sectores/ZonaDeNinos/3.jpg";
+import ninos4 from "../assets/Sectores/ZonaDeNinos/4.jpg";
+import ninos5 from "../assets/Sectores/ZonaDeNinos/5.jpg";
+import ninos6 from "../assets/Sectores/ZonaDeNinos/6.jpg";
+import ninos7 from "../assets/Sectores/ZonaDeNinos/7.jpg";
+import ninos8 from "../assets/Sectores/ZonaDeNinos/8.jpg";
+// #endregion
+// #region FotosMesaPrincipal
+import mesaPrincipal1 from "../assets/Sectores/MesaPrincipal/1.jpg";
+import mesaPrincipal2 from "../assets/Sectores/MesaPrincipal/2.jpg";
+import mesaPrincipal3 from "../assets/Sectores/MesaPrincipal/3.jpg";
+import mesaPrincipal4 from "../assets/Sectores/MesaPrincipal/4.jpg";
+// #endregion
+// #region FotosZonasDeJuegos
+import juegos1 from "../assets/Sectores/ZonasDeJuegos/1.jpg";
+import juegos2 from "../assets/Sectores/ZonasDeJuegos/2.jpg";
+import juegos3 from "../assets/Sectores/ZonasDeJuegos/3.jpg";
+import juegos4 from "../assets/Sectores/ZonasDeJuegos/4.jpg";
+import juegos5 from "../assets/Sectores/ZonasDeJuegos/5.jpg";
+import juegos6 from "../assets/Sectores/ZonasDeJuegos/6.jpg";
+import juegos7 from "../assets/Sectores/ZonasDeJuegos/7.jpg";
+import juegos8 from "../assets/Sectores/ZonasDeJuegos/8.jpg";
+import juegos9 from "../assets/Sectores/ZonasDeJuegos/9.jpg";
+import juegos10 from "../assets/Sectores/ZonasDeJuegos/10.jpg";
+import juegos11 from "../assets/Sectores/ZonasDeJuegos/11.jpg";
+import juegos12 from "../assets/Sectores/ZonasDeJuegos/12.jpg";
+import juegos13 from "../assets/Sectores/ZonasDeJuegos/13.jpg";
+import juegos14 from "../assets/Sectores/ZonasDeJuegos/14.jpg";
+import juegos15 from "../assets/Sectores/ZonasDeJuegos/15.jpg";
+import juegos16 from "../assets/Sectores/ZonasDeJuegos/16.jpg";
+import juegos17 from "../assets/Sectores/ZonasDeJuegos/17.jpg";
+import juegos18 from "../assets/Sectores/ZonasDeJuegos/18.jpg";
+import juegos19 from "../assets/Sectores/ZonasDeJuegos/19.jpg";
+import juegos20 from "../assets/Sectores/ZonasDeJuegos/20.jpg";
+import juegos21 from "../assets/Sectores/ZonasDeJuegos/21.jpg";
+// #endregion
+// #region FotosExteriorYJardin
+import exterior1 from "../assets/Sectores/ExteriorYJardin/1.jpg";
+import exterior2 from "../assets/Sectores/ExteriorYJardin/2.jpg";
+import exterior3 from "../assets/Sectores/ExteriorYJardin/3.jpg";
+import exterior4 from "../assets/Sectores/ExteriorYJardin/4.jpg";
+import exterior5 from "../assets/Sectores/ExteriorYJardin/5.jpg";
+import exterior6 from "../assets/Sectores/ExteriorYJardin/6.jpg";
+import exterior7 from "../assets/Sectores/ExteriorYJardin/7.jpg";
+import exterior8 from "../assets/Sectores/ExteriorYJardin/8.jpg";
+import exterior9 from "../assets/Sectores/ExteriorYJardin/9.jpg";
+import exterior10 from "../assets/Sectores/ExteriorYJardin/10.jpg";
+import exterior11 from "../assets/Sectores/ExteriorYJardin/11.jpg";
+import exterior12 from "../assets/Sectores/ExteriorYJardin/12.jpg";
+import exterior13 from "../assets/Sectores/ExteriorYJardin/13.jpg";
+import exterior14 from "../assets/Sectores/ExteriorYJardin/14.jpg";
+// #endregion
 
 type Sector = {
   title: string;
   desc: string;
-  img: string;
+  img?: string;
   tag: string;
   gallery: string[];
   features: string[];
-  illustrative?: boolean; // ✅ NUEVO: indica si las fotos son de ejemplo
+  placeholder?: boolean;
 };
 
 const items: Sector[] = [
   {
-    title: "Parrillero",
-    desc: "Espacio ideal para reuniones, cumpleaños y encuentros con un ambiente cálido y práctico.",
-    img: parrillero,
-    tag: "Reuniones",
-    gallery: [parrillero, parrillero2, parrillero3],
-    features: ["Ambiente cálido", "Ideal para grupos", "Zona flexible"],
-    illustrative: true,
+    title: "Acceso inclusivo",
+    desc: "Ingreso pensado para facilitar la llegada y circulación de los invitados con mayor comodidad.",
+    tag: "Accesibilidad",
+    gallery: [],
+    features: ["Ingreso cómodo", "Circulación simple", "Mayor accesibilidad"],
+    placeholder: true,
   },
   {
-    title: "Zona Adultos",
-    desc: "Mesas amplias, circulación cómoda y un entorno ideal para disfrutar la celebración.",
-    img: adultos,
+    title: "Zonas de juegos",
+    desc: "Espacio pensado para que los chicos puedan divertirse durante el evento en un entorno cómodo.",
+    img: juegos1,
+    tag: "Diversión",
+    gallery: [
+      juegos1,
+      juegos2,
+      juegos3,
+      juegos4,
+      juegos5,
+      juegos6,
+      juegos7,
+      juegos8,
+      juegos9,
+      juegos10,
+      juegos11,
+      juegos12,
+      juegos13,
+      juegos14,
+      juegos15,
+      juegos16,
+      juegos17,
+      juegos18,
+      juegos19,
+      juegos20,
+      juegos21,
+    ],
+    features: ["Juegos", "Entretenimiento", "Ideal para niños"],
+  },
+  {
+    title: "Zona de adultos",
+    desc: "Mesas amplias, circulación cómoda y un entorno pensado para disfrutar la celebración con tranquilidad.",
+    img: adultos1,
     tag: "Comodidad",
-    gallery: [adultos],
+    gallery: [adultos1, adultos2, adultos3, adultos4, adultos5],
     features: ["Mesas amplias", "Circulación cómoda", "Espacio social"],
-    illustrative: true,
   },
   {
-    title: "Zona Niños",
-    desc: "Sector pensado para que los más chicos se diviertan mientras los adultos disfrutan tranquilos.",
-    img: ninos,
+    title: "Parrillero y Cocina",
+    desc: "Espacio ideal para reuniones, cumpleaños y encuentros con un ambiente cálido y práctico.",
+    img: ParrilleroYCocina1,
+    tag: "Encuentros",
+    gallery: [
+      ParrilleroYCocina1,
+      ParrilleroYCocina2,
+      ParrilleroYCocina3,
+      ParrilleroYCocina4,
+      ParrilleroYCocina5,
+      ParrilleroYCocina6,
+      ParrilleroYCocina7,
+      ParrilleroYCocina8,
+      ParrilleroYCocina9,
+      ParrilleroYCocina10,
+      ParrilleroYCocina11,
+    ],
+    features: ["Ambiente cálido", "Ideal para grupos", "Zona flexible"],
+  },
+  {
+    title: "Zona de niños",
+    desc: "Sector pensado para que los más chicos se diviertan mientras los adultos disfrutan el evento.",
+    img: ninos1,
     tag: "Familias",
-    gallery: [ninos],
+    gallery: [ninos1, ninos2, ninos3, ninos4, ninos5, ninos6, ninos7, ninos8],
     features: ["Pensado para niños", "Más tranquilidad", "Zona dedicada"],
-    illustrative: true,
   },
   {
-    title: "Cocina",
-    desc: "Área funcional para organizar catering, preparaciones y apoyo durante el evento.",
-    img: cocina,
-    tag: "Soporte",
-    gallery: [cocina, cocina2, cocina3],
-    features: ["Área funcional", "Apoyo para catering", "Organización"],
-    illustrative: true,
+    title: "Mesa principal",
+    desc: "Sector central para la torta, decoración, fotos y momentos importantes de la celebración.",
+    img: mesaPrincipal1,
+    tag: "Celebración",
+    gallery: [mesaPrincipal1, mesaPrincipal2, mesaPrincipal3, mesaPrincipal4],
+    features: ["Punto central", "Ideal para fotos", "Decoración principal"],
+  },
+  {
+    title: "Exterior y jardín",
+    desc: "Área al aire libre para complementar el evento con más amplitud y un ambiente natural.",
+    img: exterior1,
+    tag: "Exterior",
+    gallery: [
+      exterior1,
+      exterior2,
+      exterior3,
+      exterior4,
+      exterior5,
+      exterior6,
+      exterior7,
+      exterior8,
+      exterior9,
+      exterior10,
+      exterior11,
+      exterior12,
+      exterior13,
+      exterior14,
+    ],
+    features: ["Aire libre", "Más amplitud", "Ambiente natural"],
   },
 ];
 
+function SectorPlaceholder({ title }: { title: string }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(11,179,166,0.26),transparent_34%),linear-gradient(135deg,#3b2b22_0%,#2f241e_48%,#5a4032_100%)]">
+      <div className="text-center">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur">
+          <ImageIcon size={24} />
+        </div>
+        <div className="mt-4 font-display text-2xl text-white">{title}</div>
+        <div className="mt-2 text-xs uppercase tracking-[0.22em] text-white/70">
+          Foto próximamente
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Sectores() {
   const [expanded, setExpanded] = useState(false);
-
-  // Modal state: index del sector seleccionado (más fácil para prev/next sector)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-
-  // Imagen activa del mini carrusel
-  const [activeImg, setActiveImg] = useState<string>("");
+  const [activeImg, setActiveImg] = useState("");
 
   const collapsedMobile = 2;
   const collapsedDesktop = 4;
-  const hasMore = items.length > collapsedDesktop;
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
+  const selectedGallery = selected?.gallery ?? [];
 
-  // cuando abrimos modal, setear imagen activa
   useEffect(() => {
-    if (selected) setActiveImg(selected.gallery?.[0] ?? selected.img);
-  }, [selectedIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (selected) setActiveImg(selected.gallery[0] ?? "");
+  }, [selectedIndex]);
 
   const goPrevImg = () => {
-    if (!selected) return;
-    const idx = selected.gallery.findIndex(
-      (g) => g === (activeImg || selected.img),
+    if (!selected || selected.gallery.length <= 1) return;
+
+    const idx = selected.gallery.findIndex((g) => g === activeImg);
+    const safe = idx === -1 ? 0 : idx;
+
+    setActiveImg(
+      selected.gallery[
+        (safe - 1 + selected.gallery.length) % selected.gallery.length
+      ],
     );
-    const safeIdx = idx === -1 ? 0 : idx;
-    const nextIdx =
-      (safeIdx - 1 + selected.gallery.length) % selected.gallery.length;
-    setActiveImg(selected.gallery[nextIdx]);
   };
 
   const goNextImg = () => {
-    if (!selected) return;
-    const idx = selected.gallery.findIndex(
-      (g) => g === (activeImg || selected.img),
-    );
-    const safeIdx = idx === -1 ? 0 : idx;
-    const nextIdx = (safeIdx + 1) % selected.gallery.length;
-    setActiveImg(selected.gallery[nextIdx]);
+    if (!selected || selected.gallery.length <= 1) return;
+
+    const idx = selected.gallery.findIndex((g) => g === activeImg);
+    const safe = idx === -1 ? 0 : idx;
+
+    setActiveImg(selected.gallery[(safe + 1) % selected.gallery.length]);
   };
 
   const goPrevSector = () => {
     if (selectedIndex === null) return;
-    const next = (selectedIndex - 1 + items.length) % items.length;
-    setSelectedIndex(next);
+    setSelectedIndex((selectedIndex - 1 + items.length) % items.length);
   };
 
   const goNextSector = () => {
     if (selectedIndex === null) return;
-    const next = (selectedIndex + 1) % items.length;
-    setSelectedIndex(next);
+    setSelectedIndex((selectedIndex + 1) % items.length);
   };
 
   const activeIndex = useMemo(() => {
-    if (!selected) return 0;
-    const idx = selected.gallery.findIndex(
-      (g) => g === (activeImg || selected.img),
-    );
+    if (!selected || selected.gallery.length === 0) return 0;
+
+    const idx = selected.gallery.findIndex((g) => g === activeImg);
     return idx === -1 ? 0 : idx;
   }, [selected, activeImg]);
 
-  // cerrar con ESC + bloquear scroll + navegación por teclado
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedIndex(null);
       if (!selected) return;
 
-      // Flechas: imágenes
-      if (e.key === "ArrowLeft") goPrevImg();
-      if (e.key === "ArrowRight") goNextImg();
-
-      // Flechas: sectores (Shift + ←/→)
       if (e.shiftKey && e.key === "ArrowLeft") goPrevSector();
-      if (e.shiftKey && e.key === "ArrowRight") goNextSector();
+      else if (e.shiftKey && e.key === "ArrowRight") goNextSector();
+      else if (e.key === "ArrowLeft") goPrevImg();
+      else if (e.key === "ArrowRight") goNextImg();
     };
 
     if (selected) {
       document.addEventListener("keydown", onKey);
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
+
       return () => {
         document.removeEventListener("keydown", onKey);
         document.body.style.overflow = prev;
       };
     }
-  }, [selected, activeImg, selectedIndex]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const visibleItems = useMemo(() => items, []);
+  }, [selected, activeImg, selectedIndex]);
 
   return (
-    <section id="sectors" className="py-20">
-      <div className="mx-auto max-w-6xl px-4">
-        {/* Header */}
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="text-xs tracking-[0.22em] uppercase text-black/50">
-              Espacios del local
+    <section
+      id="sectors"
+      className="relative overflow-hidden bg-[#f6f0e7] py-24"
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 opacity-[0.16] [background-image:radial-gradient(rgba(70,54,45,0.18)_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute left-[-100px] top-20 h-[260px] w-[260px] rounded-full bg-calypso/10 blur-3xl" />
+        <div className="absolute right-[-120px] bottom-10 h-[320px] w-[320px] rounded-full bg-[#c9a46a]/10 blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl px-6 md:px-10">
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#cdb79e]/70 bg-white/70 px-4 py-2 text-xs uppercase tracking-[0.22em] text-[#6a5649] backdrop-blur">
+              <ImageIcon size={14} className="text-calypso" />
+              Espacios del salón
             </div>
-            <h2 className="mt-2 font-display text-4xl tracking-tight">
-              Sectores<span className="text-calypso">.</span>
+
+            <h2 className="mt-4 font-display text-4xl tracking-tight text-[#2f241e] md:text-5xl">
+              Sectores para disfrutar cada momento
+              <span className="text-calypso">.</span>
             </h2>
-            <p className="mt-3 max-w-2xl text-black/70">
-              Explorá cada sector del salón. Tocá una tarjeta para ver fotos y
-              detalles.
+
+            <p className="mt-4 text-[#46362d]">
+              Explorá los distintos espacios de Calypso. Cada zona fue pensada
+              para brindar comodidad, disfrute y una experiencia memorable.
             </p>
 
-            {/* ✅ Aviso premium para transpariencia */}
-            <div className="mt-5 inline-flex items-start gap-3 rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
-              <div className="mt-0.5 h-9 w-9 rounded-xl bg-black/5 text-black flex items-center justify-center">
+            <div className="mt-6 inline-flex items-start gap-3 rounded-2xl border border-[#cdb79e]/60 bg-white/70 px-4 py-3 shadow-[0_12px_28px_rgba(90,64,50,0.08)]">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-calypso/10 text-calypso">
                 <Info size={18} />
               </div>
-              <div className="text-sm text-black/70 leading-relaxed">
-                <b>Nota:</b> Algunas imágenes pueden ser <b>ilustrativas</b>.
-                Próximamente se actualizarán con fotos reales del salón.
+
+              <div className="text-sm leading-relaxed text-[#6a5649]">
+                <b className="text-[#46362d]">Fotos reales del salón.</b> Los
+                sectores ya muestran espacios de Calypso. El único material
+                pendiente corresponde al acceso inclusivo.
               </div>
             </div>
           </div>
 
           <a
             href="#contact"
-            className="inline-flex rounded-2xl border border-black/10 bg-white px-5 py-2.5 text-sm hover:border-black/20 transition"
+            className="inline-flex items-center justify-center rounded-2xl border border-[#cdb79e]/70 bg-white/75 px-5 py-3 text-sm font-semibold text-[#46362d] transition hover:bg-white"
           >
-            Consultar apertura
+            Consultar disponibilidad
+            <span className="ml-2 text-calypso">●</span>
           </a>
         </div>
 
-        {/* Grid */}
-        <div className="relative mt-10">
-          <div
-            className={[
-              "grid gap-6 md:grid-cols-2",
-              !expanded ? "max-h-[760px] sm:max-h-[720px]" : "max-h-none",
-              "overflow-hidden",
-            ].join(" ")}
-          >
-            {visibleItems.map((x, idx) => {
-              const hiddenOnMobile = !expanded && idx >= collapsedMobile;
-              const hiddenOnDesktop = !expanded && idx >= collapsedDesktop;
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {items.map((x, idx) => {
+            const hiddenMobile = !expanded && idx >= collapsedMobile;
+            const hiddenDesktop = !expanded && idx >= collapsedDesktop;
 
-              return (
-                <motion.button
-                  key={x.title}
-                  type="button"
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{
-                    duration: 0.6,
-                    delay: idx * 0.06,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  onClick={() => setSelectedIndex(idx)}
-                  className={[
-                    "group relative overflow-hidden rounded-3xl border border-black/10 bg-black text-left",
-                    "focus:outline-none focus:ring-4 focus:ring-calypso/15",
-                    hiddenOnMobile ? "hidden sm:block" : "",
-                    hiddenOnDesktop ? "sm:hidden" : "",
-                  ].join(" ")}
-                >
-                  <img
-                    src={x.img}
-                    alt={x.title}
-                    className="h-[320px] w-full object-cover opacity-90 transition duration-700 group-hover:scale-[1.04] group-hover:opacity-100"
-                  />
+            return (
+              <motion.button
+                key={x.title}
+                type="button"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.55, delay: idx * 0.05 }}
+                onClick={() => setSelectedIndex(idx)}
+                className={[
+                  "group relative overflow-hidden rounded-3xl border border-[#cdb79e]/55 bg-[#2f241e] text-left shadow-[0_18px_44px_rgba(90,64,50,0.14)] transition hover:-translate-y-1 hover:shadow-[0_24px_58px_rgba(90,64,50,0.22)]",
+                  hiddenMobile ? "hidden sm:block" : "",
+                  hiddenDesktop ? "sm:hidden" : "",
+                ].join(" ")}
+              >
+                <div className="relative h-[330px] overflow-hidden">
+                  {x.img ? (
+                    <img
+                      src={x.img}
+                      alt={x.title}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <SectorPlaceholder title={x.title} />
+                  )}
 
-                  {/* overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-[radial-gradient(600px_220px_at_20%_20%,rgba(11,179,166,0.25),transparent)]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/58 to-black/18" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(201,164,106,0.10),transparent_35%)]" />
 
-                  {/* tag + illustrative */}
-                  <div className="absolute left-5 top-5 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] tracking-[0.22em] uppercase text-white/75 backdrop-blur">
-                      <span className="h-1.5 w-1.5 rounded-full bg-calypso" />
+                  <div className="absolute left-5 top-5 flex flex-wrap gap-2">
+                    <span className="rounded-full border border-white/25 bg-black/55 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white backdrop-blur">
                       {x.tag}
                     </span>
 
-                    {x.illustrative && (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-3 py-1 text-[11px] tracking-[0.22em] uppercase text-white/70 backdrop-blur">
-                        Ilustrativo
+                    {x.placeholder && (
+                      <span className="rounded-full border border-white/25 bg-black/55 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
+                        Foto pendiente
                       </span>
                     )}
                   </div>
 
-                  {/* content */}
                   <div className="absolute inset-x-0 bottom-0 p-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <h3 className="font-display text-2xl text-white">
-                        {x.title}
-                      </h3>
+                    <h3 className="font-display text-3xl text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)]">
+                      {x.title}
+                    </h3>
 
-                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] tracking-[0.22em] uppercase text-white/70 backdrop-blur">
-                        Explorar <ArrowUpRight size={14} />
-                      </span>
-                    </div>
-
-                    <p className="mt-2 text-sm leading-relaxed text-white/75">
+                    <p className="mt-3 text-sm font-medium leading-relaxed text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.9)]">
                       {x.desc}
                     </p>
 
-                    <div className="mt-4 inline-flex items-center gap-2 text-[11px] tracking-[0.22em] uppercase text-white/60">
+                    <div className="mt-4 h-px w-16 bg-gradient-to-r from-calypso via-white/60 to-transparent transition-all group-hover:w-28" />
+
+                    <div className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
                       <ImageIcon size={14} />
-                      {x.illustrative
-                        ? `Fotos (ilustrativas)`
-                        : `${x.gallery.length} fotos`}
+                      Explorar sector
+                      <ArrowUpRight size={14} />
                     </div>
                   </div>
-                </motion.button>
-              );
-            })}
-          </div>
-
-          {/* Fade cuando está colapsado */}
-          {!expanded && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-white/90" />
-          )}
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
 
-        {/* Ver más / Ver menos */}
-        {(items.length > collapsedMobile || hasMore) && (
-          <div className="mt-8 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-5 py-2.5 text-sm hover:border-black/20 transition"
-            >
-              {expanded ? "Ver menos" : "Ver más"}
-              <ChevronDown
-                size={16}
-                className={expanded ? "rotate-180 transition" : "transition"}
-              />
-            </button>
-          </div>
-        )}
+        <div className="mt-9 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#cdb79e]/70 bg-white/75 px-5 py-3 text-sm font-semibold text-[#46362d]"
+          >
+            {expanded ? "Ver menos" : "Ver más sectores"}
+            <ChevronDown
+              size={16}
+              className={expanded ? "rotate-180 transition" : "transition"}
+            />
+          </button>
+        </div>
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {selected && (
           <motion.div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* backdrop */}
             <div
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-black/72 backdrop-blur-sm"
               onClick={() => setSelectedIndex(null)}
             />
 
-            {/* Flechas externas para cambiar de SECTOR */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                goPrevSector();
-              }}
-              className="hidden md:inline-flex absolute left-6 top-1/2 -translate-y-1/2 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-black/50 backdrop-blur-md text-white/90 shadow-[0_20px_70px_rgba(0,0,0,0.55)] hover:bg-black/60 transition"
-              aria-label="Sector anterior"
-              title="Sector anterior"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                goNextSector();
-              }}
-              className="hidden md:inline-flex absolute right-6 top-1/2 -translate-y-1/2 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-black/50 backdrop-blur-md text-white/90 shadow-[0_20px_70px_rgba(0,0,0,0.55)] hover:bg-black/60 transition"
-              aria-label="Sector siguiente"
-              title="Sector siguiente"
-            >
-              <ChevronRight size={18} />
-            </button>
-
             <motion.div
-              role="dialog"
-              aria-modal="true"
               initial={{ y: 18, opacity: 0, scale: 0.98 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 18, opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-[0_40px_160px_rgba(0,0,0,0.55)]"
+              className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-[#cdb79e]/45 bg-[#f8f3eb] shadow-[0_34px_90px_rgba(0,0,0,0.42)]"
             >
-              {/* top bar */}
-              <div className="relative flex items-center justify-between gap-4 px-6 py-4">
-                <div className="absolute inset-0 bg-calypso/45" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/35" />
-                <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-white/15" />
-
-                <div className="relative min-w-0">
-                  <div className="flex items-center gap-2">
-                    <div className="text-[11px] tracking-[0.22em] uppercase text-white/85">
-                      {selected.tag}
-                    </div>
-
-                    {selected.illustrative && (
-                      <span className="inline-flex items-center rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[10px] tracking-[0.22em] uppercase text-white/80 backdrop-blur">
-                        Ilustrativo
-                      </span>
-                    )}
+              <div className="flex items-center justify-between border-b border-[#cdb79e]/45 bg-[#2f241e] px-6 py-4">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.22em] text-[#f6efe7]/72">
+                    {selected.tag}
                   </div>
 
-                  <div className="font-display text-2xl text-white truncate">
+                  <div className="mt-1 font-display text-2xl text-[#f6efe7]">
                     {selected.title}
-                    <span className="text-white/90">.</span>
+                    <span className="text-calypso">.</span>
                   </div>
                 </div>
 
                 <button
-                  type="button"
                   onClick={() => setSelectedIndex(null)}
-                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-black/25 backdrop-blur-md text-white/95 shadow hover:bg-black/35 transition"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white"
                   aria-label="Cerrar"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              {/* content */}
-              <div className="grid max-h-[calc(90vh-64px)] overflow-hidden lg:grid-cols-[1.35fr_1fr]">
-                {/* image */}
+              <div className="grid lg:grid-cols-[1.35fr_1fr]">
                 <div className="relative bg-black">
-                  <img
-                    src={activeImg || selected.img}
-                    alt={selected.title}
-                    className="h-[280px] w-full object-cover sm:h-[380px] lg:h-[calc(90vh-64px)]"
-                  />
+                  {activeImg ? (
+                    <img
+                      src={activeImg}
+                      alt={selected.title}
+                      className="h-[300px] w-full object-cover lg:h-[520px]"
+                    />
+                  ) : (
+                    <div className="h-[300px] lg:h-[520px]">
+                      <SectorPlaceholder title={selected.title} />
+                    </div>
+                  )}
 
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/15" />
 
-                  {/* Flechas de IMÁGENES */}
-                  {selected.gallery.length > 1 && (
+                  {selectedGallery.length > 1 && (
                     <>
                       <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          goPrevImg();
-                        }}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-black/55 backdrop-blur-md text-white shadow-[0_18px_60px_rgba(0,0,0,0.55)] hover:bg-black/65 transition"
+                        onClick={goPrevImg}
+                        className="absolute left-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl border border-white/20 bg-black/55 text-white"
                         aria-label="Foto anterior"
-                        title="Foto anterior"
                       >
                         <ChevronLeft size={18} />
                       </button>
 
                       <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          goNextImg();
-                        }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-black/55 backdrop-blur-md text-white shadow-[0_18px_60px_rgba(0,0,0,0.55)] hover:bg-black/65 transition"
+                        onClick={goNextImg}
+                        className="absolute right-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl border border-white/20 bg-black/55 text-white"
                         aria-label="Foto siguiente"
-                        title="Foto siguiente"
                       >
                         <ChevronRight size={18} />
                       </button>
                     </>
                   )}
 
-                  {/* index */}
-                  <div className="absolute right-5 top-5 rounded-full border border-white/20 bg-black/35 px-3 py-1 text-[11px] tracking-[0.22em] uppercase text-white/90 backdrop-blur">
-                    {activeIndex + 1}/{selected.gallery.length}
+                  <div className="absolute right-5 top-5 rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-white">
+                    {selectedGallery.length > 0
+                      ? `${activeIndex + 1}/${selectedGallery.length}`
+                      : "Foto pendiente"}
                   </div>
-
-                  {/* thumbs (ocultas si es ilustrativo para no “vender” algo falso) */}
-                  {!selected.illustrative && (
-                    <div className="hidden md:block absolute bottom-5 left-6 right-6">
-                      <div className="rounded-2xl border border-white/10 bg-black/35 backdrop-blur-md px-3 py-3">
-                        <div className="flex gap-2 overflow-x-auto">
-                          {selected.gallery.map((g, i) => {
-                            const isActive = (activeImg || selected.img) === g;
-                            return (
-                              <button
-                                key={`${selected.title}-g-${i}`}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveImg(g);
-                                }}
-                                className={[
-                                  "shrink-0 overflow-hidden rounded-xl border transition",
-                                  isActive
-                                    ? "border-calypso/80"
-                                    : "border-white/15 hover:border-white/30",
-                                ].join(" ")}
-                                aria-label={`Ver foto ${i + 1}`}
-                                title={`Foto ${i + 1}`}
-                              >
-                                <img
-                                  src={g}
-                                  alt={`Foto ${i + 1}`}
-                                  className="h-14 w-20 object-cover opacity-95"
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* details */}
-                <div className="bg-white p-6 sm:p-7 overflow-auto">
-                  {/* ✅ Aviso dentro del modal */}
-                  {selected.illustrative && (
-                    <div className="mb-4 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-black/70">
-                      <b>Imágenes ilustrativas.</b> Próximamente se actualizarán
-                      con fotos reales del salón.
+                <div className="overflow-auto p-6 sm:p-7">
+                  {selected.placeholder && (
+                    <div className="mb-5 rounded-2xl border border-[#cdb79e]/60 bg-white/70 p-4 text-sm leading-relaxed text-[#6a5649]">
+                      <b className="text-[#46362d]">Foto pendiente.</b> Este
+                      sector se actualizará cuando esté disponible el material
+                      del acceso inclusivo.
                     </div>
                   )}
 
-                  <p className="text-black/75 leading-relaxed">
+                  <p className="leading-relaxed text-[#46362d]">
                     {selected.desc}
                   </p>
 
-                  <div className="mt-6">
-                    <div className="text-xs tracking-[0.22em] uppercase text-black/50">
+                  <div className="mt-7">
+                    <div className="text-xs uppercase tracking-[0.22em] text-[#8b7667]">
                       Características
                     </div>
 
@@ -499,7 +537,7 @@ export default function Sectores() {
                       {selected.features.map((f) => (
                         <span
                           key={f}
-                          className="inline-flex rounded-full border border-black/10 bg-zinc-50 px-3 py-1 text-xs text-black/70"
+                          className="rounded-full border border-[#cdb79e]/65 bg-white/70 px-3 py-1 text-xs text-[#46362d]"
                         >
                           {f}
                         </span>
@@ -511,25 +549,21 @@ export default function Sectores() {
                     <a
                       href="#contact"
                       onClick={() => setSelectedIndex(null)}
-                      className="inline-flex items-center justify-center rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white hover:bg-black/90 transition"
+                      className="inline-flex items-center justify-center rounded-2xl bg-[#2f241e] px-5 py-3 text-sm font-semibold text-[#f6efe7]"
                     >
-                      {selected.illustrative
-                        ? "Quiero que me avisen al abrir"
-                        : "Consultar por este sector"}{" "}
+                      Consultar por este sector
                       <span className="ml-2 text-calypso">●</span>
                     </a>
 
-                    <a
-                      href="#sectors"
+                    <button
                       onClick={() => setSelectedIndex(null)}
-                      className="inline-flex items-center justify-center rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm hover:border-black/20 transition"
+                      className="rounded-2xl border border-[#cdb79e]/70 bg-white/70 px-5 py-3 text-sm font-semibold text-[#46362d]"
                     >
-                      Volver a sectores
-                    </a>
+                      Volver
+                    </button>
 
-                    <div className="text-xs text-black/50">
-                      Tip: cerrar con <b>ESC</b>. Fotos con <b>←</b> <b>→</b>.
-                      Sectores con <b>Shift</b> + <b>←</b>/<b>→</b>.
+                    <div className="text-xs text-[#8b7667]">
+                      ESC para cerrar · ← → fotos · Shift + ← → sectores
                     </div>
                   </div>
                 </div>
