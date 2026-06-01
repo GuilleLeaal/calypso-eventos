@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const VIDEO_SRC = "/videos/recorrido-calypso.mp4";
+const VIDEO_SRC = "/videos/calypso-recorrido-comprimido.mp4";
 const VIDEO_POSTER = "/videos/recorrido-poster.jpg";
 
 const WHATSAPP_MESSAGE = encodeURIComponent(
