@@ -11,8 +11,6 @@ import ReviewPage from "./pages/ReviewPage";
 import ReviewsPreview from "./components/ReviewsPreview";
 import ReservationPage from "./pages/ReservationPage";
 import AdminReservationsPage from "./pages/AdminReservationsPage";
-import VideoTour from "./components/VideoTour";
-
 function Home() {
   return (
     <main>
@@ -23,7 +21,6 @@ function Home() {
       <section className="bg-rustic-ivory">
         <Services />
         <Sectores />
-        <VideoTour />
         <Contact />
         <Location />
       </section>
