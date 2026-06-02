@@ -9,11 +9,11 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const VIDEO_SRC = "/videos/calypso-recorrido-comprimido.mp4";
-const VIDEO_POSTER = "/videos/recorrido-poster.jpg";
+const YOUTUBE_EMBED_URL =
+  "https://www.youtube-nocookie.com/embed/7szBnd9UrbU?rel=0&modestbranding=1";
 
 const WHATSAPP_MESSAGE = encodeURIComponent(
-  "¡Hola! Vi el recorrido del salón y me gustaría consultar disponibilidad para un evento en Calypso.",
+  "¡Hola! Vi el recorrido del salón y me gustaría consultar disponibilidad para un evento en Calypso."
 );
 
 export default function VideoTour() {
@@ -73,6 +73,7 @@ export default function VideoTour() {
           transition={{ duration: 0.65, delay: 0.08, ease: circOut }}
           className="mt-12 overflow-hidden rounded-[2rem] border border-[#d8bd90] bg-[#17110d] shadow-[0_28px_80px_rgba(90,64,50,0.18)]"
         >
+          {/* Top bar */}
           <div className="relative overflow-hidden bg-[#17110d] px-5 py-4">
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute right-[-90px] top-[-90px] h-56 w-56 rounded-full bg-[#0BB3A6]/18 blur-3xl" />
@@ -89,6 +90,7 @@ export default function VideoTour() {
                   <h3 className="font-display text-xl text-white">
                     Video recorrido
                   </h3>
+
                   <p className="mt-1 inline-flex rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-[#f8efe2] ring-1 ring-white/10 backdrop-blur-sm">
                     Espacios reales de Calypso Eventos
                   </p>
@@ -102,19 +104,22 @@ export default function VideoTour() {
             </div>
           </div>
 
+          {/* YouTube embed */}
           <div className="relative bg-black">
-            <video
-              className="aspect-video w-full bg-black object-cover"
-              src={VIDEO_SRC}
-              poster={VIDEO_POSTER}
-              controls
-              preload="metadata"
-              playsInline
-            >
-              Tu navegador no puede reproducir este video.
-            </video>
+            <div className="aspect-video w-full overflow-hidden bg-black">
+              <iframe
+                className="h-full w-full"
+                src={YOUTUBE_EMBED_URL}
+                title="Recorrido por Calypso Eventos"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
           </div>
 
+          {/* Bottom CTA */}
           <div className="grid gap-5 border-t border-white/10 bg-[#17110d] p-5 md:grid-cols-[1fr_auto] md:items-center">
             <div className="flex items-start gap-4">
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 text-[#7ff3e9]">
@@ -125,6 +130,7 @@ export default function VideoTour() {
                 <h3 className="font-display text-xl text-white">
                   ¿Querés venir a conocerlo?
                 </h3>
+
                 <p className="mt-2 max-w-xl text-sm font-medium leading-relaxed text-[#f8efe2]">
                   Después de ver el recorrido, podés consultar disponibilidad o
                   coordinar una visita para conocer el salón en persona.
