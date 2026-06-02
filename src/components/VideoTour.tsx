@@ -99,7 +99,6 @@ export default function VideoTour() {
 
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#f8efe2] backdrop-blur">
                 <Sparkles size={14} className="text-[#e8c17f]" />
-                Salón real
               </div>
             </div>
           </div>
