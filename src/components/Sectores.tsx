@@ -8,83 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  Loader2,
 } from "lucide-react";
-
-// #region FotosParrilleroYCocina
-import ParrilleroYCocina1 from "../assets/Sectores/ParrilleroYCocina/1.jpg";
-import ParrilleroYCocina2 from "../assets/Sectores/ParrilleroYCocina/2.jpg";
-import ParrilleroYCocina3 from "../assets/Sectores/ParrilleroYCocina/3.jpg";
-import ParrilleroYCocina4 from "../assets/Sectores/ParrilleroYCocina/4.jpg";
-import ParrilleroYCocina5 from "../assets/Sectores/ParrilleroYCocina/5.jpg";
-import ParrilleroYCocina6 from "../assets/Sectores/ParrilleroYCocina/6.jpg";
-import ParrilleroYCocina7 from "../assets/Sectores/ParrilleroYCocina/7.jpg";
-import ParrilleroYCocina8 from "../assets/Sectores/ParrilleroYCocina/8.jpg";
-import ParrilleroYCocina9 from "../assets/Sectores/ParrilleroYCocina/9.jpg";
-import ParrilleroYCocina10 from "../assets/Sectores/ParrilleroYCocina/10.jpg";
-import ParrilleroYCocina11 from "../assets/Sectores/ParrilleroYCocina/11.jpg";
-// #endregion
-// #region FotosZonaDeAdultos
-import adultos1 from "../assets/Sectores/ZonaDeAdultos/1.jpg";
-import adultos2 from "../assets/Sectores/ZonaDeAdultos/2.jpg";
-import adultos3 from "../assets/Sectores/ZonaDeAdultos/3.jpg";
-import adultos4 from "../assets/Sectores/ZonaDeAdultos/4.jpg";
-import adultos5 from "../assets/Sectores/ZonaDeAdultos/5.jpg";
-// #endregion
-// #region FotosZonaDeNinos
-import ninos1 from "../assets/Sectores/ZonaDeNinos/1.jpg";
-import ninos2 from "../assets/Sectores/ZonaDeNinos/2.jpg";
-import ninos3 from "../assets/Sectores/ZonaDeNinos/3.jpg";
-import ninos4 from "../assets/Sectores/ZonaDeNinos/4.jpg";
-import ninos5 from "../assets/Sectores/ZonaDeNinos/5.jpg";
-import ninos6 from "../assets/Sectores/ZonaDeNinos/6.jpg";
-import ninos7 from "../assets/Sectores/ZonaDeNinos/7.jpg";
-import ninos8 from "../assets/Sectores/ZonaDeNinos/8.jpg";
-// #endregion
-// #region FotosMesaPrincipal
-import mesaPrincipal1 from "../assets/Sectores/MesaPrincipal/1.jpg";
-import mesaPrincipal2 from "../assets/Sectores/MesaPrincipal/2.jpg";
-import mesaPrincipal3 from "../assets/Sectores/MesaPrincipal/3.jpg";
-import mesaPrincipal4 from "../assets/Sectores/MesaPrincipal/4.jpg";
-// #endregion
-// #region FotosZonasDeJuegos
-import juegos1 from "../assets/Sectores/ZonasDeJuegos/1.jpg";
-import juegos2 from "../assets/Sectores/ZonasDeJuegos/2.jpg";
-import juegos3 from "../assets/Sectores/ZonasDeJuegos/3.jpg";
-import juegos4 from "../assets/Sectores/ZonasDeJuegos/4.jpg";
-import juegos5 from "../assets/Sectores/ZonasDeJuegos/5.jpg";
-import juegos6 from "../assets/Sectores/ZonasDeJuegos/6.jpg";
-import juegos7 from "../assets/Sectores/ZonasDeJuegos/7.jpg";
-import juegos8 from "../assets/Sectores/ZonasDeJuegos/8.jpg";
-import juegos9 from "../assets/Sectores/ZonasDeJuegos/9.jpg";
-import juegos10 from "../assets/Sectores/ZonasDeJuegos/10.jpg";
-import juegos11 from "../assets/Sectores/ZonasDeJuegos/11.jpg";
-import juegos12 from "../assets/Sectores/ZonasDeJuegos/12.jpg";
-import juegos13 from "../assets/Sectores/ZonasDeJuegos/13.jpg";
-import juegos14 from "../assets/Sectores/ZonasDeJuegos/14.jpg";
-import juegos15 from "../assets/Sectores/ZonasDeJuegos/15.jpg";
-import juegos16 from "../assets/Sectores/ZonasDeJuegos/16.jpg";
-import juegos17 from "../assets/Sectores/ZonasDeJuegos/17.jpg";
-import juegos18 from "../assets/Sectores/ZonasDeJuegos/18.jpg";
-import juegos19 from "../assets/Sectores/ZonasDeJuegos/19.jpg";
-import juegos20 from "../assets/Sectores/ZonasDeJuegos/20.jpg";
-import juegos21 from "../assets/Sectores/ZonasDeJuegos/21.jpg";
-// #endregion
-// #region FotosExteriorYJardin
-import exterior1 from "../assets/Sectores/ExteriorYJardin/1.jpg";
-import exterior2 from "../assets/Sectores/ExteriorYJardin/2.jpg";
-import exterior3 from "../assets/Sectores/ExteriorYJardin/3.jpg";
-import exterior4 from "../assets/Sectores/ExteriorYJardin/4.jpg";
-import exterior5 from "../assets/Sectores/ExteriorYJardin/5.jpg";
-import exterior6 from "../assets/Sectores/ExteriorYJardin/6.jpg";
-import exterior7 from "../assets/Sectores/ExteriorYJardin/7.jpg";
-import exterior8 from "../assets/Sectores/ExteriorYJardin/8.jpg";
-import exterior9 from "../assets/Sectores/ExteriorYJardin/9.jpg";
-import exterior10 from "../assets/Sectores/ExteriorYJardin/10.jpg";
-import exterior11 from "../assets/Sectores/ExteriorYJardin/11.jpg";
-import exterior12 from "../assets/Sectores/ExteriorYJardin/12.jpg";
-import exterior13 from "../assets/Sectores/ExteriorYJardin/13.jpg";
-import exterior14 from "../assets/Sectores/ExteriorYJardin/14.jpg";
-// #endregion
 
 type Sector = {
   title: string;
@@ -95,6 +20,23 @@ type Sector = {
   features: string[];
   placeholder?: boolean;
 };
+
+function sectorImg(folder: string, index: number) {
+  return `/Sectores/${folder}/${index}.webp`;
+}
+
+function makeGallery(folder: string, total: number) {
+  return Array.from({ length: total }, (_, index) =>
+    sectorImg(folder, index + 1),
+  );
+}
+
+const juegosGallery = makeGallery("ZonasDeJuegos", 21);
+const adultosGallery = makeGallery("ZonaDeAdultos", 5);
+const parrilleroYCocinaGallery = makeGallery("ParrilleroYCocina", 11);
+const ninosGallery = makeGallery("ZonaDeNinos", 8);
+const mesaPrincipalGallery = makeGallery("MesaPrincipal", 4);
+const exteriorGallery = makeGallery("ExteriorYJardin", 14);
 
 const items: Sector[] = [
   {
@@ -108,98 +50,49 @@ const items: Sector[] = [
   {
     title: "Zonas de juegos",
     desc: "Espacio pensado para que los chicos puedan divertirse durante el evento en un entorno cómodo.",
-    img: juegos1,
+    img: juegosGallery[0],
     tag: "Diversión",
-    gallery: [
-      juegos1,
-      juegos2,
-      juegos3,
-      juegos4,
-      juegos5,
-      juegos6,
-      juegos7,
-      juegos8,
-      juegos9,
-      juegos10,
-      juegos11,
-      juegos12,
-      juegos13,
-      juegos14,
-      juegos15,
-      juegos16,
-      juegos17,
-      juegos18,
-      juegos19,
-      juegos20,
-      juegos21,
-    ],
+    gallery: juegosGallery,
     features: ["Juegos", "Entretenimiento", "Ideal para niños"],
   },
   {
     title: "Zona de adultos",
     desc: "Mesas amplias, circulación cómoda y un entorno pensado para disfrutar la celebración con tranquilidad.",
-    img: adultos1,
+    img: adultosGallery[0],
     tag: "Comodidad",
-    gallery: [adultos1, adultos2, adultos3, adultos4, adultos5],
+    gallery: adultosGallery,
     features: ["Mesas amplias", "Circulación cómoda", "Espacio social"],
   },
   {
     title: "Parrillero y Cocina",
     desc: "Espacio ideal para reuniones, cumpleaños y encuentros con un ambiente cálido y práctico.",
-    img: ParrilleroYCocina1,
+    img: parrilleroYCocinaGallery[0],
     tag: "Encuentros",
-    gallery: [
-      ParrilleroYCocina1,
-      ParrilleroYCocina2,
-      ParrilleroYCocina3,
-      ParrilleroYCocina4,
-      ParrilleroYCocina5,
-      ParrilleroYCocina6,
-      ParrilleroYCocina7,
-      ParrilleroYCocina8,
-      ParrilleroYCocina9,
-      ParrilleroYCocina10,
-      ParrilleroYCocina11,
-    ],
+    gallery: parrilleroYCocinaGallery,
     features: ["Ambiente cálido", "Ideal para grupos", "Zona flexible"],
   },
   {
     title: "Zona de niños",
     desc: "Sector pensado para que los más chicos se diviertan mientras los adultos disfrutan el evento.",
-    img: ninos1,
+    img: ninosGallery[0],
     tag: "Familias",
-    gallery: [ninos1, ninos2, ninos3, ninos4, ninos5, ninos6, ninos7, ninos8],
+    gallery: ninosGallery,
     features: ["Pensado para niños", "Más tranquilidad", "Zona dedicada"],
   },
   {
     title: "Mesa principal",
     desc: "Sector central para la torta, decoración, fotos y momentos importantes de la celebración.",
-    img: mesaPrincipal1,
+    img: mesaPrincipalGallery[0],
     tag: "Celebración",
-    gallery: [mesaPrincipal1, mesaPrincipal2, mesaPrincipal3, mesaPrincipal4],
+    gallery: mesaPrincipalGallery,
     features: ["Punto central", "Ideal para fotos", "Decoración principal"],
   },
   {
     title: "Exterior y jardín",
     desc: "Área al aire libre para complementar el evento con más amplitud y un ambiente natural.",
-    img: exterior1,
+    img: exteriorGallery[0],
     tag: "Exterior",
-    gallery: [
-      exterior1,
-      exterior2,
-      exterior3,
-      exterior4,
-      exterior5,
-      exterior6,
-      exterior7,
-      exterior8,
-      exterior9,
-      exterior10,
-      exterior11,
-      exterior12,
-      exterior13,
-      exterior14,
-    ],
+    gallery: exteriorGallery,
     features: ["Aire libre", "Más amplitud", "Ambiente natural"],
   },
 ];
@@ -224,6 +117,7 @@ export default function Sectores() {
   const [expanded, setExpanded] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [activeImg, setActiveImg] = useState("");
+  const [loadedImg, setLoadedImg] = useState("");
 
   const collapsedMobile = 2;
   const collapsedDesktop = 4;
@@ -232,8 +126,43 @@ export default function Sectores() {
   const selectedGallery = selected?.gallery ?? [];
 
   useEffect(() => {
-    if (selected) setActiveImg(selected.gallery[0] ?? "");
-  }, [selectedIndex]);
+    if (!selected) return;
+
+    const firstImage = selected.gallery[0] ?? "";
+
+    setActiveImg(firstImage);
+    setLoadedImg("");
+  }, [selectedIndex, selected]);
+
+  const activeIndex = useMemo(() => {
+    if (!selected || selected.gallery.length === 0) return 0;
+
+    const idx = selected.gallery.findIndex((g) => g === activeImg);
+    return idx === -1 ? 0 : idx;
+  }, [selected, activeImg]);
+
+  useEffect(() => {
+    if (!selected || selected.gallery.length <= 1 || !activeImg) return;
+
+    const prev =
+      selected.gallery[
+        (activeIndex - 1 + selected.gallery.length) % selected.gallery.length
+      ];
+
+    const next = selected.gallery[(activeIndex + 1) % selected.gallery.length];
+
+    [prev, next].forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, [selected, activeImg, activeIndex]);
+
+  function changeActiveImage(src: string) {
+    if (!src || src === activeImg) return;
+
+    setLoadedImg("");
+    setActiveImg(src);
+  }
 
   const goPrevImg = () => {
     if (!selected || selected.gallery.length <= 1) return;
@@ -241,7 +170,7 @@ export default function Sectores() {
     const idx = selected.gallery.findIndex((g) => g === activeImg);
     const safe = idx === -1 ? 0 : idx;
 
-    setActiveImg(
+    changeActiveImage(
       selected.gallery[
         (safe - 1 + selected.gallery.length) % selected.gallery.length
       ],
@@ -254,7 +183,7 @@ export default function Sectores() {
     const idx = selected.gallery.findIndex((g) => g === activeImg);
     const safe = idx === -1 ? 0 : idx;
 
-    setActiveImg(selected.gallery[(safe + 1) % selected.gallery.length]);
+    changeActiveImage(selected.gallery[(safe + 1) % selected.gallery.length]);
   };
 
   const goPrevSector = () => {
@@ -266,13 +195,6 @@ export default function Sectores() {
     if (selectedIndex === null) return;
     setSelectedIndex((selectedIndex + 1) % items.length);
   };
-
-  const activeIndex = useMemo(() => {
-    if (!selected || selected.gallery.length === 0) return 0;
-
-    const idx = selected.gallery.findIndex((g) => g === activeImg);
-    return idx === -1 ? 0 : idx;
-  }, [selected, activeImg]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -373,6 +295,8 @@ export default function Sectores() {
                     <img
                       src={x.img}
                       alt={x.title}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     />
                   ) : (
@@ -475,24 +399,58 @@ export default function Sectores() {
               <div className="grid lg:grid-cols-[1.35fr_1fr]">
                 <div className="relative bg-black">
                   {activeImg ? (
-                    <img
-                      src={activeImg}
-                      alt={selected.title}
-                      className="h-[300px] w-full object-cover lg:h-[520px]"
-                    />
+                    <>
+                      <div
+                        className={[
+                          "absolute inset-0 z-10 grid place-items-center bg-black/45 transition-opacity duration-300",
+                          loadedImg === activeImg
+                            ? "pointer-events-none opacity-0"
+                            : "opacity-100",
+                        ].join(" ")}
+                      >
+                        <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/15 bg-black/45 px-5 py-4 text-white backdrop-blur-md">
+                          <Loader2 className="h-6 w-6 animate-spin text-calypso" />
+                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+                            Cargando foto
+                          </span>
+                        </div>
+                      </div>
+
+                      <img
+                        key={activeImg}
+                        src={activeImg}
+                        alt={selected.title}
+                        loading="eager"
+                        decoding="async"
+                        onLoad={() => setLoadedImg(activeImg)}
+                        onError={() => {
+                          console.error(
+                            "No se pudo cargar la imagen:",
+                            activeImg,
+                          );
+                          setLoadedImg(activeImg);
+                        }}
+                        className={[
+                          "h-[300px] w-full object-cover transition duration-500 lg:h-[520px]",
+                          loadedImg === activeImg
+                            ? "scale-100 opacity-100"
+                            : "scale-[1.015] opacity-0",
+                        ].join(" ")}
+                      />
+                    </>
                   ) : (
                     <div className="h-[300px] lg:h-[520px]">
                       <SectorPlaceholder title={selected.title} />
                     </div>
                   )}
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/15" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/15" />
 
                   {selectedGallery.length > 1 && (
                     <>
                       <button
                         onClick={goPrevImg}
-                        className="absolute left-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl border border-white/20 bg-black/55 text-white"
+                        className="absolute left-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl border border-white/20 bg-black/55 text-white transition hover:bg-black/70"
                         aria-label="Foto anterior"
                       >
                         <ChevronLeft size={18} />
@@ -500,7 +458,7 @@ export default function Sectores() {
 
                       <button
                         onClick={goNextImg}
-                        className="absolute right-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl border border-white/20 bg-black/55 text-white"
+                        className="absolute right-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl border border-white/20 bg-black/55 text-white transition hover:bg-black/70"
                         aria-label="Foto siguiente"
                       >
                         <ChevronRight size={18} />

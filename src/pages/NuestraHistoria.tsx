@@ -12,24 +12,24 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import historia1 from "../assets/historia/historia-1.jpg";
-import historia2 from "../assets/historia/historia-2.jpg";
-import historia3 from "../assets/historia/historia-3.jpg";
-import historia4 from "../assets/historia/historia-4.jpg";
-import historia5 from "../assets/historia/historia-5.png";
+import historia1 from "/historia/historia-1.jpg";
+import historia2 from "/historia/historia-2.jpg";
+import historia3 from "/historia/historia-3.jpg";
+import historia4 from "/historia/historia-4.jpg";
+import historia5 from "/historia/historia-5.png";
 
-import cipreses1 from "../assets/historia/cipreses-1.jpg";
-import cipreses2 from "../assets/historia/cipreses-2.jpg";
+import cipreses1 from "/historia/cipreses-1.jpg";
+import cipreses2 from "/historia/cipreses-2.jpg";
 
-import img2018 from "../assets/timeline/2018.png";
-import img2019 from "../assets/timeline/2019.png";
-import img2020 from "../assets/timeline/2020.png";
-import img2021 from "../assets/timeline/2021.png";
-import img2022 from "../assets/timeline/2022.jpg";
-import img2023 from "../assets/timeline/2023.jpg";
-import img2024 from "../assets/timeline/2024.jpg";
-import img2025 from "../assets/timeline/2025.jpg";
-import img2026 from "../assets/timeline/2026.jpg";
+import img2018 from "/timeline/2018.png";
+import img2019 from "/timeline/2019.png";
+import img2020 from "/timeline/2020.png";
+import img2021 from "/timeline/2021.png";
+import img2022 from "/timeline/2022.jpg";
+import img2023 from "/timeline/2023.jpg";
+import img2024 from "/timeline/2024.jpg";
+import img2025 from "/timeline/2025.jpg";
+import img2026 from "/timeline/2026.jpg";
 
 const timeline = [
   {
