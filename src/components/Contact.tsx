@@ -17,7 +17,7 @@ const eventTypes = [
   "Cumpleaños",
   "Reunión familiar",
   "Evento corporativo",
-  "Evento especial",
+  "Otro tipo de evento",
   "Consulta general",
 ];
 
