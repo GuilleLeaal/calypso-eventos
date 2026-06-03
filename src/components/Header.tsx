@@ -7,7 +7,7 @@ const nav = [
   { label: "Servicios", href: "/#services", id: "services" },
   { label: "Sectores", href: "/#sectors", id: "sectors" },
   { label: "Nuestra historia", href: "/nuestra-historia", id: "history" },
-  { label: "Contacto", href: "/#contact", id: "contact" },
+  { label: "Contacto", href: "/contacto", id: "contact" },
   { label: "Ubicación", href: "/#location", id: "location" },
 ];
 
