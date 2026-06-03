@@ -7,7 +7,7 @@ import {
   MapPin,
   Sparkles,
 } from "lucide-react";
-import heroImg from "../assets/FotoPinar.jpg";
+import heroImg from "/Sectores/ExteriorYJardin/14.webp";
 
 const stats = [
   { k: "Capacidad", v: "+50 adultos +30 niños" },
