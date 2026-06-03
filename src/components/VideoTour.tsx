@@ -162,13 +162,6 @@ export default function VideoTour() {
             </div>
           </div>
         </motion.div>
-
-        {/* Cierre */}
-        <div className="mx-auto mt-12 flex max-w-sm items-center justify-center gap-5 text-[#c49a5b]">
-          <div className="h-px flex-1 bg-[#c49a5b]/55" />
-          <span className="font-display text-3xl">✦</span>
-          <div className="h-px flex-1 bg-[#c49a5b]/55" />
-        </div>
       </div>
     </section>
   );

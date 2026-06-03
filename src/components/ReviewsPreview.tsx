@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, circOut } from "framer-motion";
-import {
-  MessageCircle,
-  Quote,
-  RefreshCw,
-  Star,
-} from "lucide-react";
+import { MessageCircle, Quote, RefreshCw, Star } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Review = {
@@ -231,6 +226,12 @@ export default function ReviewsPreview() {
             </p>
           </div>
         </motion.div>
+        {/* Detalle final - mantener */}
+        <div className="mx-auto mt-12 flex max-w-sm items-center justify-center gap-5 text-[#c49a5b]">
+          <div className="h-px flex-1 bg-[#c49a5b]/55" />
+          <span className="font-display text-3xl">✦</span>
+          <div className="h-px flex-1 bg-[#c49a5b]/55" />
+        </div>
       </div>
     </section>
   );

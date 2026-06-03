@@ -17,14 +17,13 @@ function Home() {
     <main>
       <Hero />
 
-      <ReviewsPreview />
+      <Services />
 
       <section className="bg-rustic-ivory">
-        <Services />
-        <Sectores />
         <VideoTour />
-        <Contact />
+        <Sectores />
         <Location />
+        <ReviewsPreview />
       </section>
     </main>
   );
@@ -38,7 +37,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/nuestra-historia" element={<NuestraHistoria />} />
-        <Route path="/dejar-resena" element={<ReviewPage />} />
+        <Route path="/contacto" element={<Contact />} />
+        <Route path="/dejar-resena" element={<ReviewPage />} /> 
         <Route path="/reservar" element={<ReservationPage />} />
         <Route path="/admin-calypso" element={<AdminReservationsPage />} />
       </Routes>
