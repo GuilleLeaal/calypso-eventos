@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { FormEvent} from "react";
+import type { FormEvent } from "react";
 import { motion, circOut } from "framer-motion";
 import {
   ArrowLeft,
@@ -52,12 +52,14 @@ export default function ReviewPage() {
     const { error: insertError } = await supabase.from("reviews").insert({
       name: name || null,
       message,
-      approved: true,
+      rating: 5,
+      approved: false,
     });
 
     setSubmitting(false);
 
     if (insertError) {
+      console.error("Error Supabase insert review:", insertError);
       setError(
         "No pudimos guardar la reseña. Intentá nuevamente en unos segundos."
       );
@@ -142,7 +144,8 @@ export default function ReviewPage() {
                 </h2>
 
                 <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[#5c473b]">
-                  Gracias por tomarte el tiempo de compartir tu experiencia.
+                  Gracias por tomarte el tiempo de compartir tu experiencia. La
+                  reseña será publicada luego de ser revisada.
                 </p>
 
                 <Link
@@ -164,7 +167,8 @@ export default function ReviewPage() {
                       Contanos cómo estuvo
                     </h2>
                     <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-                      La reseña quedará publicada en la landing principal.
+                      La reseña quedará pendiente y será publicada luego de ser
+                      revisada.
                     </p>
                   </div>
 

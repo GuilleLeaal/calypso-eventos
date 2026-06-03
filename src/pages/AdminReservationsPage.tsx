@@ -35,6 +35,8 @@ type ReservationStatus =
   | "expired"
   | "completed";
 
+type AdminSection = "reservations" | "reviews";
+
 type ReservationSource = "website" | "admin";
 
 type Reservation = {
@@ -53,6 +55,15 @@ type Reservation = {
   discovery_source: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type Review = {
+  id: string;
+  name: string | null;
+  message: string;
+  rating: number;
+  approved: boolean;
+  created_at: string;
 };
 
 const FIRST_RESERVATION_DATE = "2026-07-01";
@@ -177,6 +188,17 @@ export default function AdminReservationsPage() {
   const [globalError, setGlobalError] = useState("");
 
   const [filter, setFilter] = useState<"all" | ReservationStatus>("all");
+  const [activeSection, setActiveSection] =
+    useState<AdminSection>("reservations");
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewActionLoadingId, setReviewActionLoadingId] = useState<
+    string | null
+  >(null);
+  const [reviewFilter, setReviewFilter] = useState<
+    "all" | "pending" | "approved"
+  >("all");
 
   const [manualBlocks, setManualBlocks] = useState<ReservationBlock[]>([]);
   const [manualMonthBlocks, setManualMonthBlocks] = useState<
@@ -227,6 +249,7 @@ export default function AdminReservationsPage() {
 
         if (hasSession) {
           fetchReservations();
+          fetchReviews();
         }
       } catch (error) {
         console.error("Unexpected admin session error:", error);
@@ -249,8 +272,10 @@ export default function AdminReservationsPage() {
 
       if (hasSession) {
         fetchReservations();
+        fetchReviews();
       } else {
         setReservations([]);
+        setReviews([]);
         setManualBlocks([]);
         setManualMonthBlocks([]);
       }
@@ -382,8 +407,77 @@ export default function AdminReservationsPage() {
     }
   }
 
+  async function fetchReviews() {
+    setLoadingReviews(true);
+    setGlobalError("");
+
+    try {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("id, name, message, rating, approved, created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching reviews:", error);
+        setGlobalError("No pudimos cargar las reseñas.");
+        setReviews([]);
+        return;
+      }
+
+      setReviews((data || []) as Review[]);
+    } catch (error) {
+      console.error("Unexpected reviews error:", error);
+      setGlobalError("Ocurrió un error cargando las reseñas.");
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
+    }
+  }
+
+  async function updateReviewStatus(id: string, approved: boolean) {
+    setReviewActionLoadingId(id);
+    setGlobalError("");
+
+    const { error } = await supabase
+      .from("reviews")
+      .update({ approved })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating review:", error);
+      setGlobalError("No pudimos actualizar la reseña.");
+    } else {
+      await fetchReviews();
+    }
+
+    setReviewActionLoadingId(null);
+  }
+
+  async function deleteReview(id: string) {
+    const confirmed = window.confirm(
+      "¿Seguro que querés borrar esta reseña? Esta acción no se puede deshacer.",
+    );
+
+    if (!confirmed) return;
+
+    setReviewActionLoadingId(id);
+    setGlobalError("");
+
+    const { error } = await supabase.from("reviews").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error deleting review:", error);
+      setGlobalError("No pudimos borrar la reseña.");
+    } else {
+      await fetchReviews();
+    }
+
+    setReviewActionLoadingId(null);
+  }
+
   async function refreshAll() {
     await fetchReservations();
+    await fetchReviews();
     await fetchManualBlocks();
     await fetchManualMonthBlocks();
   }
@@ -748,17 +842,16 @@ export default function AdminReservationsPage() {
             </Link>
 
             <h1 className="mt-6 font-display text-4xl leading-tight text-[#2f241e] md:text-6xl">
-              Gestión de{" "}
+              Panel de{" "}
               <span className="relative inline-block text-[#0BB3A6]">
-                reservas
+                administración
                 <span className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-gradient-to-r from-[#0BB3A6] via-[#e8c17f] to-transparent" />
               </span>
               .
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#5c473b] md:text-base">
-              Administrá solicitudes pendientes, reservas confirmadas, señas,
-              notas internas y métricas de origen de clientes.
+              Administrá reservas, reseñas, señas, notas internas y métricas de origen de clientes.
             </p>
           </div>
 
@@ -789,13 +882,42 @@ export default function AdminReservationsPage() {
           </div>
         </div>
 
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveSection("reservations")}
+            className={[
+              "rounded-full border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition",
+              activeSection === "reservations"
+                ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+            ].join(" ")}
+          >
+            Reservas
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection("reviews")}
+            className={[
+              "rounded-full border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition",
+              activeSection === "reviews"
+                ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+            ].join(" ")}
+          >
+            Reseñas
+          </button>
+        </div>
+
         {globalError && (
           <p className="mt-7 rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {globalError}
           </p>
         )}
 
-        <div className="mt-10 grid gap-7 xl:grid-cols-[0.72fr_1.28fr]">
+        {activeSection === "reservations" && (
+          <div className="mt-10 grid gap-7 xl:grid-cols-[0.72fr_1.28fr]">
           <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
             <div className="flex items-start justify-between gap-4 border-b border-[#e4cfad] pb-5">
               <div>
@@ -1137,9 +1259,201 @@ export default function AdminReservationsPage() {
               </div>
             )}
           </section>
-        </div>
+          </div>
+        )}
+
+        {activeSection === "reviews" && (
+          <ReviewsAdminSection
+            reviews={reviews}
+            loadingReviews={loadingReviews}
+            reviewFilter={reviewFilter}
+            setReviewFilter={setReviewFilter}
+            reviewActionLoadingId={reviewActionLoadingId}
+            onApprove={(id) => updateReviewStatus(id, true)}
+            onHide={(id) => updateReviewStatus(id, false)}
+            onDelete={deleteReview}
+          />
+        )}
       </section>
     </main>
+  );
+}
+
+function ReviewsAdminSection({
+  reviews,
+  loadingReviews,
+  reviewFilter,
+  setReviewFilter,
+  reviewActionLoadingId,
+  onApprove,
+  onHide,
+  onDelete,
+}: {
+  reviews: Review[];
+  loadingReviews: boolean;
+  reviewFilter: "all" | "pending" | "approved";
+  setReviewFilter: (filter: "all" | "pending" | "approved") => void;
+  reviewActionLoadingId: string | null;
+  onApprove: (id: string) => void;
+  onHide: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const filteredReviews = reviews.filter((review) => {
+    if (reviewFilter === "all") return true;
+    if (reviewFilter === "approved") return review.approved;
+    return !review.approved;
+  });
+
+  return (
+    <section className="mt-10 rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
+      <div className="flex flex-col gap-4 border-b border-[#e4cfad] pb-5 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="font-display text-3xl text-[#2f241e]">
+            Gestión de reseñas
+          </h2>
+
+          <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
+            Aprobá, ocultá o eliminá las reseñas recibidas desde el QR del salón.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(["all", "pending", "approved"] as const).map((item) => (
+            <button
+              key={item}
+              onClick={() => setReviewFilter(item)}
+              className={[
+                "rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition",
+                reviewFilter === item
+                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                  : "border-[#dfc8ab] bg-white/50 text-[#5c473b] hover:bg-white",
+              ].join(" ")}
+            >
+              {item === "all"
+                ? "Todas"
+                : item === "pending"
+                  ? "Pendientes"
+                  : "Publicadas"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loadingReviews ? (
+        <div className="grid min-h-64 place-items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0BB3A6]" />
+        </div>
+      ) : filteredReviews.length === 0 ? (
+        <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
+          No hay reseñas para este filtro.
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-4">
+          {filteredReviews.map((review) => (
+            <ReviewAdminCard
+              key={review.id}
+              review={review}
+              loading={reviewActionLoadingId === review.id}
+              onApprove={() => onApprove(review.id)}
+              onHide={() => onHide(review.id)}
+              onDelete={() => onDelete(review.id)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReviewAdminCard({
+  review,
+  loading,
+  onApprove,
+  onHide,
+  onDelete,
+}: {
+  review: Review;
+  loading: boolean;
+  onApprove: () => void;
+  onHide: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <article className="rounded-[1.45rem] border border-[#dfc8ab] bg-white/55 p-5 shadow-[0_12px_32px_rgba(90,64,50,0.06)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={[
+                "rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]",
+                review.approved
+                  ? "border-[#0BB3A6]/35 bg-[#0BB3A6]/12 text-[#087d75]"
+                  : "border-[#e8c17f]/45 bg-[#e8c17f]/18 text-[#8a5b1f]",
+              ].join(" ")}
+            >
+              {review.approved ? "Publicada" : "Pendiente"}
+            </span>
+
+            <span className="rounded-full border border-[#dfc8ab] bg-[#fff9f0] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6d5748]">
+              5 estrellas
+            </span>
+          </div>
+
+          <h3 className="mt-3 font-display text-2xl text-[#2f241e]">
+            {review.name || "Anónimo"}
+          </h3>
+
+          <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
+            “{review.message}”
+          </p>
+
+          <p className="mt-3 text-xs font-medium text-[#8a7667]">
+            {new Date(review.created_at).toLocaleString("es-UY")}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {!review.approved && (
+            <button
+              onClick={onApprove}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Check size={15} />
+              )}
+              Aprobar
+            </button>
+          )}
+
+          {review.approved && (
+            <button
+              onClick={onHide}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
+            >
+              <X size={15} />
+              Ocultar
+            </button>
+          )}
+
+          <button
+            onClick={onDelete}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+          >
+            {loading ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Trash2 size={15} />
+            )}
+            Borrar
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }
 
