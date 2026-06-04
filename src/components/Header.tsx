@@ -5,10 +5,11 @@ import logo from "../assets/logo.png";
 
 const nav = [
   { label: "Servicios", href: "/#services", id: "services" },
+  { label: "Video Tour", href: "/#recorrido", id: "recorrido" },
   { label: "Sectores", href: "/#sectors", id: "sectors" },
+  { label: "Ubicación", href: "/#location", id: "location" },
   { label: "Nuestra historia", href: "/nuestra-historia", id: "history" },
   { label: "Contacto", href: "/contacto", id: "contact" },
-  { label: "Ubicación", href: "/#location", id: "location" },
 ];
 
 export default function Header() {
@@ -40,7 +41,14 @@ export default function Header() {
         return;
       }
 
-      const sectionIds = ["services", "sectors", "contact", "location"];
+      const sectionIds = [
+        "services",
+        "sectors",
+        "recorrido",
+        "contact",
+        "location",
+      ];
+
       let current = "";
 
       for (const id of sectionIds) {
@@ -97,6 +105,14 @@ export default function Header() {
     return activeId === item.id;
   };
 
+  const handleNavClick = () => {
+    setOpen(false);
+
+    window.setTimeout(() => {
+      setPathname(window.location.pathname);
+    }, 80);
+  };
+
   return (
     <header className="fixed left-0 right-0 top-0 z-50 overflow-x-clip">
       <motion.div
@@ -110,13 +126,12 @@ export default function Header() {
       >
         <div
           className={[
-            "group relative isolate flex w-full min-w-0 items-center justify-between gap-4 overflow-hidden rounded-full border px-5 transition-all duration-300 sm:px-6",
+            "group relative isolate flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-full border px-4 transition-all duration-300 sm:px-5 lg:gap-4",
             scrolled
               ? "border-[#d8bd90]/80 bg-[#fff9f0]/94 py-2.5 shadow-[0_16px_45px_rgba(63,42,28,0.14)] backdrop-blur-xl"
-              : "border-[#e0c79d]/70 bg-[#fff9f0]/84 py-3.5 shadow-[0_10px_30px_rgba(63,42,28,0.08)] backdrop-blur-xl",
+              : "border-[#e0c79d]/70 bg-[#fff9f0]/84 py-3 shadow-[0_10px_30px_rgba(63,42,28,0.08)] backdrop-blur-xl",
           ].join(" ")}
         >
-          {/* Background */}
           <div className="pointer-events-none absolute inset-0 -z-10">
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.58),rgba(255,244,230,0.68))]" />
             <div className="absolute left-0 top-0 h-full w-40 opacity-[0.09] [background-image:radial-gradient(#b98a4f_1.2px,transparent_1.2px)] [background-size:13px_13px]" />
@@ -125,22 +140,20 @@ export default function Header() {
             <div className="absolute inset-x-20 bottom-0 h-px bg-gradient-to-r from-transparent via-[#0f5550]/20 to-transparent" />
           </div>
 
-          {/* Logo */}
           <a
             href="/"
             aria-label="Ir al inicio"
             className="group/logo flex min-w-0 shrink-0 items-center"
-            onClick={() => setOpen(false)}
+            onClick={handleNavClick}
           >
             <img
               src={logo}
               alt="Calypso Eventos"
-              className="h-8 w-auto max-w-[150px] object-contain transition duration-300 group-hover/logo:scale-[1.02] sm:h-9 sm:max-w-[190px] md:max-w-[210px]"
+              className="h-8 w-auto max-w-[145px] object-contain transition duration-300 group-hover/logo:scale-[1.02] sm:h-9 sm:max-w-[180px] lg:max-w-[190px]"
             />
           </a>
 
-          {/* Desktop Nav */}
-          <nav className="hidden min-w-0 items-center justify-center gap-6 lg:flex xl:gap-7">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex xl:gap-4">
             {nav.map((item) => {
               const active = isActive(item);
 
@@ -148,8 +161,9 @@ export default function Header() {
                 <a
                   key={item.href}
                   href={item.href}
+                  onClick={handleNavClick}
                   className={[
-                    "group/nav relative py-2 text-[12px] font-semibold uppercase tracking-[0.13em] transition-all duration-300 xl:text-[13px]",
+                    "group/nav relative whitespace-nowrap px-1 py-2 text-[11px] font-bold uppercase tracking-[0.095em] transition-all duration-300 xl:text-[12px] xl:tracking-[0.11em]",
                     active
                       ? "text-[#0f5550]"
                       : "text-[#4a382e] hover:text-[#0f5550]",
@@ -159,10 +173,10 @@ export default function Header() {
 
                   <span
                     className={[
-                      "absolute -bottom-0.5 left-0 h-[2px] rounded-full bg-gradient-to-r from-[#c49a5b] via-[#e8c17f] to-[#0bb3a6] transition-all duration-300",
+                      "absolute -bottom-0.5 left-1 right-1 h-[2px] rounded-full bg-gradient-to-r from-[#c49a5b] via-[#e8c17f] to-[#0bb3a6] transition-all duration-300",
                       active
-                        ? "w-full opacity-100"
-                        : "w-0 opacity-0 group-hover/nav:w-full group-hover/nav:opacity-100",
+                        ? "opacity-100"
+                        : "opacity-0 group-hover/nav:opacity-100",
                     ].join(" ")}
                   />
                 </a>
@@ -170,11 +184,11 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Desktop CTA */}
           <div className="hidden shrink-0 md:block">
             <a
               href="/reservar"
-              className="group/cta inline-flex items-center justify-center gap-2 rounded-full bg-[#4a2b17] px-5 py-3 text-xs font-bold uppercase tracking-[0.11em] text-white shadow-[0_14px_32px_rgba(74,43,23,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#351f12]"
+              onClick={handleNavClick}
+              className="group/cta inline-flex items-center justify-center gap-2 rounded-full bg-[#4a2b17] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-white shadow-[0_14px_32px_rgba(74,43,23,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#351f12] xl:px-5 xl:text-xs"
             >
               <CalendarCheck size={16} className="text-[#e8c17f]" />
               Reservar
@@ -185,7 +199,6 @@ export default function Header() {
             </a>
           </div>
 
-          {/* Mobile Button */}
           <button
             onClick={() => setOpen((value) => !value)}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d8bd90]/80 bg-[#fff4df]/70 text-[#3f3028] shadow-[0_8px_22px_rgba(63,42,28,0.10)] transition hover:bg-[#f2e3cd] lg:hidden"
@@ -197,7 +210,6 @@ export default function Header() {
         </div>
       </motion.div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {open && (
           <>
@@ -216,68 +228,42 @@ export default function Header() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.24, ease: circOut }}
-              className="mx-auto w-full max-w-6xl px-4 pt-3 lg:hidden"
+              className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-6xl overflow-hidden rounded-[1.7rem] border border-[#d8bd90]/80 bg-[#fff9f0]/96 p-4 shadow-[0_22px_60px_rgba(63,42,28,0.20)] backdrop-blur-xl lg:hidden"
             >
-              <div className="relative isolate overflow-hidden rounded-[1.8rem] border border-[#d8bd90]/80 bg-[#fff9f0]/96 shadow-[0_24px_60px_rgba(63,42,28,0.22)] backdrop-blur-xl">
-                <div className="pointer-events-none absolute inset-0 -z-10">
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,#fff9f0,#fff1df)]" />
-                  <div className="absolute right-0 top-0 h-56 w-56 bg-[radial-gradient(ellipse_at_top_right,rgba(11,179,166,0.13),transparent_68%)]" />
-                  <div className="absolute left-0 bottom-0 h-48 w-32 opacity-[0.11] [background-image:radial-gradient(#b98a4f_1.2px,transparent_1.2px)] [background-size:13px_13px]" />
-                </div>
+              <div className="grid gap-2">
+                {nav.map((item) => {
+                  const active = isActive(item);
 
-                <div className="flex flex-col px-6 py-5">
-                  <div className="mb-4 flex items-center justify-between border-b border-[#e0c79d]/80 pb-4">
-                    <img
-                      src={logo}
-                      alt="Calypso Eventos"
-                      className="h-8 w-auto max-w-[165px] object-contain"
-                    />
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleNavClick}
+                      className={[
+                        "flex items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-bold uppercase tracking-[0.11em] transition",
+                        active
+                          ? "border-[#0BB3A6]/35 bg-[#0BB3A6]/10 text-[#087d75]"
+                          : "border-[#dfc8ab]/70 bg-white/55 text-[#3f3028] hover:bg-white",
+                      ].join(" ")}
+                    >
+                      {item.label}
+                      <ArrowUpRight
+                        size={16}
+                        className={active ? "text-[#0BB3A6]" : "text-[#c49a5b]"}
+                      />
+                    </a>
+                  );
+                })}
 
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9a6b2f]">
-                      Menú
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col">
-                    {nav.map((item) => {
-                      const active = isActive(item);
-
-                      return (
-                        <a
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setOpen(false)}
-                          className={[
-                            "group/mobile flex items-center justify-between border-b border-[#e6d2b4]/70 py-4 text-sm font-semibold uppercase tracking-[0.12em] transition",
-                            active
-                              ? "text-[#0f5550]"
-                              : "text-[#3f3028] hover:text-[#0f5550]",
-                          ].join(" ")}
-                        >
-                          <span>{item.label}</span>
-
-                          <ArrowUpRight
-                            size={17}
-                            className={[
-                              "transition group-hover/mobile:translate-x-0.5 group-hover/mobile:-translate-y-0.5",
-                              active ? "text-[#0f5550]" : "text-[#b88945]",
-                            ].join(" ")}
-                          />
-                        </a>
-                      );
-                    })}
-                  </div>
-
-                  <a
-                    href="/reservar"
-                    onClick={() => setOpen(false)}
-                    className="mt-6 inline-flex items-center justify-center gap-3 rounded-full bg-[#4a2b17] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_16px_35px_rgba(74,43,23,0.24)] transition hover:bg-[#351f12]"
-                  >
-                    <CalendarCheck size={18} className="text-[#e8c17f]" />
-                    Reservar fecha
-                    <ArrowUpRight size={17} />
-                  </a>
-                </div>
+                <a
+                  href="/reservar"
+                  onClick={handleNavClick}
+                  className="mt-2 inline-flex items-center justify-center gap-3 rounded-2xl bg-[#0BB3A6] px-5 py-4 text-sm font-bold uppercase tracking-[0.11em] text-white shadow-[0_16px_38px_rgba(11,179,166,0.24)] transition hover:bg-[#099f94]"
+                >
+                  <CalendarCheck size={18} />
+                  Reservar fecha
+                  <ArrowUpRight size={16} />
+                </a>
               </div>
             </motion.div>
           </>
