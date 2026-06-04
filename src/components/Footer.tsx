@@ -193,7 +193,7 @@ export default function Footer() {
             <p className="text-[#f8efe2]/45">
               Sitio por{" "}
               <a
-                href="https://gweb.com.uy"
+                href="https://gweb.pages.dev/"
                 target="_blank"
                 rel="noreferrer"
                 className="font-medium text-[#f8efe2]/70 transition hover:text-[#7ff3e9]"
