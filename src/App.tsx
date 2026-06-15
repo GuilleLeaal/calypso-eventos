@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
@@ -12,6 +13,9 @@ import ReviewsPreview from "./components/ReviewsPreview";
 import ReservationPage from "./pages/ReservationPage";
 import AdminReservationsPage from "./pages/AdminReservationsPage";
 import VideoTour from "./components/VideoTour";
+import PrivacidadPage from "./pages/PrivacidadPage";
+import TerminosPage from "./pages/TerminosPage";
+
 function Home() {
   return (
     <main>
@@ -38,9 +42,11 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/nuestra-historia" element={<NuestraHistoria />} />
         <Route path="/contacto" element={<Contact />} />
-        <Route path="/dejar-resena" element={<ReviewPage />} /> 
+        <Route path="/dejar-resena" element={<ReviewPage />} />
         <Route path="/reservar" element={<ReservationPage />} />
         <Route path="/admin-calypso" element={<AdminReservationsPage />} />
+        <Route path="/privacidad" element={<PrivacidadPage />} />
+        <Route path="/terminos" element={<TerminosPage />} />
       </Routes>
 
       <Footer />

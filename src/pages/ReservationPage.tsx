@@ -113,12 +113,14 @@ export default function ReservationPage() {
   const [blocks, setBlocks] = useState<ReservationBlock[]>([]);
   const [monthBlocks, setMonthBlocks] = useState<ReservationBlock[]>([]);
   const [calendarMonth, setCalendarMonth] = useState(() =>
-    createLocalDate(getMinReservationDate())
+    createLocalDate(getMinReservationDate()),
   );
 
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingMonthBlocks, setLoadingMonthBlocks] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<ReservationSlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<ReservationSlot | null>(
+    null,
+  );
 
   const [form, setForm] = useState({
     customerName: "",
@@ -126,8 +128,8 @@ export default function ReservationPage() {
     phone: "",
     email: "",
     discoverySource: "",
+    acceptsPrivacy: false,
   });
-
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -155,7 +157,7 @@ export default function ReservationPage() {
         "get_public_reservation_blocks",
         {
           target_date: selectedDate,
-        }
+        },
       );
 
       if (rpcError) {
@@ -184,7 +186,7 @@ export default function ReservationPage() {
         {
           start_date: start,
           end_date: end,
-        }
+        },
       );
 
       if (rpcError) {
@@ -238,6 +240,13 @@ export default function ReservationPage() {
       return;
     }
 
+    if (!form.acceptsPrivacy) {
+      setError(
+        "Para solicitar la reserva tenés que aceptar la Política de privacidad.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     const { error: createError } = await supabase.rpc(
@@ -251,7 +260,7 @@ export default function ReservationPage() {
         p_start_time: selectedSlot.startTime,
         p_end_time: selectedSlot.endTime,
         p_discovery_source: form.discoverySource,
-      }
+      },
     );
 
     setSubmitting(false);
@@ -260,13 +269,13 @@ export default function ReservationPage() {
       console.error("Error creating reservation:", createError);
       setError(
         createError.message ||
-          "No pudimos crear la solicitud. Intentá nuevamente."
+          "No pudimos crear la solicitud. Intentá nuevamente.",
       );
       return;
     }
 
     const whatsappText = encodeURIComponent(
-      `¡Hola! Me gustaría hacer una reserva para el ${selectedDateLabel}, de ${selectedSlot.label}, ¿cuándo podría ir a conocer el salón?`
+      `¡Hola! Me gustaría hacer una reserva para el ${selectedDateLabel}, de ${selectedSlot.label}, ¿cuándo podría ir a conocer el salón?`,
     );
 
     setSent(true);
@@ -274,7 +283,7 @@ export default function ReservationPage() {
     window.open(
       `https://wa.me/${PHONE}?text=${whatsappText}`,
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
@@ -316,10 +325,10 @@ export default function ReservationPage() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#4a382e] md:text-lg">
-            Las reservas pueden solicitarse a partir del 1 de julio. La solicitud
-            mantiene la fecha durante 48 horas. No implica compromiso de pago. La
-            reserva se confirma luego de coordinar por WhatsApp y realizar la
-            seña.
+            Las reservas pueden solicitarse a partir del 1 de julio. La
+            solicitud mantiene la fecha durante 48 horas. No implica compromiso
+            de pago. La reserva se confirma luego de coordinar por WhatsApp y
+            realizar la seña.
           </p>
         </motion.div>
 
@@ -387,7 +396,6 @@ export default function ReservationPage() {
                   </div>
                 )}
               </div>
-              
 
               {!loadingSlots &&
                 allSlots.length > 0 &&
@@ -426,15 +434,15 @@ export default function ReservationPage() {
                 </div>
               )}
               <div className="mt-5 rounded-[1.2rem] border border-[#e4cfad] bg-white/45 p-4">
-              <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
-                <p className="text-sm leading-relaxed text-[#5c473b]">
+                <div className="flex items-start gap-3">
+                  <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
+                  <p className="text-sm leading-relaxed text-[#5c473b]">
                     Se tachan los horarios que se superponen con reservas
                     aprobadas o pendientes vigentes, respetando la ventana de
                     1:30 h.
                   </p>
+                </div>
               </div>
-            </div>
             </div>
           </motion.div>
 
@@ -620,17 +628,48 @@ export default function ReservationPage() {
                 <div className="mt-6 rounded-[1.2rem] border border-[#e4cfad] bg-white/45 p-4">
                   <div className="flex items-start gap-3">
                     <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
-                    <p className="text-sm leading-relaxed text-[#5c473b]">
-                      La solicitud no tiene compromiso de pago. La fecha se
-                      mantiene durante 48 horas y se confirma únicamente luego de
-                      coordinar por WhatsApp y realizar la seña.
-                    </p>
+                    <div className="space-y-3">
+                      <p className="text-sm leading-relaxed text-[#5c473b]">
+                        La solicitud no tiene compromiso de pago. La fecha se
+                        mantiene durante 48 horas y se confirma únicamente luego
+                        de coordinar por WhatsApp y realizar la seña.
+                      </p>
+
+                      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#dfc8ab] bg-white/55 p-3 text-sm leading-relaxed text-[#5c473b]">
+                        <input
+                          type="checkbox"
+                          checked={form.acceptsPrivacy}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              acceptsPrivacy: event.target.checked,
+                            }))
+                          }
+                          className="mt-1 h-4 w-4 shrink-0 accent-[#0BB3A6]"
+                        />
+
+                        <span>
+                          Acepto que Calypso Eventos utilice los datos enviados
+                          para responder mi solicitud, consultar disponibilidad
+                          y coordinar la reserva. Ver{" "}
+                          <a
+                            href="/privacidad"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold text-[#087d75] underline underline-offset-4 transition hover:text-[#0BB3A6]"
+                          >
+                            Política de privacidad
+                          </a>
+                          .
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={submitting || !selectedSlot}
+                  disabled={submitting || !selectedSlot || !form.acceptsPrivacy}
                   className="group mt-7 inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                   {submitting ? (
@@ -676,8 +715,8 @@ function SlotGroup({
     availableSlots.some(
       (available) =>
         available.startTime === slot.startTime &&
-        available.endTime === slot.endTime
-    )
+        available.endTime === slot.endTime,
+    ),
   ).length;
 
   return (
@@ -706,7 +745,8 @@ function SlotGroup({
         {slots.map((slot) => {
           const available = availableSlots.some(
             (item) =>
-              item.startTime === slot.startTime && item.endTime === slot.endTime
+              item.startTime === slot.startTime &&
+              item.endTime === slot.endTime,
           );
 
           const active =
@@ -760,7 +800,7 @@ function ReservationCalendar({
 
   const getDateAvailability = (dateValue: string) => {
     const dateBlocks = monthBlocks.filter(
-      (block) => block.event_date === dateValue
+      (block) => block.event_date === dateValue,
     );
 
     const slots = getSlotsForDate(dateValue);

@@ -45,7 +45,6 @@ export default function Header() {
         "services",
         "sectors",
         "recorrido",
-        "contact",
         "location",
       ];
 
@@ -100,6 +99,10 @@ export default function Header() {
   const isActive = (item: (typeof nav)[number]) => {
     if (item.id === "history") {
       return pathname.includes("nuestra-historia");
+    }
+
+    if (item.id === "contact") {
+      return pathname === "/contacto" || activeId === "contact";
     }
 
     return activeId === item.id;
