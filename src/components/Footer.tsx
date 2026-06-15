@@ -1,5 +1,4 @@
 // src/components/Footer.tsx
-import { useState } from "react";
 import { motion, circOut } from "framer-motion";
 import {
   Instagram,
@@ -10,9 +9,6 @@ import {
   MessageCircle,
 } from "lucide-react";
 import logo from "../assets/Logo2.png";
-import LegalModal from "./LegalModal";
-import TerminosContent from "./legal/TerminosContent";
-import PrivacidadContent from "./legal/PrivacidadContent";
 
 const year = new Date().getFullYear();
 
@@ -33,15 +29,11 @@ const navLinks = [
   { label: "Servicios", href: "/#services" },
   { label: "Sectores", href: "/#sectors" },
   { label: "Nuestra historia", href: "/nuestra-historia" },
-  { label: "Contacto", href: "/#contact" },
+  { label: "Contacto", href: "/contacto" },
   { label: "Ubicación", href: "/#location" },
 ];
 
 export default function Footer() {
-  const [legalOpen, setLegalOpen] = useState<"terminos" | "privacidad" | null>(
-    null
-  );
-
   const scrollTop = () => {
     const topElement = document.getElementById("top");
 
@@ -83,8 +75,10 @@ export default function Footer() {
             </a>
 
             <p className="mt-5 max-w-md text-sm leading-relaxed text-[#f8efe2]/72">
-              Salón de eventos en El Pinar para cumpleaños, reuniones y
-              celebraciones familiares en un entorno cálido y natural.
+              Calypso Eventos es un salón de eventos ubicado en El Pinar,
+              Ciudad de la Costa, Canelones, Uruguay. Brindamos un espacio para
+              cumpleaños, reuniones, celebraciones familiares y eventos sociales
+              en un entorno cálido y natural.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -100,6 +94,7 @@ export default function Footer() {
               </a>
 
               <button
+                type="button"
                 onClick={scrollTop}
                 className="inline-flex items-center gap-2 rounded-full border border-[#f8efe2]/18 px-5 py-3 text-sm font-semibold text-[#f8efe2]/82 transition hover:border-[#e8c17f]/55 hover:text-white"
               >
@@ -152,7 +147,7 @@ export default function Footer() {
                 className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
               >
                 <Instagram className="h-4 w-4 shrink-0 text-[#7ff3e9]" />
-                <span>Instagram</span>
+                <span>@calypso.eventos.uy</span>
                 <ArrowUpRight className="h-4 w-4 opacity-60 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
               </a>
 
@@ -161,7 +156,7 @@ export default function Footer() {
                 className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
               >
                 <MapPin className="h-4 w-4 shrink-0 text-[#e8c17f]" />
-                <span>El Pinar, Canelones</span>
+                <span>El Pinar, Ciudad de la Costa, Canelones, Uruguay</span>
               </a>
             </div>
           </div>
@@ -174,19 +169,19 @@ export default function Footer() {
           </p>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-            <button
-              onClick={() => setLegalOpen("terminos")}
+            <a
+              href="/terminos"
               className="text-[#f8efe2]/45 transition hover:text-white"
             >
-              Términos
-            </button>
+              Términos y condiciones
+            </a>
 
-            <button
-              onClick={() => setLegalOpen("privacidad")}
+            <a
+              href="/privacidad"
               className="text-[#f8efe2]/45 transition hover:text-white"
             >
-              Privacidad
-            </button>
+              Política de privacidad
+            </a>
 
             <span className="hidden text-[#f8efe2]/20 sm:inline">•</span>
 
@@ -204,22 +199,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-
-      <LegalModal
-        open={legalOpen === "terminos"}
-        title="Términos y Condiciones"
-        onClose={() => setLegalOpen(null)}
-      >
-        <TerminosContent />
-      </LegalModal>
-
-      <LegalModal
-        open={legalOpen === "privacidad"}
-        title="Política de Privacidad"
-        onClose={() => setLegalOpen(null)}
-      >
-        <PrivacidadContent />
-      </LegalModal>
     </footer>
   );
 }

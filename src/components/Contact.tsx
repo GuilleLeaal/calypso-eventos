@@ -34,7 +34,7 @@ export default function Contact() {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -53,18 +53,18 @@ Tipo de evento: ${form.eventType || "No indicado"}
 Fecha tentativa: ${form.date || "No indicada"}
 
 Idea del evento:
-${form.message || "No indicado"}`
+${form.message || "No indicado"}`,
     );
 
     window.open(
       `https://wa.me/${PHONE}?text=${text}`,
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
   const quickWhatsapp = encodeURIComponent(
-    "¡Hola! Me gustaría coordinar fecha y hora para ir a conocer el salón."
+    "¡Hola! Me gustaría coordinar fecha y hora para ir a conocer el salón.",
   );
 
   return (
@@ -148,7 +148,7 @@ ${form.message || "No indicado"}`
                 <ContactLine
                   icon={MapPin}
                   label="Ubicación"
-                  value="El Pinar, Canelones"
+                  value="El Pinar, Ciudad de la Costa, Canelones"
                   href="/#location"
                 />
 
@@ -280,7 +280,17 @@ ${form.message || "No indicado"}`
             </button>
 
             <p className="mt-4 text-center text-xs leading-relaxed text-[#6d5748]">
-              El botón abre WhatsApp con tu consulta lista para enviar.
+              El botón abre WhatsApp con tu consulta lista para enviar. Al
+              enviar tu mensaje, aceptás que Calypso Eventos utilice los datos
+              proporcionados para responder tu consulta y coordinar
+              disponibilidad. Ver{" "}
+              <a
+                href="/privacidad"
+                className="font-semibold text-[#087d75] underline underline-offset-4 transition hover:text-[#0BB3A6]"
+              >
+                Política de privacidad
+              </a>
+              .
             </p>
           </motion.form>
         </div>
