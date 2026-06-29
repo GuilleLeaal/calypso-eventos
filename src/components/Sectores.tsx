@@ -9,90 +9,137 @@ import {
   ChevronRight,
   Info,
   Loader2,
+  Sun,
+  Moon,
 } from "lucide-react";
+
+type GalleryMoment = "day" | "night";
 
 type Sector = {
   title: string;
   desc: string;
   img?: string;
   tag: string;
-  gallery: string[];
+  galleries: {
+    day: string[];
+    night?: string[];
+  };
   features: string[];
-  placeholder?: boolean;
 };
 
-function sectorImg(folder: string, index: number) {
-  return `/Sectores/${folder}/${index}.webp`;
+function sectorImg(moment: GalleryMoment, folder: string, index: number) {
+  const baseFolder = moment === "day" ? "FotosDia" : "FotosNoche";
+  return `/Sectores/${baseFolder}/${folder}/${index}.webp`;
 }
 
-function makeGallery(folder: string, total: number) {
+function makeGallery(
+  moment: GalleryMoment,
+  folder: string,
+  total: number,
+) {
   return Array.from({ length: total }, (_, index) =>
-    sectorImg(folder, index + 1),
+    sectorImg(moment, folder, index + 1),
   );
 }
 
-const juegosGallery = makeGallery("ZonasDeJuegos", 21);
-const adultosGallery = makeGallery("ZonaDeAdultos", 5);
-const parrilleroYCocinaGallery = makeGallery("ParrilleroYCocina", 11);
-const ninosGallery = makeGallery("ZonaDeNinos", 8);
-const mesaPrincipalGallery = makeGallery("MesaPrincipal", 4);
-const exteriorGallery = makeGallery("ExteriorYJardin", 14);
+/**
+ * Ajustá estos números según la cantidad real de fotos diurnas.
+ * Las cantidades nocturnas quedaron como estaban en tu componente anterior.
+ */
+const juegosDayGallery = makeGallery("day", "ZonasDeJuegos", 27);
+const adultosDayGallery = makeGallery("day", "ZonaDeAdultos", 5);
+const parrilleroYCocinaDayGallery = makeGallery("day", "ParrilleroYCocina", 12);
+const ninosDayGallery = makeGallery("day", "ZonaDeNinos", 5);
+const mesaPrincipalDayGallery = makeGallery("day", "MesaPrincipal", 4);
+const exteriorDayGallery = makeGallery("day", "ExteriorYJardin", 11);
+const accesoInclusivoDayGallery = makeGallery("day", "AccesoInclusivo", 4);
+
+const juegosNightGallery = makeGallery("night", "ZonasDeJuegos", 21);
+const adultosNightGallery = makeGallery("night", "ZonaDeAdultos", 5);
+const parrilleroYCocinaNightGallery = makeGallery(
+  "night",
+  "ParrilleroYCocina",
+  11,
+);
+const ninosNightGallery = makeGallery("night", "ZonaDeNinos", 8);
+const mesaPrincipalNightGallery = makeGallery("night", "MesaPrincipal", 4);
+const exteriorNightGallery = makeGallery("night", "ExteriorYJardin", 14);
 
 const items: Sector[] = [
   {
     title: "Acceso inclusivo",
     desc: "Ingreso pensado para facilitar la llegada y circulación de los invitados con mayor comodidad.",
     tag: "Accesibilidad",
-    gallery: [],
+    img: accesoInclusivoDayGallery[0],
+    galleries: {
+      day: accesoInclusivoDayGallery,
+    },
     features: ["Ingreso cómodo", "Circulación simple", "Mayor accesibilidad"],
-    placeholder: true,
   },
   {
     title: "Zonas de juegos",
-    desc: "Espacio pensado para que los chicos puedan divertirse durante el evento en un entorno cómodo.",
-    img: juegosGallery[0],
+    desc: "Espacio pensado para que chicos y adultos puedan divertirse durante el evento en un entorno cómodo.",
+    img: juegosDayGallery[0],
     tag: "Diversión",
-    gallery: juegosGallery,
+    galleries: {
+      day: juegosDayGallery,
+      night: juegosNightGallery,
+    },
     features: ["Juegos", "Entretenimiento", "Ideal para niños"],
   },
   {
     title: "Zona de adultos",
     desc: "Mesas amplias, circulación cómoda y un entorno pensado para disfrutar la celebración con tranquilidad.",
-    img: adultosGallery[0],
+    img: adultosDayGallery[0],
     tag: "Comodidad",
-    gallery: adultosGallery,
+    galleries: {
+      day: adultosDayGallery,
+      night: adultosNightGallery,
+    },
     features: ["Mesas amplias", "Circulación cómoda", "Espacio social"],
   },
   {
     title: "Parrillero y Cocina",
     desc: "Espacio ideal para reuniones, cumpleaños y encuentros con un ambiente cálido y práctico.",
-    img: parrilleroYCocinaGallery[0],
+    img: parrilleroYCocinaDayGallery[0],
     tag: "Encuentros",
-    gallery: parrilleroYCocinaGallery,
+    galleries: {
+      day: parrilleroYCocinaDayGallery,
+      night: parrilleroYCocinaNightGallery,
+    },
     features: ["Ambiente cálido", "Ideal para grupos", "Zona flexible"],
   },
   {
     title: "Zona de niños",
     desc: "Sector pensado para que los más chicos se diviertan mientras los adultos disfrutan el evento.",
-    img: ninosGallery[0],
+    img: ninosDayGallery[0],
     tag: "Familias",
-    gallery: ninosGallery,
+    galleries: {
+      day: ninosDayGallery,
+      night: ninosNightGallery,
+    },
     features: ["Pensado para niños", "Más tranquilidad", "Zona dedicada"],
   },
   {
     title: "Mesa principal",
     desc: "Sector central para la torta, decoración, fotos y momentos importantes de la celebración.",
-    img: mesaPrincipalGallery[0],
+    img: mesaPrincipalDayGallery[0],
     tag: "Celebración",
-    gallery: mesaPrincipalGallery,
+    galleries: {
+      day: mesaPrincipalDayGallery,
+      night: mesaPrincipalNightGallery,
+    },
     features: ["Punto central", "Ideal para fotos", "Decoración principal"],
   },
   {
     title: "Exterior y jardín",
     desc: "Área al aire libre para complementar el evento con más amplitud y un ambiente natural.",
-    img: exteriorGallery[0],
+    img: exteriorDayGallery[0],
     tag: "Exterior",
-    gallery: exteriorGallery,
+    galleries: {
+      day: exteriorDayGallery,
+      night: exteriorNightGallery,
+    },
     features: ["Aire libre", "Más amplitud", "Ambiente natural"],
   },
 ];
@@ -116,6 +163,7 @@ function SectorPlaceholder({ title }: { title: string }) {
 export default function Sectores() {
   const [expanded, setExpanded] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [galleryMoment, setGalleryMoment] = useState<GalleryMoment>("day");
   const [activeImg, setActiveImg] = useState("");
   const [loadedImg, setLoadedImg] = useState("");
 
@@ -123,39 +171,62 @@ export default function Sectores() {
   const collapsedDesktop = 4;
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
-  const selectedGallery = selected?.gallery ?? [];
+
+  const hasNightGallery =
+    selected?.galleries.night && selected.galleries.night.length > 0;
+
+  const selectedGallery = useMemo(() => {
+    if (!selected) return [];
+
+    if (galleryMoment === "night" && selected.galleries.night?.length) {
+      return selected.galleries.night;
+    }
+
+    return selected.galleries.day;
+  }, [selected, galleryMoment]);
 
   useEffect(() => {
     if (!selected) return;
 
-    const firstImage = selected.gallery[0] ?? "";
+    setGalleryMoment("day");
+  }, [selectedIndex, selected]);
+
+  useEffect(() => {
+    if (!selected) return;
+
+    const gallery =
+      galleryMoment === "night" && selected.galleries.night?.length
+        ? selected.galleries.night
+        : selected.galleries.day;
+
+    const firstImage = gallery[0] ?? "";
 
     setActiveImg(firstImage);
     setLoadedImg("");
-  }, [selectedIndex, selected]);
+  }, [selected, galleryMoment]);
 
   const activeIndex = useMemo(() => {
-    if (!selected || selected.gallery.length === 0) return 0;
+    if (selectedGallery.length === 0) return 0;
 
-    const idx = selected.gallery.findIndex((g) => g === activeImg);
+    const idx = selectedGallery.findIndex((g) => g === activeImg);
     return idx === -1 ? 0 : idx;
-  }, [selected, activeImg]);
+  }, [selectedGallery, activeImg]);
 
   useEffect(() => {
-    if (!selected || selected.gallery.length <= 1 || !activeImg) return;
+    if (selectedGallery.length <= 1 || !activeImg) return;
 
     const prev =
-      selected.gallery[
-        (activeIndex - 1 + selected.gallery.length) % selected.gallery.length
+      selectedGallery[
+        (activeIndex - 1 + selectedGallery.length) % selectedGallery.length
       ];
 
-    const next = selected.gallery[(activeIndex + 1) % selected.gallery.length];
+    const next = selectedGallery[(activeIndex + 1) % selectedGallery.length];
 
     [prev, next].forEach((src) => {
       const img = new window.Image();
       img.src = src;
     });
-  }, [selected, activeImg, activeIndex]);
+  }, [selectedGallery, activeImg, activeIndex]);
 
   function changeActiveImage(src: string) {
     if (!src || src === activeImg) return;
@@ -165,25 +236,25 @@ export default function Sectores() {
   }
 
   const goPrevImg = () => {
-    if (!selected || selected.gallery.length <= 1) return;
+    if (selectedGallery.length <= 1) return;
 
-    const idx = selected.gallery.findIndex((g) => g === activeImg);
+    const idx = selectedGallery.findIndex((g) => g === activeImg);
     const safe = idx === -1 ? 0 : idx;
 
     changeActiveImage(
-      selected.gallery[
-        (safe - 1 + selected.gallery.length) % selected.gallery.length
+      selectedGallery[
+        (safe - 1 + selectedGallery.length) % selectedGallery.length
       ],
     );
   };
 
   const goNextImg = () => {
-    if (!selected || selected.gallery.length <= 1) return;
+    if (selectedGallery.length <= 1) return;
 
-    const idx = selected.gallery.findIndex((g) => g === activeImg);
+    const idx = selectedGallery.findIndex((g) => g === activeImg);
     const safe = idx === -1 ? 0 : idx;
 
-    changeActiveImage(selected.gallery[(safe + 1) % selected.gallery.length]);
+    changeActiveImage(selectedGallery[(safe + 1) % selectedGallery.length]);
   };
 
   const goPrevSector = () => {
@@ -217,7 +288,7 @@ export default function Sectores() {
         document.body.style.overflow = prev;
       };
     }
-  }, [selected, activeImg, selectedIndex]);
+  }, [selected, activeImg, selectedIndex, selectedGallery]);
 
   return (
     <section
@@ -254,9 +325,9 @@ export default function Sectores() {
               </div>
 
               <div className="text-sm leading-relaxed text-[#6a5649]">
-                <b className="text-[#46362d]">Fotos reales del salón.</b> Los
-                sectores ya muestran espacios de Calypso. El único material
-                pendiente corresponde al acceso inclusivo.
+                <b className="text-[#46362d]">Fotos reales del salón.</b> Podés
+                explorar los sectores con fotos de día y de noche. El acceso
+                inclusivo cuenta únicamente con fotos de día.
               </div>
             </div>
           </div>
@@ -311,11 +382,15 @@ export default function Sectores() {
                       {x.tag}
                     </span>
 
-                    {x.placeholder && (
+                    <span className="rounded-full border border-white/25 bg-black/55 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
+                      Día
+                    </span>
+
+                    {x.galleries.night?.length ? (
                       <span className="rounded-full border border-white/25 bg-black/55 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
-                        Foto pendiente
+                        Noche
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="absolute inset-x-0 bottom-0 p-6">
@@ -474,13 +549,47 @@ export default function Sectores() {
                 </div>
 
                 <div className="overflow-auto p-6 sm:p-7">
-                  {selected.placeholder && (
-                    <div className="mb-5 rounded-2xl border border-[#cdb79e]/60 bg-white/70 p-4 text-sm leading-relaxed text-[#6a5649]">
-                      <b className="text-[#46362d]">Foto pendiente.</b> Este
-                      sector se actualizará cuando esté disponible el material
-                      del acceso inclusivo.
+                  <div className="mb-5">
+                    <div className="mb-3 text-xs uppercase tracking-[0.22em] text-[#8b7667]">
+                      Ver sector
                     </div>
-                  )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGalleryMoment("day")}
+                        className={[
+                          "inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition",
+                          galleryMoment === "day"
+                            ? "border-calypso bg-calypso text-white"
+                            : "border-[#cdb79e]/70 bg-white/70 text-[#46362d] hover:bg-white",
+                        ].join(" ")}
+                      >
+                        <Sun size={16} />
+                        Día
+                      </button>
+
+                      {hasNightGallery ? (
+                        <button
+                          type="button"
+                          onClick={() => setGalleryMoment("night")}
+                          className={[
+                            "inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition",
+                            galleryMoment === "night"
+                              ? "border-[#2f241e] bg-[#2f241e] text-white"
+                              : "border-[#cdb79e]/70 bg-white/70 text-[#46362d] hover:bg-white",
+                          ].join(" ")}
+                        >
+                          <Moon size={16} />
+                          Noche
+                        </button>
+                      ) : (
+                        <div className="inline-flex items-center justify-center rounded-2xl border border-[#cdb79e]/60 bg-white/45 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-[#8b7667]">
+                          Solo día
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <p className="leading-relaxed text-[#46362d]">
                     {selected.desc}
