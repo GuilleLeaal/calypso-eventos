@@ -46,7 +46,7 @@ function makeGallery(
  * Ajustá estos números según la cantidad real de fotos diurnas.
  * Las cantidades nocturnas quedaron como estaban en tu componente anterior.
  */
-const juegosDayGallery = makeGallery("day", "ZonasDeJuegos", 27);
+const juegosDayGallery = makeGallery("day", "ZonasDeJuegos", 26);
 const adultosDayGallery = makeGallery("day", "ZonaDeAdultos", 5);
 const parrilleroYCocinaDayGallery = makeGallery("day", "ParrilleroYCocina", 12);
 const ninosDayGallery = makeGallery("day", "ZonaDeNinos", 5);
