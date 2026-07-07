@@ -29,11 +29,7 @@ import {
 } from "../lib/reservations";
 
 type ReservationStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "expired"
-  | "completed";
+  "pending" | "approved" | "rejected" | "expired" | "completed";
 
 type AdminSection = "reservations" | "reviews";
 
@@ -112,7 +108,19 @@ const DISCOVERY_OPTIONS = [
 ];
 
 function normalizeTime(value: string) {
-  return value.slice(0, 5);
+  return value.trim().slice(0, 5);
+}
+
+const TIME_24H_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function isValid24HourTime(value: string) {
+  return TIME_24H_REGEX.test(normalizeTime(value));
+}
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = normalizeTime(value).split(":").map(Number);
+
+  return hours * 60 + minutes;
 }
 
 function escapeCsvValue(value: unknown) {
@@ -573,16 +581,33 @@ export default function AdminReservationsPage() {
       return;
     }
 
+    const startTime = normalizeTime(manualForm.start_time);
+    const endTime = normalizeTime(manualForm.end_time);
+
+    if (!isValid24HourTime(startTime) || !isValid24HourTime(endTime)) {
+      setGlobalError(
+        "Ingresá inicio y fin en formato 24 horas. Ejemplo: 17:00.",
+      );
+      return;
+    }
+
+    if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+      setGlobalError(
+        "El horario de inicio debe ser anterior al horario de fin.",
+      );
+      return;
+    }
+
     const { error } = await supabase.rpc("create_admin_reservation", {
-      p_customer_name: manualForm.customer_name,
+      p_customer_name: manualForm.customer_name.trim(),
       p_event_type: manualForm.event_type,
-      p_phone: manualForm.phone,
-      p_email: manualForm.email,
+      p_phone: manualForm.phone.trim(),
+      p_email: manualForm.email.trim(),
       p_event_date: manualForm.event_date,
-      p_start_time: manualForm.start_time,
-      p_end_time: manualForm.end_time,
+      p_start_time: startTime,
+      p_end_time: endTime,
       p_deposit_paid: manualForm.deposit_paid,
-      p_notes: manualForm.notes,
+      p_notes: manualForm.notes.trim(),
       p_discovery_source: manualForm.discovery_source,
     });
 
@@ -851,7 +876,8 @@ export default function AdminReservationsPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#5c473b] md:text-base">
-              Administrá reservas, reseñas, señas, notas internas y métricas de origen de clientes.
+              Administrá reservas, reseñas, señas, notas internas y métricas de
+              origen de clientes.
             </p>
           </div>
 
@@ -918,347 +944,359 @@ export default function AdminReservationsPage() {
 
         {activeSection === "reservations" && (
           <div className="mt-10 grid gap-7 xl:grid-cols-[0.72fr_1.28fr]">
-          <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
-            <div className="flex items-start justify-between gap-4 border-b border-[#e4cfad] pb-5">
-              <div>
-                <h2 className="font-display text-3xl text-[#2f241e]">
-                  Crear reserva
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-                  Para clientes que reservaron por fuera de la web.
-                </p>
-              </div>
-
-              <div className="hidden h-11 w-11 shrink-0 place-items-center rounded-full bg-[#0BB3A6]/12 text-[#0BB3A6] sm:grid">
-                <Plus size={20} />
-              </div>
-            </div>
-
-            <form onSubmit={handleCreateManualReservation} className="mt-6">
-              <div className="grid gap-5">
-                <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                    Cliente
-                  </span>
-                  <input
-                    value={manualForm.customer_name}
-                    onChange={(event) =>
-                      setManualForm((prev) => ({
-                        ...prev,
-                        customer_name: event.target.value,
-                      }))
-                    }
-                    className="input-contact"
-                    placeholder="Nombre y apellido"
-                  />
-                </label>
-
-                <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                    Tipo de evento
-                  </span>
-                  <select
-                    value={manualForm.event_type}
-                    onChange={(event) =>
-                      setManualForm((prev) => ({
-                        ...prev,
-                        event_type: event.target.value,
-                      }))
-                    }
-                    className="input-contact"
-                  >
-                    <option value="">Seleccioná una opción</option>
-                    {EVENT_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                    Cómo conoció Calypso
-                  </span>
-
-                  <select
-                    value={manualForm.discovery_source}
-                    onChange={(event) =>
-                      setManualForm((prev) => ({
-                        ...prev,
-                        discovery_source: event.target.value,
-                      }))
-                    }
-                    className="input-contact"
-                  >
-                    <option value="">No indicado</option>
-                    {DISCOVERY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Teléfono
-                    </span>
-                    <input
-                      value={manualForm.phone}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          phone: event.target.value,
-                        }))
-                      }
-                      className="input-contact"
-                      placeholder="+598..."
-                    />
-                  </label>
-
-                  <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Email
-                    </span>
-                    <input
-                      value={manualForm.email}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          email: event.target.value,
-                        }))
-                      }
-                      className="input-contact"
-                      placeholder="cliente@email.com"
-                    />
-                  </label>
-                </div>
-
+            <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
+              <div className="flex items-start justify-between gap-4 border-b border-[#e4cfad] pb-5">
                 <div>
-                  <span className="mb-3 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                    Fecha
-                  </span>
-
-                  <ReservationCalendar
-                    selectedDate={manualForm.event_date}
-                    calendarMonth={manualCalendarMonth}
-                    monthBlocks={manualMonthBlocks}
-                    loading={loadingManualMonthBlocks}
-                    minDate={getMinReservationDate()}
-                    onMonthChange={setManualCalendarMonth}
-                    onSelectDate={(dateValue) => {
-                      setManualForm((prev) => ({
-                        ...prev,
-                        event_date: dateValue,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <span className="block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Horarios disponibles
-                    </span>
-
-                    {loadingManualSlots && (
-                      <span className="text-xs font-semibold text-[#087d75]">
-                        Consultando...
-                      </span>
-                    )}
-                  </div>
-
-                  {manualSlots.length === 0 ? (
-                    <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm leading-relaxed text-[#5c473b]">
-                      No hay horarios disponibles para esta fecha.
-                    </div>
-                  ) : (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {manualSlots.map((slot) => {
-                        const active =
-                          manualForm.start_time === slot.startTime &&
-                          manualForm.end_time === slot.endTime;
-
-                        return (
-                          <button
-                            key={`${slot.period}-${slot.startTime}`}
-                            type="button"
-                            onClick={() => applyManualSlot(slot)}
-                            className={[
-                              "rounded-[1rem] border px-3 py-2 text-left text-sm font-semibold transition",
-                              active
-                                ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-                            ].join(" ")}
-                          >
-                            {slot.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <p className="mt-2 text-xs leading-relaxed text-[#6d5748]/75">
-                    Se ocultan los horarios que se superponen con reservas
-                    aprobadas o pendientes vigentes, respetando la ventana de
-                    1:30 h.
+                  <h2 className="font-display text-3xl text-[#2f241e]">
+                    Crear reserva
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
+                    Para clientes que reservaron por fuera de la web.
                   </p>
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="hidden h-11 w-11 shrink-0 place-items-center rounded-full bg-[#0BB3A6]/12 text-[#0BB3A6] sm:grid">
+                  <Plus size={20} />
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateManualReservation} className="mt-6">
+                <div className="grid gap-5">
                   <label>
                     <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Inicio
+                      Cliente
                     </span>
                     <input
-                      type="time"
-                      value={manualForm.start_time}
+                      value={manualForm.customer_name}
                       onChange={(event) =>
                         setManualForm((prev) => ({
                           ...prev,
-                          start_time: event.target.value,
+                          customer_name: event.target.value,
                         }))
                       }
                       className="input-contact"
+                      placeholder="Nombre y apellido"
                     />
                   </label>
 
                   <label>
                     <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Fin
+                      Tipo de evento
                     </span>
-                    <input
-                      type="time"
-                      value={manualForm.end_time}
+                    <select
+                      value={manualForm.event_type}
                       onChange={(event) =>
                         setManualForm((prev) => ({
                           ...prev,
-                          end_time: event.target.value,
+                          event_type: event.target.value,
                         }))
                       }
                       className="input-contact"
+                    >
+                      <option value="">Seleccioná una opción</option>
+                      {EVENT_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                      Cómo conoció Calypso
+                    </span>
+
+                    <select
+                      value={manualForm.discovery_source}
+                      onChange={(event) =>
+                        setManualForm((prev) => ({
+                          ...prev,
+                          discovery_source: event.target.value,
+                        }))
+                      }
+                      className="input-contact"
+                    >
+                      <option value="">No indicado</option>
+                      {DISCOVERY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Teléfono
+                      </span>
+                      <input
+                        value={manualForm.phone}
+                        onChange={(event) =>
+                          setManualForm((prev) => ({
+                            ...prev,
+                            phone: event.target.value,
+                          }))
+                        }
+                        className="input-contact"
+                        placeholder="+598..."
+                      />
+                    </label>
+
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Email
+                      </span>
+                      <input
+                        value={manualForm.email}
+                        onChange={(event) =>
+                          setManualForm((prev) => ({
+                            ...prev,
+                            email: event.target.value,
+                          }))
+                        }
+                        className="input-contact"
+                        placeholder="cliente@email.com"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <span className="mb-3 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                      Fecha
+                    </span>
+
+                    <ReservationCalendar
+                      selectedDate={manualForm.event_date}
+                      calendarMonth={manualCalendarMonth}
+                      monthBlocks={manualMonthBlocks}
+                      loading={loadingManualMonthBlocks}
+                      minDate={getMinReservationDate()}
+                      onMonthChange={setManualCalendarMonth}
+                      onSelectDate={(dateValue) => {
+                        setManualForm((prev) => ({
+                          ...prev,
+                          event_date: dateValue,
+                        }));
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Horarios sugeridos
+                      </span>
+
+                      {loadingManualSlots && (
+                        <span className="text-xs font-semibold text-[#087d75]">
+                          Consultando...
+                        </span>
+                      )}
+                    </div>
+
+                    {manualSlots.length === 0 ? (
+                      <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm leading-relaxed text-[#5c473b]">
+                        No hay horarios sugeridos para esta fecha. Igual podés
+                        ingresar un horario libre abajo.
+                      </div>
+                    ) : (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {manualSlots.map((slot) => {
+                          const active =
+                            manualForm.start_time === slot.startTime &&
+                            manualForm.end_time === slot.endTime;
+
+                          return (
+                            <button
+                              key={`${slot.period}-${slot.startTime}`}
+                              type="button"
+                              onClick={() => applyManualSlot(slot)}
+                              className={[
+                                "rounded-[1rem] border px-3 py-2 text-left text-sm font-semibold transition",
+                                active
+                                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                                  : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+                              ].join(" ")}
+                            >
+                              {slot.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <p className="mt-2 text-xs leading-relaxed text-[#6d5748]/75">
+                      Son accesos rápidos. Para un caso especial, escribí un
+                      horario libre en Inicio y Fin usando formato 24 horas.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Inicio
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-2][0-9]:[0-5][0-9]"
+                        maxLength={5}
+                        placeholder="17:00"
+                        value={manualForm.start_time}
+                        onChange={(event) =>
+                          setManualForm((prev) => ({
+                            ...prev,
+                            start_time: event.target.value,
+                          }))
+                        }
+                        className="input-contact"
+                      />
+                    </label>
+
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Fin
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-2][0-9]:[0-5][0-9]"
+                        maxLength={5}
+                        placeholder="20:00"
+                        value={manualForm.end_time}
+                        onChange={(event) =>
+                          setManualForm((prev) => ({
+                            ...prev,
+                            end_time: event.target.value,
+                          }))
+                        }
+                        className="input-contact"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm font-semibold text-[#2f241e]">
+                    <input
+                      type="checkbox"
+                      checked={manualForm.deposit_paid}
+                      onChange={(event) =>
+                        setManualForm((prev) => ({
+                          ...prev,
+                          deposit_paid: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 accent-[#0BB3A6]"
+                    />
+                    Pagó seña
+                  </label>
+
+                  <label>
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                      Notas internas
+                    </span>
+                    <textarea
+                      value={manualForm.notes}
+                      onChange={(event) =>
+                        setManualForm((prev) => ({
+                          ...prev,
+                          notes: event.target.value,
+                        }))
+                      }
+                      className="input-contact min-h-28 resize-none"
+                      placeholder="Menú, personal requerido, condiciones especiales..."
                     />
                   </label>
                 </div>
 
-                <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm font-semibold text-[#2f241e]">
-                  <input
-                    type="checkbox"
-                    checked={manualForm.deposit_paid}
-                    onChange={(event) =>
-                      setManualForm((prev) => ({
-                        ...prev,
-                        deposit_paid: event.target.checked,
-                      }))
-                    }
-                    className="h-4 w-4 accent-[#0BB3A6]"
-                  />
-                  Pagó seña
-                </label>
+                <button
+                  type="submit"
+                  className="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
+                >
+                  <Plus size={18} />
+                  Crear reserva aprobada
+                </button>
+              </form>
+            </section>
 
-                <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                    Notas internas
-                  </span>
-                  <textarea
-                    value={manualForm.notes}
-                    onChange={(event) =>
-                      setManualForm((prev) => ({
-                        ...prev,
-                        notes: event.target.value,
-                      }))
-                    }
-                    className="input-contact min-h-28 resize-none"
-                    placeholder="Menú, personal requerido, condiciones especiales..."
-                  />
-                </label>
-              </div>
+            <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
+              <div className="flex flex-col gap-4 border-b border-[#e4cfad] pb-5 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="font-display text-3xl text-[#2f241e]">
+                    Reservas
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
+                    Pendientes, aprobadas, rechazadas, vencidas y finalizadas.
+                  </p>
+                </div>
 
-              <button
-                type="submit"
-                className="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
-              >
-                <Plus size={18} />
-                Crear reserva aprobada
-              </button>
-            </form>
-          </section>
-
-          <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
-            <div className="flex flex-col gap-4 border-b border-[#e4cfad] pb-5 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="font-display text-3xl text-[#2f241e]">
-                  Reservas
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-                  Pendientes, aprobadas, rechazadas, vencidas y finalizadas.
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      "all",
+                      "pending",
+                      "approved",
+                      "rejected",
+                      "expired",
+                      "completed",
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => setFilter(item)}
+                      className={[
+                        "rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition",
+                        filter === item
+                          ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                          : "border-[#dfc8ab] bg-white/50 text-[#5c473b] hover:bg-white",
+                      ].join(" ")}
+                    >
+                      {item === "all" ? "Todas" : statusLabels[item]}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    "all",
-                    "pending",
-                    "approved",
-                    "rejected",
-                    "expired",
-                    "completed",
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => setFilter(item)}
-                    className={[
-                      "rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition",
-                      filter === item
-                        ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                        : "border-[#dfc8ab] bg-white/50 text-[#5c473b] hover:bg-white",
-                    ].join(" ")}
-                  >
-                    {item === "all" ? "Todas" : statusLabels[item]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {loadingReservations ? (
-              <div className="grid min-h-64 place-items-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#0BB3A6]" />
-              </div>
-            ) : filteredReservations.length === 0 ? (
-              <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
-                No hay reservas para este filtro.
-              </div>
-            ) : (
-              <div className="mt-6 space-y-4">
-                {filteredReservations.map((reservation) => (
-                  <ReservationCard
-                    key={reservation.id}
-                    reservation={reservation}
-                    loading={actionLoadingId === reservation.id}
-                    onApprove={() =>
-                      updateReservation(reservation.id, { status: "approved" })
-                    }
-                    onReject={() =>
-                      updateReservation(reservation.id, { status: "rejected" })
-                    }
-                    onDepositChange={(value) =>
-                      updateReservation(reservation.id, {
-                        deposit_paid: value,
-                      })
-                    }
-                    onSaveNotes={(notes) =>
-                      updateReservation(reservation.id, { notes })
-                    }
-                    onDelete={() => deleteReservation(reservation.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+              {loadingReservations ? (
+                <div className="grid min-h-64 place-items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#0BB3A6]" />
+                </div>
+              ) : filteredReservations.length === 0 ? (
+                <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
+                  No hay reservas para este filtro.
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {filteredReservations.map((reservation) => (
+                    <ReservationCard
+                      key={reservation.id}
+                      reservation={reservation}
+                      loading={actionLoadingId === reservation.id}
+                      onApprove={() =>
+                        updateReservation(reservation.id, {
+                          status: "approved",
+                        })
+                      }
+                      onReject={() =>
+                        updateReservation(reservation.id, {
+                          status: "rejected",
+                        })
+                      }
+                      onDepositChange={(value) =>
+                        updateReservation(reservation.id, {
+                          deposit_paid: value,
+                        })
+                      }
+                      onSaveNotes={(notes) =>
+                        updateReservation(reservation.id, { notes })
+                      }
+                      onDelete={() => deleteReservation(reservation.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         )}
 
@@ -1313,7 +1351,8 @@ function ReviewsAdminSection({
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-            Aprobá, ocultá o eliminá las reseñas recibidas desde el QR del salón.
+            Aprobá, ocultá o eliminá las reseñas recibidas desde el QR del
+            salón.
           </p>
         </div>
 
@@ -1712,8 +1751,7 @@ function ReservationCalendar({
 
           const selected = selectedDate === dateValue;
           const outsideMonth = date.getMonth() !== month;
-          const disabled =
-            availability === "disabled" || availability === "full";
+          const disabled = availability === "disabled";
 
           return (
             <button
@@ -1727,7 +1765,7 @@ function ReservationCalendar({
                 selected
                   ? "border-[#0BB3A6] bg-[#0BB3A6] text-white shadow-[0_12px_26px_rgba(11,179,166,0.20)]"
                   : availability === "full"
-                    ? "cursor-not-allowed border-red-300 bg-red-100 text-red-700"
+                    ? "border-red-300 bg-red-100 text-red-700 hover:bg-red-50"
                     : availability === "partial"
                       ? "border-[#d89b38] bg-[#f4c76f]/45 text-[#6f4311] hover:bg-[#f4c76f]/60"
                       : availability === "disabled"
@@ -1754,7 +1792,7 @@ function ReservationCalendar({
 
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-red-100 ring-1 ring-red-300" />
-          Reservada
+          Con reservas
         </div>
 
         <div className="inline-flex items-center gap-2">

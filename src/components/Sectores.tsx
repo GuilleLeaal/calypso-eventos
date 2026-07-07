@@ -122,7 +122,7 @@ const items: Sector[] = [
   },
   {
     title: "Mesa principal",
-    desc: "Sector central para la torta, decoración, fotos y momentos importantes de la celebración",
+    desc: "Sector central para la torta, decoración, fotos y momentos importantes de la celebración.",
     img: mesaPrincipalDayGallery[0],
     tag: "Celebración",
     galleries: {

@@ -1,4 +1,9 @@
-import { type FormEvent, type ReactNode, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+  useState,
+} from "react";
 import { motion, circOut } from "framer-motion";
 import {
   ArrowUpRight,
@@ -6,7 +11,6 @@ import {
   Mail,
   MapPin,
   MessageCircle,
-  Phone,
   Send,
   type LucideIcon,
 } from "lucide-react";
@@ -24,36 +28,65 @@ const eventTypes = [
 export default function Contact() {
   const [form, setForm] = useState({
     name: "",
-    phone: "",
+    whatsapp: "",
     email: "",
     eventType: "",
     date: "",
+    childrenCount: "",
+    adultsCount: "",
     message: "",
   });
 
+  const [formError, setFormError] = useState("");
+
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+
     setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (formError) {
+      setFormError("");
+    }
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
+    const requiredFields = [
+      { key: "name", label: "Nombre y apellido" },
+      { key: "whatsapp", label: "Celular" },
+      { key: "email", label: "Email" },
+      { key: "eventType", label: "Tipo de evento" },
+      { key: "date", label: "Fecha tentativa" },
+      { key: "childrenCount", label: "Cantidad de niños" },
+      { key: "adultsCount", label: "Cantidad de adultos" },
+      { key: "message", label: "Mensaje" },
+    ] as const;
+
+    const emptyFields = requiredFields.filter(
+      (field) => !form[field.key].trim(),
+    );
+
+    if (emptyFields.length > 0) {
+      setFormError("Por favor, completá todos los campos antes de enviar.");
+      return;
+    }
+
     const text = encodeURIComponent(
       `¡Hola! Me gustaría consultar por un evento en Calypso.
 
-Nombre: ${form.name || "No indicado"}
-Teléfono: ${form.phone || "No indicado"}
-Email: ${form.email || "No indicado"}
-Tipo de evento: ${form.eventType || "No indicado"}
-Fecha tentativa: ${form.date || "No indicada"}
+Nombre: ${form.name.trim()}
+WhatsApp: ${form.whatsapp.trim()}
+Email: ${form.email.trim()}
+Tipo de evento: ${form.eventType.trim()}
+Fecha tentativa: ${form.date.trim()}
+Cantidad de niños: ${form.childrenCount.trim()}
+Cantidad de adultos: ${form.adultsCount.trim()}
 
 Idea del evento:
-${form.message || "No indicado"}`,
+${form.message.trim()}`,
     );
 
     window.open(
@@ -139,13 +172,6 @@ ${form.message || "No indicado"}`,
                 />
 
                 <ContactLine
-                  icon={Phone}
-                  label="Teléfono"
-                  value="+598 99 372 068"
-                  href="tel:+59899372068"
-                />
-
-                <ContactLine
                   icon={MapPin}
                   label="Ubicación"
                   value="El Pinar, Ciudad de la Costa, Canelones"
@@ -209,12 +235,12 @@ ${form.message || "No indicado"}`,
                 />
               </Field>
 
-              <Field label="Teléfono">
+              <Field label="Celular">
                 <input
-                  name="phone"
-                  value={form.phone}
+                  name="whatsapp"
+                  value={form.whatsapp}
                   onChange={handleChange}
-                  placeholder="Tu número"
+                  placeholder="Ej: 099123456"
                   className="input-contact"
                 />
               </Field>
@@ -245,12 +271,38 @@ ${form.message || "No indicado"}`,
                 </select>
               </Field>
 
-              <Field label="Fecha tentativa" full>
+              <Field label="Fecha tentativa">
                 <input
                   type="date"
                   name="date"
                   value={form.date}
                   onChange={handleChange}
+                  className="input-contact"
+                />
+              </Field>
+
+              <Field label="Cantidad de niños">
+                <input
+                  type="number"
+                  name="childrenCount"
+                  value={form.childrenCount}
+                  onChange={handleChange}
+                  min="0"
+                  inputMode="numeric"
+                  placeholder="Ej: 15"
+                  className="input-contact"
+                />
+              </Field>
+
+              <Field label="Cantidad de adultos">
+                <input
+                  type="number"
+                  name="adultsCount"
+                  value={form.adultsCount}
+                  onChange={handleChange}
+                  min="0"
+                  inputMode="numeric"
+                  placeholder="Ej: 40"
                   className="input-contact"
                 />
               </Field>
@@ -261,11 +313,17 @@ ${form.message || "No indicado"}`,
                   value={form.message}
                   onChange={handleChange}
                   rows={4}
-                  placeholder="Contanos cantidad de invitados, tipo de celebración o cualquier detalle importante."
+                  placeholder="Contanos tipo de celebración, necesidades especiales o cualquier detalle importante."
                   className="input-contact resize-none"
                 />
               </Field>
             </div>
+
+            {formError && (
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                {formError}
+              </div>
+            )}
 
             <button
               type="submit"
