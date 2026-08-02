@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   LogOut,
+  Pencil,
   Plus,
   RefreshCw,
   Save,
@@ -61,6 +62,23 @@ type Review = {
   approved: boolean;
   created_at: string;
 };
+
+type ReservationUpdateValues = Partial<
+  Pick<
+    Reservation,
+    | "customer_name"
+    | "event_type"
+    | "phone"
+    | "email"
+    | "event_date"
+    | "start_time"
+    | "end_time"
+    | "status"
+    | "deposit_paid"
+    | "notes"
+    | "discovery_source"
+  >
+>;
 
 const FIRST_RESERVATION_DATE = "2026-07-01";
 
@@ -514,9 +532,7 @@ export default function AdminReservationsPage() {
 
   async function updateReservation(
     id: string,
-    values: Partial<
-      Pick<Reservation, "status" | "deposit_paid" | "notes" | "updated_at">
-    >,
+    values: ReservationUpdateValues,
   ) {
     setActionLoadingId(id);
     setGlobalError("");
@@ -532,11 +548,13 @@ export default function AdminReservationsPage() {
     if (error) {
       console.error("Error updating reservation:", error);
       setGlobalError("No pudimos actualizar la reserva.");
-    } else {
-      await refreshAll();
+      setActionLoadingId(null);
+      return false;
     }
 
+    await refreshAll();
     setActionLoadingId(null);
+    return true;
   }
 
   async function deleteReservation(id: string) {
@@ -1288,6 +1306,9 @@ export default function AdminReservationsPage() {
                           deposit_paid: value,
                         })
                       }
+                      onSaveDetails={(values) =>
+                        updateReservation(reservation.id, values)
+                      }
                       onSaveNotes={(notes) =>
                         updateReservation(reservation.id, { notes })
                       }
@@ -1502,6 +1523,7 @@ function ReservationCard({
   onApprove,
   onReject,
   onDepositChange,
+  onSaveDetails,
   onSaveNotes,
   onDelete,
 }: {
@@ -1510,14 +1532,120 @@ function ReservationCard({
   onApprove: () => void;
   onReject: () => void;
   onDepositChange: (value: boolean) => void;
+  onSaveDetails: (values: ReservationUpdateValues) => Promise<boolean>;
   onSaveNotes: (notes: string) => void;
   onDelete: () => void;
 }) {
   const [notesDraft, setNotesDraft] = useState(reservation.notes || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const [editDraft, setEditDraft] = useState({
+    customer_name: reservation.customer_name,
+    event_type: reservation.event_type,
+    phone: reservation.phone,
+    email: reservation.email || "",
+    event_date: reservation.event_date,
+    start_time: normalizeTime(reservation.start_time),
+    end_time: normalizeTime(reservation.end_time),
+    status: reservation.status,
+    deposit_paid: reservation.deposit_paid,
+    discovery_source: reservation.discovery_source || "",
+  });
 
   useEffect(() => {
     setNotesDraft(reservation.notes || "");
-  }, [reservation.notes]);
+    setEditDraft({
+      customer_name: reservation.customer_name,
+      event_type: reservation.event_type,
+      phone: reservation.phone,
+      email: reservation.email || "",
+      event_date: reservation.event_date,
+      start_time: normalizeTime(reservation.start_time),
+      end_time: normalizeTime(reservation.end_time),
+      status: reservation.status,
+      deposit_paid: reservation.deposit_paid,
+      discovery_source: reservation.discovery_source || "",
+    });
+    setEditError("");
+  }, [reservation]);
+
+  async function handleSaveDetails(event: FormEvent) {
+    event.preventDefault();
+
+    setEditError("");
+
+    if (!editDraft.customer_name.trim()) {
+      setEditError("Ingresá el nombre del cliente.");
+      return;
+    }
+
+    if (!editDraft.event_type.trim()) {
+      setEditError("Seleccioná el tipo de evento.");
+      return;
+    }
+
+    if (!editDraft.phone.trim()) {
+      setEditError("Ingresá el teléfono.");
+      return;
+    }
+
+    if (!editDraft.event_date.trim()) {
+      setEditError("Seleccioná la fecha del evento.");
+      return;
+    }
+
+    const startTime = normalizeTime(editDraft.start_time);
+    const endTime = normalizeTime(editDraft.end_time);
+
+    if (!isValid24HourTime(startTime) || !isValid24HourTime(endTime)) {
+      setEditError(
+        "Ingresá inicio y fin en formato 24 horas. Ejemplo: 17:00.",
+      );
+      return;
+    }
+
+    if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+      setEditError(
+        "El horario de inicio debe ser anterior al horario de fin.",
+      );
+      return;
+    }
+
+    const saved = await onSaveDetails({
+      customer_name: editDraft.customer_name.trim(),
+      event_type: editDraft.event_type,
+      phone: editDraft.phone.trim(),
+      email: editDraft.email.trim() || null,
+      event_date: editDraft.event_date,
+      start_time: startTime,
+      end_time: endTime,
+      status: editDraft.status,
+      deposit_paid: editDraft.deposit_paid,
+      discovery_source: editDraft.discovery_source || null,
+    });
+
+    if (saved) {
+      setIsEditing(false);
+    }
+  }
+
+  function cancelEdit() {
+    setEditDraft({
+      customer_name: reservation.customer_name,
+      event_type: reservation.event_type,
+      phone: reservation.phone,
+      email: reservation.email || "",
+      event_date: reservation.event_date,
+      start_time: normalizeTime(reservation.start_time),
+      end_time: normalizeTime(reservation.end_time),
+      status: reservation.status,
+      deposit_paid: reservation.deposit_paid,
+      discovery_source: reservation.discovery_source || "",
+    });
+    setEditError("");
+    setIsEditing(false);
+  }
 
   return (
     <article className="rounded-[1.45rem] border border-[#dfc8ab] bg-white/55 p-5 shadow-[0_12px_32px_rgba(90,64,50,0.06)]">
@@ -1562,11 +1690,9 @@ function ReservationCard({
             <p>
               <b>Tel:</b> {reservation.phone}
             </p>
-            {reservation.email && (
-              <p>
-                <b>Email:</b> {reservation.email}
-              </p>
-            )}
+            <p>
+              <b>Email:</b> {reservation.email || "No indicado"}
+            </p>
             {reservation.discovery_source && (
               <p>
                 <b>Conoció Calypso por:</b> {reservation.discovery_source}
@@ -1576,6 +1702,15 @@ function ReservationCard({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setIsEditing((prev) => !prev)}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
+          >
+            <Pencil size={15} />
+            {isEditing ? "Cerrar edición" : "Editar"}
+          </button>
+
           {reservation.status !== "approved" &&
             reservation.status !== "completed" && (
               <button
@@ -1615,6 +1750,253 @@ function ReservationCard({
         </div>
       </div>
 
+      {isEditing && (
+        <form
+          onSubmit={handleSaveDetails}
+          className="mt-5 rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Cliente
+              </span>
+              <input
+                value={editDraft.customer_name}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    customer_name: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="Nombre y apellido"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Tipo de evento
+              </span>
+              <select
+                value={editDraft.event_type}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    event_type: event.target.value,
+                  }))
+                }
+                className="input-contact"
+              >
+                <option value="">Seleccioná una opción</option>
+                {EVENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Teléfono
+              </span>
+              <input
+                value={editDraft.phone}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    phone: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="+598..."
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Email
+              </span>
+              <input
+                type="email"
+                value={editDraft.email}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    email: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="cliente@email.com"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Fecha
+              </span>
+              <input
+                type="date"
+                value={editDraft.event_date}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    event_date: event.target.value,
+                  }))
+                }
+                className="input-contact"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Estado
+              </span>
+              <select
+                value={editDraft.status}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    status: event.target.value as ReservationStatus,
+                  }))
+                }
+                className="input-contact"
+              >
+                {(
+                  [
+                    "pending",
+                    "approved",
+                    "rejected",
+                    "expired",
+                    "completed",
+                  ] as ReservationStatus[]
+                ).map((status) => (
+                  <option key={status} value={status}>
+                    {statusLabels[status]}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Inicio
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-2][0-9]:[0-5][0-9]"
+                maxLength={5}
+                value={editDraft.start_time}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    start_time: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="17:00"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Fin
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-2][0-9]:[0-5][0-9]"
+                maxLength={5}
+                value={editDraft.end_time}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    end_time: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="20:00"
+              />
+            </label>
+
+            <label className="md:col-span-2">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Cómo conoció Calypso
+              </span>
+              <select
+                value={editDraft.discovery_source}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    discovery_source: event.target.value,
+                  }))
+                }
+                className="input-contact"
+              >
+                <option value="">No indicado</option>
+                {DISCOVERY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm font-semibold text-[#2f241e] md:col-span-2">
+              <input
+                type="checkbox"
+                checked={editDraft.deposit_paid}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    deposit_paid: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4 accent-[#0BB3A6]"
+              />
+              Pagó seña
+            </label>
+          </div>
+
+          {editError && (
+            <p className="mt-4 rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {editError}
+            </p>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Save size={15} />
+              )}
+              Guardar cambios
+            </button>
+
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
+            >
+              <X size={15} />
+              Cancelar
+            </button>
+          </div>
+
+          <p className="mt-3 text-xs leading-relaxed text-[#6d5748]/75">
+            Usá esta edición para completar datos faltantes, como email, teléfono,
+            fecha, horario, estado o cómo conoció Calypso.
+          </p>
+        </form>
+      )}
+
       <div className="mt-5 grid gap-4 border-t border-[#e4cfad] pt-5 lg:grid-cols-[0.8fr_1.2fr]">
         <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 px-4 py-3 text-sm font-semibold text-[#2f241e]">
           <input
@@ -1651,6 +2033,7 @@ function ReservationCard({
     </article>
   );
 }
+
 
 function ReservationCalendar({
   selectedDate,
