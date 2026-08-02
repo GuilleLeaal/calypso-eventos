@@ -58,6 +58,13 @@ function getMinReservationDate() {
   return today > FIRST_RESERVATION_DATE ? today : FIRST_RESERVATION_DATE;
 }
 
+function getMinimumReservationDateTime() {
+  const minimum = new Date();
+  minimum.setHours(minimum.getHours() + 48);
+
+  return minimum;
+}
+
 function createLocalDate(dateValue: string) {
   const [year, month, day] = dateValue.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -69,6 +76,23 @@ function toInputDate(date: Date) {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+function getMinReservationDateWithAdvance() {
+  const minByToday = getMinReservationDate();
+  const minByAdvance = toInputDate(getMinimumReservationDateTime());
+
+  return minByAdvance > minByToday ? minByAdvance : minByToday;
+}
+
+function isSlotAtLeast48HoursAhead(dateValue: string, startTime: string) {
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const [hours, minutes] = startTime.split(":").map(Number);
+
+  const slotDateTime = new Date(year, month - 1, day, hours, minutes);
+  const minimumDateTime = getMinimumReservationDateTime();
+
+  return slotDateTime >= minimumDateTime;
 }
 
 function getMonthStart(date: Date) {
@@ -109,11 +133,13 @@ function getMonthLabel(date: Date) {
 }
 
 export default function ReservationPage() {
-  const [selectedDate, setSelectedDate] = useState(getMinReservationDate());
+  const [selectedDate, setSelectedDate] = useState(
+    getMinReservationDateWithAdvance(),
+  );
   const [blocks, setBlocks] = useState<ReservationBlock[]>([]);
   const [monthBlocks, setMonthBlocks] = useState<ReservationBlock[]>([]);
   const [calendarMonth, setCalendarMonth] = useState(() =>
-    createLocalDate(getMinReservationDate()),
+    createLocalDate(getMinReservationDateWithAdvance()),
   );
 
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -134,12 +160,18 @@ export default function ReservationPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
+  const minReservationDate = useMemo(() => {
+    return getMinReservationDateWithAdvance();
+  }, []);
+
   const allSlots = useMemo(() => {
     return getSlotsForDate(selectedDate);
   }, [selectedDate]);
 
   const availableSlots = useMemo(() => {
-    return getAvailableSlots(selectedDate, blocks);
+    return getAvailableSlots(selectedDate, blocks).filter((slot) =>
+      isSlotAtLeast48HoursAhead(selectedDate, slot.startTime),
+    );
   }, [selectedDate, blocks]);
 
   const daySlots = allSlots.filter((slot) => slot.period === "day");
@@ -220,6 +252,13 @@ export default function ReservationPage() {
       return;
     }
 
+    if (!isSlotAtLeast48HoursAhead(selectedDate, selectedSlot.startTime)) {
+      setError(
+        "Las reservas deben realizarse con al menos 48 horas de anticipación.",
+      );
+      return;
+    }
+
     if (!form.customerName.trim()) {
       setError("Ingresá tu nombre.");
       return;
@@ -252,14 +291,14 @@ export default function ReservationPage() {
     const { error: createError } = await supabase.rpc(
       "create_public_reservation",
       {
-        p_customer_name: form.customerName,
-        p_event_type: form.eventType,
-        p_phone: form.phone,
-        p_email: form.email,
+        p_customer_name: form.customerName.trim(),
+        p_event_type: form.eventType.trim(),
+        p_phone: form.phone.trim(),
+        p_email: form.email.trim(),
         p_event_date: selectedDate,
         p_start_time: selectedSlot.startTime,
         p_end_time: selectedSlot.endTime,
-        p_discovery_source: form.discoverySource,
+        p_discovery_source: form.discoverySource.trim(),
       },
     );
 
@@ -325,10 +364,10 @@ export default function ReservationPage() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#4a382e] md:text-lg">
-            Las reservas pueden solicitarse a partir del 1 de julio. La
-            solicitud mantiene la fecha durante 48 horas. No implica compromiso
-            de pago. La reserva se confirma luego de coordinar por WhatsApp y
-            realizar la seña.
+            Las reservas pueden solicitarse a partir del 1 de julio y con al
+            menos 48 horas de anticipación. La solicitud mantiene la fecha
+            durante 48 horas. No implica compromiso de pago. La reserva se
+            confirma luego de coordinar por WhatsApp y realizar la seña.
           </p>
         </motion.div>
 
@@ -364,7 +403,7 @@ export default function ReservationPage() {
                 calendarMonth={calendarMonth}
                 monthBlocks={monthBlocks}
                 loading={loadingMonthBlocks}
-                minDate={getMinReservationDate()}
+                minDate={minReservationDate}
                 onMonthChange={setCalendarMonth}
                 onSelectDate={(dateValue) => {
                   setSelectedDate(dateValue);
@@ -379,6 +418,16 @@ export default function ReservationPage() {
                 <p className="text-sm leading-relaxed text-[#5c473b]">
                   Todos los horarios incluyen media hora previa para llegada y
                   preparación, y media hora posterior para salida.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[1.2rem] border border-[#e4cfad] bg-white/45 p-4">
+              <div className="flex items-start gap-3">
+                <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
+                <p className="text-sm leading-relaxed text-[#5c473b]">
+                  Las solicitudes deben realizarse con al menos 48 horas de
+                  anticipación al horario de inicio del evento.
                 </p>
               </div>
             </div>
@@ -433,6 +482,7 @@ export default function ReservationPage() {
                   )}
                 </div>
               )}
+
               <div className="mt-5 rounded-[1.2rem] border border-[#e4cfad] bg-white/45 p-4">
                 <div className="flex items-start gap-3">
                   <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
@@ -804,10 +854,12 @@ function ReservationCalendar({
     );
 
     const slots = getSlotsForDate(dateValue);
-    const available = getAvailableSlots(dateValue, dateBlocks);
+    const available = getAvailableSlots(dateValue, dateBlocks).filter((slot) =>
+      isSlotAtLeast48HoursAhead(dateValue, slot.startTime),
+    );
 
     if (dateValue < minDate) return "disabled";
-    if (dateBlocks.length === 0) return "available";
+    if (dateBlocks.length === 0 && available.length > 0) return "available";
     if (available.length === 0) return "full";
     if (available.length < slots.length) return "partial";
 
