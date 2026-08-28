@@ -22,6 +22,13 @@ type ReservationEmailPayload = {
   discovery_source?: string;
 };
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 function escapeHtml(value: unknown) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -31,24 +38,33 @@ function escapeHtml(value: unknown) {
     .replaceAll("'", "&#039;");
 }
 
-serve(async (req) => {
+function getRecipients() {
+  const fallbackEmail = "santiagorivas2002@gmail.com";
+  const value = Deno.env.get("RESERVATION_NOTIFICATION_TO") || fallbackEmail;
+
+  const recipients = value
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+
+  return recipients.length > 0 ? recipients : [fallbackEmail];
+}
+
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
   try {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const toEmail = Deno.env.get("RESERVATION_NOTIFICATION_TO") ||
-      "santiagorivas2002@gmail.com";
-    const fromEmail = Deno.env.get("RESERVATION_NOTIFICATION_FROM") ||
-      "Calypso Eventos <onboarding@resend.dev>";
+    const toEmails = getRecipients();
+    const fromEmail =
+      Deno.env.get("RESERVATION_NOTIFICATION_FROM") ||
+      "Calypso Eventos <reservas@calypsoeventos.com.uy>";
 
     if (!resendApiKey) {
       throw new Error("Missing RESEND_API_KEY secret.");
@@ -58,7 +74,8 @@ serve(async (req) => {
 
     const customerName = payload.customer_name || "Cliente sin nombre";
     const dateLabel = payload.event_date_label || payload.event_date || "No indicada";
-    const slotLabel = payload.slot_label ||
+    const slotLabel =
+      payload.slot_label ||
       `${payload.start_time || ""} a ${payload.end_time || ""}`.trim();
 
     const childrenCount = Number(payload.children_count ?? 0);
@@ -98,7 +115,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: fromEmail,
-        to: [toEmail],
+        to: toEmails,
         subject,
         html,
       }),
@@ -108,25 +125,16 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error("Resend error:", result);
-      return new Response(JSON.stringify({ error: "Email provider error", details: result }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Email provider error", details: result }, 502);
     }
 
-    return new Response(JSON.stringify({ ok: true, result }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ ok: true, recipients: toEmails, result });
   } catch (error) {
     console.error("send-reservation-email error:", error);
 
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unexpected error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : "Unexpected error" },
+      500,
     );
   }
 });
