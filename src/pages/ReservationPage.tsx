@@ -53,6 +53,14 @@ const DISCOVERY_OPTIONS = [
   "Otro",
 ];
 
+type DisabledReservationDateRange = {
+  id: string;
+  start_date: string;
+  end_date: string;
+  reason: string | null;
+  created_at: string;
+};
+
 function getMinReservationDate() {
   const today = getTodayInputValue();
   return today > FIRST_RESERVATION_DATE ? today : FIRST_RESERVATION_DATE;
@@ -132,12 +140,25 @@ function getMonthLabel(date: Date) {
   }).format(date);
 }
 
+function isDateInDisabledRange(
+  dateValue: string,
+  disabledRanges: DisabledReservationDateRange[],
+) {
+  return disabledRanges.some(
+    (range) => dateValue >= range.start_date && dateValue <= range.end_date,
+  );
+}
+
 export default function ReservationPage() {
   const [selectedDate, setSelectedDate] = useState(
     getMinReservationDateWithAdvance(),
   );
   const [blocks, setBlocks] = useState<ReservationBlock[]>([]);
   const [monthBlocks, setMonthBlocks] = useState<ReservationBlock[]>([]);
+  const [disabledRanges, setDisabledRanges] = useState<
+    DisabledReservationDateRange[]
+  >([]);
+  const [loadingDisabledRanges, setLoadingDisabledRanges] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
     createLocalDate(getMinReservationDateWithAdvance()),
   );
@@ -169,10 +190,14 @@ export default function ReservationPage() {
   }, [selectedDate]);
 
   const availableSlots = useMemo(() => {
+    if (isDateInDisabledRange(selectedDate, disabledRanges)) {
+      return [];
+    }
+
     return getAvailableSlots(selectedDate, blocks).filter((slot) =>
       isSlotAtLeast48HoursAhead(selectedDate, slot.startTime),
     );
-  }, [selectedDate, blocks]);
+  }, [selectedDate, blocks, disabledRanges]);
 
   const daySlots = allSlots.filter((slot) => slot.period === "day");
   const nightSlots = allSlots.filter((slot) => slot.period === "night");
@@ -234,6 +259,33 @@ export default function ReservationPage() {
     fetchMonthBlocks();
   }, [calendarMonth]);
 
+  useEffect(() => {
+    const fetchDisabledRanges = async () => {
+      const start = toInputDate(getMonthStart(calendarMonth));
+      const end = toInputDate(getMonthEnd(calendarMonth));
+
+      setLoadingDisabledRanges(true);
+
+      const { data, error: disabledError } = await supabase
+        .from("disabled_reservation_dates")
+        .select("id, start_date, end_date, reason, created_at")
+        .lte("start_date", end)
+        .gte("end_date", start)
+        .order("start_date", { ascending: true });
+
+      if (disabledError) {
+        console.error("Error fetching disabled reservation dates:", disabledError);
+        setDisabledRanges([]);
+      } else {
+        setDisabledRanges((data || []) as DisabledReservationDateRange[]);
+      }
+
+      setLoadingDisabledRanges(false);
+    };
+
+    fetchDisabledRanges();
+  }, [calendarMonth]);
+
   const selectedDateLabel = useMemo(() => {
     return formatDateForDisplay(selectedDate);
   }, [selectedDate]);
@@ -249,6 +301,11 @@ export default function ReservationPage() {
 
     if (!selectedSlot) {
       setError("Seleccioná un horario disponible.");
+      return;
+    }
+
+    if (isDateInDisabledRange(selectedDate, disabledRanges)) {
+      setError("Esta fecha no está disponible para reservas.");
       return;
     }
 
@@ -402,7 +459,8 @@ export default function ReservationPage() {
                 selectedDate={selectedDate}
                 calendarMonth={calendarMonth}
                 monthBlocks={monthBlocks}
-                loading={loadingMonthBlocks}
+                disabledRanges={disabledRanges}
+                loading={loadingMonthBlocks || loadingDisabledRanges}
                 minDate={minReservationDate}
                 onMonthChange={setCalendarMonth}
                 onSelectDate={(dateValue) => {
@@ -427,7 +485,8 @@ export default function ReservationPage() {
                 <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#0BB3A6]" />
                 <p className="text-sm leading-relaxed text-[#5c473b]">
                   Las solicitudes deben realizarse con al menos 48 horas de
-                  anticipación al horario de inicio del evento.
+                  anticipación al horario de inicio del evento. Las fechas
+                  inhabilitadas por administración no se pueden seleccionar.
                 </p>
               </div>
             </div>
@@ -450,8 +509,9 @@ export default function ReservationPage() {
                 allSlots.length > 0 &&
                 availableSlots.length === 0 && (
                   <div className="mt-5 rounded-[1.2rem] border border-[#dfc8ab] bg-white/52 p-5 text-sm leading-relaxed text-[#5c473b]">
-                    No quedan horarios disponibles para esta fecha. Probá con
-                    otro día.
+                    {isDateInDisabledRange(selectedDate, disabledRanges)
+                      ? "Esta fecha no está disponible para reservas. Probá con otro día."
+                      : "No quedan horarios disponibles para esta fecha. Probá con otro día."}
                   </div>
                 )}
 
@@ -831,6 +891,7 @@ function ReservationCalendar({
   selectedDate,
   calendarMonth,
   monthBlocks,
+  disabledRanges,
   loading,
   minDate,
   onMonthChange,
@@ -839,6 +900,7 @@ function ReservationCalendar({
   selectedDate: string;
   calendarMonth: Date;
   monthBlocks: ReservationBlock[];
+  disabledRanges: DisabledReservationDateRange[];
   loading: boolean;
   minDate: string;
   onMonthChange: (date: Date) => void;
@@ -859,6 +921,7 @@ function ReservationCalendar({
     );
 
     if (dateValue < minDate) return "disabled";
+    if (isDateInDisabledRange(dateValue, disabledRanges)) return "closed";
     if (dateBlocks.length === 0 && available.length > 0) return "available";
     if (available.length === 0) return "full";
     if (available.length < slots.length) return "partial";
@@ -926,10 +989,12 @@ function ReservationCalendar({
           const dateValue = toInputDate(date);
           const availability = getDateAvailability(dateValue);
 
-          const selected = selectedDate === dateValue;
+          const selected = selectedDate === dateValue && availability !== "closed";
           const outsideMonth = date.getMonth() !== month;
           const disabled =
-            availability === "disabled" || availability === "full";
+            availability === "disabled" ||
+            availability === "full" ||
+            availability === "closed";
 
           return (
             <button
@@ -942,9 +1007,11 @@ function ReservationCalendar({
                 outsideMonth ? "opacity-35" : "",
                 selected
                   ? "border-[#0BB3A6] bg-[#0BB3A6] text-white shadow-[0_12px_26px_rgba(11,179,166,0.20)]"
-                  : availability === "full"
-                    ? "cursor-not-allowed border-red-300 bg-red-100 text-red-700"
-                    : availability === "partial"
+                  : availability === "closed"
+                    ? "cursor-not-allowed border-red-400 bg-red-100 text-red-800"
+                    : availability === "full"
+                      ? "cursor-not-allowed border-red-300 bg-red-100 text-red-700"
+                      : availability === "partial"
                       ? "border-[#d89b38] bg-[#f4c76f]/45 text-[#6f4311] hover:bg-[#f4c76f]/60"
                       : availability === "disabled"
                         ? "cursor-not-allowed border-stone-300 bg-stone-200 text-stone-500"
@@ -966,6 +1033,11 @@ function ReservationCalendar({
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-[#f4c76f]/70 ring-1 ring-[#d89b38]" />
           Parcial
+        </div>
+
+        <div className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-red-100 ring-1 ring-red-400" />
+          Inhabilitada
         </div>
 
         <div className="inline-flex items-center gap-2">
