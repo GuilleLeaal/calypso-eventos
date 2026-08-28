@@ -43,6 +43,8 @@ type Reservation = {
   event_type: string;
   phone: string;
   email: string | null;
+  children_count: number | null;
+  adults_count: number | null;
   event_date: string;
   start_time: string;
   end_time: string;
@@ -79,6 +81,8 @@ type ReservationUpdateValues = Partial<
     | "event_type"
     | "phone"
     | "email"
+    | "children_count"
+    | "adults_count"
     | "event_date"
     | "start_time"
     | "end_time"
@@ -90,6 +94,8 @@ type ReservationUpdateValues = Partial<
 >;
 
 const FIRST_RESERVATION_DATE = "2026-07-01";
+const MAX_CHILDREN_COUNT = 30;
+const MAX_ADULTS_COUNT = 50;
 
 function getMinReservationDate() {
   const today = getTodayInputValue();
@@ -285,6 +291,8 @@ export default function AdminReservationsPage() {
     event_type: "",
     phone: "",
     email: "",
+    children_count: "",
+    adults_count: "",
     event_date: getMinReservationDate(),
     start_time: "17:00",
     end_time: "20:00",
@@ -799,6 +807,44 @@ export default function AdminReservationsPage() {
       return;
     }
 
+    const childrenCount = Number(manualForm.children_count);
+    const adultsCount = Number(manualForm.adults_count);
+
+    if (!manualForm.children_count.trim() || Number.isNaN(childrenCount) || childrenCount < 0) {
+      setGlobalError("Ingresá la cantidad de niños.");
+      return;
+    }
+
+    if (!Number.isInteger(childrenCount)) {
+      setGlobalError("La cantidad de niños debe ser un número entero.");
+      return;
+    }
+
+    if (childrenCount > MAX_CHILDREN_COUNT) {
+      setGlobalError(`La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`);
+      return;
+    }
+
+    if (!manualForm.adults_count.trim() || Number.isNaN(adultsCount) || adultsCount < 0) {
+      setGlobalError("Ingresá la cantidad de adultos.");
+      return;
+    }
+
+    if (!Number.isInteger(adultsCount)) {
+      setGlobalError("La cantidad de adultos debe ser un número entero.");
+      return;
+    }
+
+    if (adultsCount > MAX_ADULTS_COUNT) {
+      setGlobalError(`La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`);
+      return;
+    }
+
+    if (childrenCount + adultsCount <= 0) {
+      setGlobalError("La cantidad total de invitados debe ser mayor a 0.");
+      return;
+    }
+
     if (isDateInDisabledRange(manualForm.event_date, disabledRanges)) {
       setGlobalError(
         "Esta fecha está inhabilitada. Habilitala primero para crear una reserva.",
@@ -831,6 +877,8 @@ export default function AdminReservationsPage() {
       p_event_date: manualForm.event_date,
       p_start_time: startTime,
       p_end_time: endTime,
+      p_children_count: childrenCount,
+      p_adults_count: adultsCount,
       p_deposit_paid: manualForm.deposit_paid,
       p_notes: manualForm.notes.trim(),
       p_discovery_source: manualForm.discovery_source,
@@ -850,6 +898,8 @@ export default function AdminReservationsPage() {
       event_type: "",
       phone: "",
       email: "",
+      children_count: "",
+      adults_count: "",
       event_date: getMinReservationDate(),
       start_time: "17:00",
       end_time: "20:00",
@@ -886,7 +936,7 @@ export default function AdminReservationsPage() {
       const { data, error } = await supabase
         .from("reservations")
         .select(
-          "id, customer_name, event_type, phone, email, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, created_at, updated_at",
+          "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, created_at, updated_at",
         )
         .in("status", ["approved", "completed"])
         .order("event_date", { ascending: true })
@@ -916,6 +966,8 @@ export default function AdminReservationsPage() {
         "Fin",
         "Telefono",
         "Email",
+        "Ninos",
+        "Adultos",
         "Como conocio Calypso",
         "Pago sena",
         "Origen",
@@ -932,6 +984,8 @@ export default function AdminReservationsPage() {
         normalizeTime(reservation.end_time),
         reservation.phone,
         reservation.email || "",
+        reservation.children_count ?? "",
+        reservation.adults_count ?? "",
         reservation.discovery_source || "",
         reservation.deposit_paid ? "Si" : "No",
         reservation.source === "website" ? "Web" : "Admin",
@@ -1296,6 +1350,48 @@ export default function AdminReservationsPage() {
                         }
                         className="input-contact"
                         placeholder="cliente@email.com"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Cantidad de niños
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={manualForm.children_count}
+                        onChange={(event) =>
+                          setManualForm((prev) => ({
+                            ...prev,
+                            children_count: event.target.value,
+                          }))
+                        }
+                        className="input-contact"
+                        placeholder="Ej: 15"
+                      />
+                    </label>
+
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Cantidad de adultos
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={manualForm.adults_count}
+                        onChange={(event) =>
+                          setManualForm((prev) => ({
+                            ...prev,
+                            adults_count: event.target.value,
+                          }))
+                        }
+                        className="input-contact"
+                        placeholder="Ej: 40"
                       />
                     </label>
                   </div>
@@ -1987,6 +2083,8 @@ function ReservationCard({
     event_type: reservation.event_type,
     phone: reservation.phone,
     email: reservation.email || "",
+    children_count: String(reservation.children_count ?? ""),
+    adults_count: String(reservation.adults_count ?? ""),
     event_date: reservation.event_date,
     start_time: normalizeTime(reservation.start_time),
     end_time: normalizeTime(reservation.end_time),
@@ -2002,6 +2100,8 @@ function ReservationCard({
       event_type: reservation.event_type,
       phone: reservation.phone,
       email: reservation.email || "",
+      children_count: String(reservation.children_count ?? ""),
+      adults_count: String(reservation.adults_count ?? ""),
       event_date: reservation.event_date,
       start_time: normalizeTime(reservation.start_time),
       end_time: normalizeTime(reservation.end_time),
@@ -2029,6 +2129,44 @@ function ReservationCard({
 
     if (!editDraft.phone.trim()) {
       setEditError("Ingresá el teléfono.");
+      return;
+    }
+
+    const childrenCount = Number(editDraft.children_count);
+    const adultsCount = Number(editDraft.adults_count);
+
+    if (!editDraft.children_count.trim() || Number.isNaN(childrenCount) || childrenCount < 0) {
+      setEditError("Ingresá la cantidad de niños.");
+      return;
+    }
+
+    if (!Number.isInteger(childrenCount)) {
+      setEditError("La cantidad de niños debe ser un número entero.");
+      return;
+    }
+
+    if (childrenCount > MAX_CHILDREN_COUNT) {
+      setEditError(`La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`);
+      return;
+    }
+
+    if (!editDraft.adults_count.trim() || Number.isNaN(adultsCount) || adultsCount < 0) {
+      setEditError("Ingresá la cantidad de adultos.");
+      return;
+    }
+
+    if (!Number.isInteger(adultsCount)) {
+      setEditError("La cantidad de adultos debe ser un número entero.");
+      return;
+    }
+
+    if (adultsCount > MAX_ADULTS_COUNT) {
+      setEditError(`La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`);
+      return;
+    }
+
+    if (childrenCount + adultsCount <= 0) {
+      setEditError("La cantidad total de invitados debe ser mayor a 0.");
       return;
     }
 
@@ -2066,6 +2204,8 @@ function ReservationCard({
       event_type: editDraft.event_type,
       phone: editDraft.phone.trim(),
       email: editDraft.email.trim() || null,
+      children_count: childrenCount,
+      adults_count: adultsCount,
       event_date: editDraft.event_date,
       start_time: startTime,
       end_time: endTime,
@@ -2085,6 +2225,8 @@ function ReservationCard({
       event_type: reservation.event_type,
       phone: reservation.phone,
       email: reservation.email || "",
+      children_count: String(reservation.children_count ?? ""),
+      adults_count: String(reservation.adults_count ?? ""),
       event_date: reservation.event_date,
       start_time: normalizeTime(reservation.start_time),
       end_time: normalizeTime(reservation.end_time),
@@ -2141,6 +2283,12 @@ function ReservationCard({
             </p>
             <p>
               <b>Email:</b> {reservation.email || "No indicado"}
+            </p>
+            <p>
+              <b>Niños:</b> {reservation.children_count ?? "No indicado"}
+            </p>
+            <p>
+              <b>Adultos:</b> {reservation.adults_count ?? "No indicado"}
             </p>
             {reservation.discovery_source && (
               <p>
@@ -2277,6 +2425,46 @@ function ReservationCard({
                 }
                 className="input-contact"
                 placeholder="cliente@email.com"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Cantidad de niños
+              </span>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={editDraft.children_count}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    children_count: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="Ej: 15"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                Cantidad de adultos
+              </span>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={editDraft.adults_count}
+                onChange={(event) =>
+                  setEditDraft((prev) => ({
+                    ...prev,
+                    adults_count: event.target.value,
+                  }))
+                }
+                className="input-contact"
+                placeholder="Ej: 40"
               />
             </label>
 
@@ -2441,7 +2629,7 @@ function ReservationCard({
 
           <p className="mt-3 text-xs leading-relaxed text-[#6d5748]/75">
             Usá esta edición para completar datos faltantes, como email, teléfono,
-            fecha, horario, estado o cómo conoció Calypso.
+            cantidad de niños/adultos, fecha, horario, estado o cómo conoció Calypso.
           </p>
         </form>
       )}

@@ -30,6 +30,8 @@ import {
 
 const PHONE = "59899372068";
 const FIRST_RESERVATION_DATE = "2026-07-01";
+const MAX_CHILDREN_COUNT = 30;
+const MAX_ADULTS_COUNT = 50;
 
 const EVENT_TYPES = [
   "Cumpleaños infantil",
@@ -174,6 +176,8 @@ export default function ReservationPage() {
     eventType: "",
     phone: "",
     email: "",
+    childrenCount: "",
+    adultsCount: "",
     discoverySource: "",
     acceptsPrivacy: false,
   });
@@ -331,6 +335,44 @@ export default function ReservationPage() {
       return;
     }
 
+    const childrenCount = Number(form.childrenCount);
+    const adultsCount = Number(form.adultsCount);
+
+    if (!form.childrenCount.trim() || Number.isNaN(childrenCount) || childrenCount < 0) {
+      setError("Ingresá la cantidad de niños.");
+      return;
+    }
+
+    if (!Number.isInteger(childrenCount)) {
+      setError("La cantidad de niños debe ser un número entero.");
+      return;
+    }
+
+    if (childrenCount > MAX_CHILDREN_COUNT) {
+      setError(`La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`);
+      return;
+    }
+
+    if (!form.adultsCount.trim() || Number.isNaN(adultsCount) || adultsCount < 0) {
+      setError("Ingresá la cantidad de adultos.");
+      return;
+    }
+
+    if (!Number.isInteger(adultsCount)) {
+      setError("La cantidad de adultos debe ser un número entero.");
+      return;
+    }
+
+    if (adultsCount > MAX_ADULTS_COUNT) {
+      setError(`La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`);
+      return;
+    }
+
+    if (childrenCount + adultsCount <= 0) {
+      setError("La cantidad total de invitados debe ser mayor a 0.");
+      return;
+    }
+
     if (!form.discoverySource.trim()) {
       setError("Indicá cómo conociste Calypso.");
       return;
@@ -345,7 +387,7 @@ export default function ReservationPage() {
 
     setSubmitting(true);
 
-    const { error: createError } = await supabase.rpc(
+    const { data: reservationId, error: createError } = await supabase.rpc(
       "create_public_reservation",
       {
         p_customer_name: form.customerName.trim(),
@@ -355,6 +397,8 @@ export default function ReservationPage() {
         p_event_date: selectedDate,
         p_start_time: selectedSlot.startTime,
         p_end_time: selectedSlot.endTime,
+        p_children_count: childrenCount,
+        p_adults_count: adultsCount,
         p_discovery_source: form.discoverySource.trim(),
       },
     );
@@ -370,8 +414,33 @@ export default function ReservationPage() {
       return;
     }
 
+    const { error: emailError } = await supabase.functions.invoke(
+      "send-reservation-email",
+      {
+        body: {
+          reservation_id: reservationId,
+          customer_name: form.customerName.trim(),
+          event_type: form.eventType.trim(),
+          phone: form.phone.trim(),
+          email: form.email.trim(),
+          event_date: selectedDate,
+          event_date_label: selectedDateLabel,
+          slot_label: selectedSlot.label,
+          start_time: selectedSlot.startTime,
+          end_time: selectedSlot.endTime,
+          children_count: childrenCount,
+          adults_count: adultsCount,
+          discovery_source: form.discoverySource.trim(),
+        },
+      },
+    );
+
+    if (emailError) {
+      console.error("Error sending reservation email:", emailError);
+    }
+
     const whatsappText = encodeURIComponent(
-      `¡Hola! Me gustaría hacer una reserva para el ${selectedDateLabel}, de ${selectedSlot.label}, ¿cuándo podría ir a conocer el salón?`,
+      `¡Hola! Me gustaría hacer una reserva para el ${selectedDateLabel}, de ${selectedSlot.label}. Cantidad de niños: ${childrenCount}. Cantidad de adultos: ${adultsCount}. ¿Cuándo podría ir a conocer el salón?`,
     );
 
     setSent(true);
@@ -667,6 +736,54 @@ export default function ReservationPage() {
                       ))}
                     </select>
                   </label>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Cantidad de niños
+                      </span>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max={MAX_CHILDREN_COUNT}
+                        step="1"
+                        inputMode="numeric"
+                        value={form.childrenCount}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            childrenCount: event.target.value,
+                          }))
+                        }
+                        placeholder="Máximo 30"
+                        className="input-contact"
+                      />
+                    </label>
+
+                    <label>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                        Cantidad de adultos
+                      </span>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max={MAX_ADULTS_COUNT}
+                        step="1"
+                        inputMode="numeric"
+                        value={form.adultsCount}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            adultsCount: event.target.value,
+                          }))
+                        }
+                        placeholder="Máximo 50"
+                        className="input-contact"
+                      />
+                    </label>
+                  </div>
 
                   <label>
                     <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
