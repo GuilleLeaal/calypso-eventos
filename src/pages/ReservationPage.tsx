@@ -618,7 +618,7 @@ export default function ReservationPage() {
                   <p className="text-sm leading-relaxed text-[#5c473b]">
                     Se tachan los horarios que se superponen con reservas
                     aprobadas o pendientes vigentes, respetando la ventana de
-                    1:30 h.
+                    2 horas.
                   </p>
                 </div>
               </div>

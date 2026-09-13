@@ -3,7 +3,7 @@ export type ReservationBlock = {
   event_date: string;
   start_time: string;
   end_time: string;
-  status: "pending" | "approved" | "rejected" | "expired";
+  status: "pending" | "approved" | "rejected" | "expired" | "completed";
   created_at: string;
 };
 
@@ -13,6 +13,8 @@ export type ReservationSlot = {
   endTime: string;
   period: "day" | "night";
 };
+
+const RESERVATION_BUFFER_MINUTES = 120;
 
 const WEEKDAY_NIGHT_SLOTS: ReservationSlot[] = [
   {
@@ -128,9 +130,10 @@ export function getAvailableSlots(
   blocks: ReservationBlock[],
 ): ReservationSlot[] {
   const slots = getSlotsForDate(dateValue);
+  const activeBlocks = getActiveReservationBlocks(blocks);
 
   return slots.filter((slot) => {
-    return !blocks.some((block) => hasSlotConflict(slot, block));
+    return !activeBlocks.some((block) => hasSlotConflict(slot, block));
   });
 }
 
@@ -138,16 +141,14 @@ export function hasSlotConflict(
   slot: ReservationSlot,
   block: ReservationBlock,
 ) {
-  const bufferMinutes = 90;
-
   const newStart = toMinutes(slot.startTime);
   const newEnd = toMinutes(slot.endTime);
   const existingStart = toMinutes(normalizeTime(block.start_time));
   const existingEnd = toMinutes(normalizeTime(block.end_time));
 
   return (
-    newStart < existingEnd + bufferMinutes &&
-    newEnd + bufferMinutes > existingStart
+    newStart < existingEnd + RESERVATION_BUFFER_MINUTES &&
+    newEnd + RESERVATION_BUFFER_MINUTES > existingStart
   );
 }
 
@@ -172,7 +173,11 @@ export function getTodayInputValue() {
 }
 
 export function normalizeTime(value: string) {
-  return value.slice(0, 5);
+  return value.trim().slice(0, 5);
+}
+
+function getActiveReservationBlocks(blocks: ReservationBlock[]) {
+  return blocks.filter((block) => block.status !== "rejected" && block.status !== "expired");
 }
 
 function toMinutes(time: string) {
