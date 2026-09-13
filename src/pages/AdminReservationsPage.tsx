@@ -15,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   Save,
+  Search,
   ShieldCheck,
   Trash2,
   X,
@@ -96,6 +97,7 @@ type ReservationUpdateValues = Partial<
 const FIRST_RESERVATION_DATE = "2026-07-01";
 const MAX_CHILDREN_COUNT = 30;
 const MAX_ADULTS_COUNT = 50;
+const RESERVATIONS_PER_PAGE = 4;
 
 function getMinReservationDate() {
   const today = getTodayInputValue();
@@ -211,13 +213,20 @@ function getMonthLabel(date: Date) {
   }).format(date);
 }
 
+function getDisabledRangeForDate(
+  dateValue: string,
+  disabledRanges: DisabledReservationDateRange[],
+) {
+  return disabledRanges.find(
+    (range) => dateValue >= range.start_date && dateValue <= range.end_date,
+  );
+}
+
 function isDateInDisabledRange(
   dateValue: string,
   disabledRanges: DisabledReservationDateRange[],
 ) {
-  return disabledRanges.some(
-    (range) => dateValue >= range.start_date && dateValue <= range.end_date,
-  );
+  return Boolean(getDisabledRangeForDate(dateValue, disabledRanges));
 }
 
 function getDisabledRangeLabel(range: DisabledReservationDateRange) {
@@ -243,6 +252,9 @@ export default function AdminReservationsPage() {
   const [loginError, setLoginError] = useState("");
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservationPage, setReservationPage] = useState(1);
+  const [reservationTotalCount, setReservationTotalCount] = useState(0);
+  const [reservationSearch, setReservationSearch] = useState("");
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState("");
@@ -277,6 +289,9 @@ export default function AdminReservationsPage() {
   const [manualBlocks, setManualBlocks] = useState<ReservationBlock[]>([]);
   const [manualMonthBlocks, setManualMonthBlocks] = useState<
     ReservationBlock[]
+  >([]);
+  const [manualMonthReservations, setManualMonthReservations] = useState<
+    Reservation[]
   >([]);
   const [loadingManualSlots, setLoadingManualSlots] = useState(false);
   const [loadingManualMonthBlocks, setLoadingManualMonthBlocks] =
@@ -328,7 +343,6 @@ export default function AdminReservationsPage() {
         setSessionReady(true);
 
         if (hasSession) {
-          fetchReservations();
           fetchReviews();
           fetchDisabledRanges();
         }
@@ -352,7 +366,6 @@ export default function AdminReservationsPage() {
       setIsLoggedIn(hasSession);
 
       if (hasSession) {
-        fetchReservations();
         fetchReviews();
         fetchDisabledRanges();
       } else {
@@ -361,6 +374,7 @@ export default function AdminReservationsPage() {
         setDisabledRanges([]);
         setManualBlocks([]);
         setManualMonthBlocks([]);
+        setManualMonthReservations([]);
       }
     });
 
@@ -371,6 +385,13 @@ export default function AdminReservationsPage() {
   }, []);
 
   useEffect(() => {
+    if (isLoggedIn) {
+      fetchReviews();
+      fetchDisabledRanges();
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
     fetchManualBlocks();
   }, [manualForm.event_date, isLoggedIn]);
 
@@ -378,11 +399,26 @@ export default function AdminReservationsPage() {
     fetchManualMonthBlocks();
   }, [manualCalendarMonth, isLoggedIn]);
 
-  const filteredReservations = useMemo(() => {
-    if (filter === "all") return reservations;
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchReservations();
+    }
+  }, [isLoggedIn, filter, reservationPage, reservationSearch]);
 
-    return reservations.filter((reservation) => reservation.status === filter);
-  }, [reservations, filter]);
+  const reservationTotalPages = Math.max(
+    1,
+    Math.ceil(reservationTotalCount / RESERVATIONS_PER_PAGE),
+  );
+
+  const reservationFirstItem =
+    reservationTotalCount === 0
+      ? 0
+      : (reservationPage - 1) * RESERVATIONS_PER_PAGE + 1;
+
+  const reservationLastItem = Math.min(
+    reservationPage * RESERVATIONS_PER_PAGE,
+    reservationTotalCount,
+  );
 
   async function fetchDisabledRanges() {
     if (!isLoggedIn) return;
@@ -571,24 +607,40 @@ export default function AdminReservationsPage() {
     setLoadingManualMonthBlocks(true);
 
     try {
-      const { data, error } = await supabase.rpc(
-        "get_public_reservation_blocks_range",
-        {
+      const [blocksResult, reservationsResult] = await Promise.all([
+        supabase.rpc("get_public_reservation_blocks_range", {
           start_date: start,
           end_date: end,
-        },
-      );
+        }),
+        supabase
+          .from("reservations")
+          .select(
+            "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, created_at, updated_at",
+          )
+          .gte("event_date", start)
+          .lte("event_date", end)
+          .neq("status", "rejected")
+          .order("event_date", { ascending: true })
+          .order("start_time", { ascending: true }),
+      ]);
 
-      if (error) {
-        console.error("Error fetching manual month blocks:", error);
+      if (blocksResult.error) {
+        console.error("Error fetching manual month blocks:", blocksResult.error);
         setManualMonthBlocks([]);
-        return;
+      } else {
+        setManualMonthBlocks((blocksResult.data || []) as ReservationBlock[]);
       }
 
-      setManualMonthBlocks((data || []) as ReservationBlock[]);
+      if (reservationsResult.error) {
+        console.error("Error fetching month reservations:", reservationsResult.error);
+        setManualMonthReservations([]);
+      } else {
+        setManualMonthReservations((reservationsResult.data || []) as Reservation[]);
+      }
     } catch (error) {
       console.error("Unexpected manual month blocks error:", error);
       setManualMonthBlocks([]);
+      setManualMonthReservations([]);
     } finally {
       setLoadingManualMonthBlocks(false);
     }
@@ -615,11 +667,27 @@ export default function AdminReservationsPage() {
         console.error("Error marking completed reservations:", completeError);
       }
 
-      const { data, error } = await supabase
+      const from = (reservationPage - 1) * RESERVATIONS_PER_PAGE;
+      const to = from + RESERVATIONS_PER_PAGE - 1;
+
+      let query = supabase
         .from("reservations")
-        .select("*")
+        .select("*", { count: "exact" });
+
+      if (filter !== "all") {
+        query = query.eq("status", filter);
+      }
+
+      const normalizedSearch = reservationSearch.trim();
+
+      if (normalizedSearch) {
+        query = query.ilike("customer_name", `%${normalizedSearch}%`);
+      }
+
+      const { data, error, count } = await query
         .order("event_date", { ascending: true })
-        .order("start_time", { ascending: true });
+        .order("start_time", { ascending: true })
+        .range(from, to);
 
       if (error) {
         console.error("Error fetching reservations:", error);
@@ -627,14 +695,25 @@ export default function AdminReservationsPage() {
           "No pudimos cargar las reservas. Revisá permisos de Supabase.",
         );
         setReservations([]);
+        setReservationTotalCount(0);
+        return;
+      }
+
+      const total = count ?? 0;
+      const totalPages = Math.max(1, Math.ceil(total / RESERVATIONS_PER_PAGE));
+
+      if (reservationPage > totalPages) {
+        setReservationPage(totalPages);
         return;
       }
 
       setReservations((data || []) as Reservation[]);
+      setReservationTotalCount(total);
     } catch (error) {
       console.error("Unexpected fetch reservations error:", error);
       setGlobalError("Ocurrió un error cargando las reservas.");
       setReservations([]);
+      setReservationTotalCount(0);
     } finally {
       setLoadingReservations(false);
     }
@@ -1405,6 +1484,7 @@ export default function AdminReservationsPage() {
                       selectedDate={manualForm.event_date}
                       calendarMonth={manualCalendarMonth}
                       monthBlocks={manualMonthBlocks}
+                      monthReservations={manualMonthReservations}
                       disabledRanges={disabledRanges}
                       loading={loadingManualMonthBlocks}
                       minDate={getMinReservationDate()}
@@ -1563,6 +1643,7 @@ export default function AdminReservationsPage() {
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
                     Pendientes, aprobadas, rechazadas, vencidas y finalizadas.
+                    La lista carga de a {RESERVATIONS_PER_PAGE} para no traer todo de una.
                   </p>
                 </div>
 
@@ -1579,7 +1660,10 @@ export default function AdminReservationsPage() {
                   ).map((item) => (
                     <button
                       key={item}
-                      onClick={() => setFilter(item)}
+                      onClick={() => {
+                        setFilter(item);
+                        setReservationPage(1);
+                      }}
                       className={[
                         "rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition",
                         filter === item
@@ -1593,17 +1677,44 @@ export default function AdminReservationsPage() {
                 </div>
               </div>
 
+              <label className="mt-5 block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+                  Buscar por cliente
+                </span>
+
+                <div className="relative">
+                  <Search
+                    size={17}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a7667]"
+                  />
+                  <input
+                    type="search"
+                    value={reservationSearch}
+                    onChange={(event) => {
+                      setReservationSearch(event.target.value);
+                      setReservationPage(1);
+                    }}
+                    placeholder="Ej: Santiago, Victoria, Rivas..."
+                    className="input-contact !pl-11"
+                  />
+                </div>
+              </label>
+
               {loadingReservations ? (
                 <div className="grid min-h-64 place-items-center">
                   <Loader2 className="h-8 w-8 animate-spin text-[#0BB3A6]" />
                 </div>
-              ) : filteredReservations.length === 0 ? (
+              ) : reservations.length === 0 ? (
                 <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
-                  No hay reservas para este filtro.
+                  {reservationSearch.trim() ? "No hay reservas para esa búsqueda." : "No hay reservas para este filtro."}
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
-                  {filteredReservations.map((reservation) => (
+                  <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6d5748]">
+                    Mostrando {reservationFirstItem}-{reservationLastItem} de {reservationTotalCount}
+                  </div>
+
+                  {reservations.map((reservation) => (
                     <ReservationCard
                       key={reservation.id}
                       reservation={reservation}
@@ -1633,6 +1744,38 @@ export default function AdminReservationsPage() {
                       onDelete={() => deleteReservation(reservation.id)}
                     />
                   ))}
+
+                  {reservationTotalPages > 1 && (
+                    <div className="flex flex-col gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-semibold text-[#6d5748]">
+                        Página {reservationPage} de {reservationTotalPages}
+                      </p>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={reservationPage <= 1 || loadingReservations}
+                          onClick={() => setReservationPage((page) => Math.max(1, page - 1))}
+                          className="rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          Anterior
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={reservationPage >= reservationTotalPages || loadingReservations}
+                          onClick={() =>
+                            setReservationPage((page) =>
+                              Math.min(reservationTotalPages, page + 1),
+                            )
+                          }
+                          className="rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          Siguiente
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -2676,6 +2819,7 @@ function ReservationCalendar({
   selectedDate,
   calendarMonth,
   monthBlocks,
+  monthReservations,
   disabledRanges,
   loading,
   minDate,
@@ -2685,6 +2829,7 @@ function ReservationCalendar({
   selectedDate: string;
   calendarMonth: Date;
   monthBlocks: ReservationBlock[];
+  monthReservations: Reservation[];
   disabledRanges: DisabledReservationDateRange[];
   loading: boolean;
   minDate: string;
@@ -2694,6 +2839,37 @@ function ReservationCalendar({
   const days = getCalendarDays(calendarMonth);
   const month = calendarMonth.getMonth();
   const weekDays = ["D", "L", "M", "M", "J", "V", "S"];
+
+  const getDateReservations = (dateValue: string) =>
+    monthReservations.filter((reservation) => reservation.event_date === dateValue);
+
+  const getDateTooltip = (dateValue: string) => {
+    if (dateValue < minDate) {
+      return "No disponible";
+    }
+
+    const disabledRange = getDisabledRangeForDate(dateValue, disabledRanges);
+
+    if (disabledRange) {
+      return `Inhabilitada: ${disabledRange.reason?.trim() || "sin motivo indicado"}`;
+    }
+
+    const dateReservations = getDateReservations(dateValue);
+
+    if (dateReservations.length === 0) {
+      return "Libre";
+    }
+
+    return dateReservations
+      .slice(0, 4)
+      .map(
+        (reservation) =>
+          `${reservation.customer_name} - ${normalizeTime(reservation.start_time)} a ${normalizeTime(
+            reservation.end_time,
+          )} (${statusLabels[reservation.status]})`,
+      )
+      .join("\n");
+  };
 
   const getDateAvailability = (dateValue: string) => {
     const dateBlocks = monthBlocks.filter(
@@ -2771,6 +2947,10 @@ function ReservationCalendar({
         {days.map((date) => {
           const dateValue = toInputDate(date);
           const availability = getDateAvailability(dateValue);
+          const tooltip = getDateTooltip(dateValue);
+          const dateReservations = getDateReservations(dateValue);
+          const hasReservation = dateReservations.length > 0;
+          const isClosed = availability === "closed";
 
           const selected = selectedDate === dateValue && availability !== "closed";
           const outsideMonth = date.getMonth() !== month;
@@ -2781,6 +2961,7 @@ function ReservationCalendar({
               key={dateValue}
               type="button"
               disabled={disabled}
+              title={tooltip}
               onClick={() => onSelectDate(dateValue)}
               className={[
                 "relative min-h-12 rounded-2xl border px-2 py-2 text-sm font-bold transition",
@@ -2798,7 +2979,16 @@ function ReservationCalendar({
                         : "border-[#d1af7e] bg-[#fff0d2] text-[#2f241e] hover:-translate-y-0.5 hover:border-[#0BB3A6]/55 hover:bg-[#fff7eb]",
               ].join(" ")}
             >
-              {date.getDate()}
+              <span>{date.getDate()}</span>
+
+              {(isClosed || hasReservation) && (
+                <span className="absolute bottom-1.5 left-1/2 flex -translate-x-1/2 gap-1">
+                  {isClosed && <span className="h-1.5 w-1.5 rounded-full bg-red-700" />}
+                  {hasReservation && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#2f241e]" />
+                  )}
+                </span>
+              )}
             </button>
           );
         })}
@@ -2817,12 +3007,12 @@ function ReservationCalendar({
 
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-red-100 ring-1 ring-red-300" />
-          Inhabilitada / con reservas
+Inhabilitada / completo
         </div>
 
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-stone-200 ring-1 ring-stone-300" />
-          No disponible
+No disponible / fuera de rango
         </div>
       </div>
     </div>
