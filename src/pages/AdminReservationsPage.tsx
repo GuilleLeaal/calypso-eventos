@@ -5,18 +5,24 @@ import {
   ArrowLeft,
   CalendarOff,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
   Loader2,
   Lock,
   LogOut,
+  MoreHorizontal,
   Pencil,
   Plus,
   RefreshCw,
   Save,
   Search,
   ShieldCheck,
+  StickyNote,
+  User,
+  WalletCards,
+  CalendarCheck,
   Trash2,
   X,
 } from "lucide-react";
@@ -34,7 +40,7 @@ import {
 type ReservationStatus =
   "pending" | "approved" | "rejected" | "expired" | "completed";
 
-type AdminSection = "reservations" | "disabled_dates" | "reviews";
+type AdminSection = "reservations" | "completed_events" | "disabled_dates" | "reviews";
 
 type ReservationSource = "website" | "admin";
 
@@ -54,6 +60,10 @@ type Reservation = {
   notes: string | null;
   source: ReservationSource;
   discovery_source: string | null;
+  agreed_price: number | null;
+  settlement_amount: number | null;
+  deposit_amount: number | null;
+  staff_count: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -75,6 +85,25 @@ type DisabledReservationDateRange = {
   created_at: string;
 };
 
+type ManualReservationFormValues = {
+  customer_name: string;
+  event_type: string;
+  phone: string;
+  email: string;
+  children_count: string;
+  adults_count: string;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  notes: string;
+  deposit_paid: boolean;
+  agreed_price: string;
+  settlement_amount: string;
+  deposit_amount: string;
+  staff_count: string;
+  discovery_source: string;
+};
+
 type ReservationUpdateValues = Partial<
   Pick<
     Reservation,
@@ -89,6 +118,10 @@ type ReservationUpdateValues = Partial<
     | "end_time"
     | "status"
     | "deposit_paid"
+    | "agreed_price"
+    | "settlement_amount"
+    | "deposit_amount"
+    | "staff_count"
     | "notes"
     | "discovery_source"
   >
@@ -158,9 +191,165 @@ function timeToMinutes(value: string) {
   return hours * 60 + minutes;
 }
 
-function escapeCsvValue(value: unknown) {
-  const stringValue = String(value ?? "");
-  return `"${stringValue.replaceAll('"', '""')}"`;
+type ExcelColumnOptions = {
+  index: number;
+  numberFormat?: string;
+  minWidth?: number;
+  maxWidth?: number;
+};
+
+async function downloadExcelFile({
+  filename,
+  sheetName,
+  headers,
+  rows,
+  columnOptions = [],
+}: {
+  filename: string;
+  sheetName: string;
+  headers: string[];
+  rows: unknown[][];
+  columnOptions?: ExcelColumnOptions[];
+}) {
+  // Carga ExcelJS solo cuando el usuario exporta, evitando aumentar el bundle inicial del admin.
+  const { Workbook } = await import("exceljs");
+
+  const workbook = new Workbook();
+  workbook.creator = "Calypso Eventos";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet(sheetName);
+
+  worksheet.addRow(headers);
+  rows.forEach((row) => worksheet.addRow(row));
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 24;
+  headerRow.eachCell((cell) => {
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF0BB3A6" },
+    };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "left",
+    };
+  });
+
+  worksheet.views = [{ state: "frozen", ySplit: 1 }];
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: headers.length },
+  };
+
+  // Ajusta automáticamente cada columna al texto más largo, con límites razonables
+  // para que textos excepcionales no generen columnas gigantes.
+  worksheet.columns.forEach((_column, columnIndex) => {
+    // worksheet.columns expone columnas parciales en los tipos de ExcelJS,
+    // por eso obtenemos la columna concreta con getColumn antes de usar eachCell.
+    const column = worksheet.getColumn(columnIndex + 1);
+    const options = columnOptions.find((item) => item.index === columnIndex + 1);
+    const minWidth = options?.minWidth ?? 12;
+    const maxWidth = options?.maxWidth ?? 42;
+    let longestText = headers[columnIndex]?.length ?? 0;
+
+    column.eachCell({ includeEmpty: true }, (cell) => {
+      const cellText = cell.text || String(cell.value ?? "");
+
+      for (const line of cellText.split(/\r?\n/)) {
+        longestText = Math.max(longestText, line.length);
+      }
+    });
+
+    column.width = Math.min(Math.max(longestText + 2, minWidth), maxWidth);
+
+    if (options?.numberFormat) {
+      column.numFmt = options.numberFormat;
+    }
+  });
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+
+    row.alignment = {
+      vertical: "middle",
+    };
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer as BlobPart], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function normalizeClientIdentityValue(value: string | null | undefined) {
+  return (value || "")
+    .trim()
+    .toLocaleLowerCase("es-UY")
+    .replace(/\s+/g, " ");
+}
+
+function getClientExportKey(reservation: Reservation) {
+  const email = normalizeClientIdentityValue(reservation.email);
+  if (email) return `email:${email}`;
+
+  const phone = (reservation.phone || "").replace(/\D/g, "");
+  if (phone) return `phone:${phone}`;
+
+  return `name:${normalizeClientIdentityValue(reservation.customer_name)}`;
+}
+
+function parseOptionalCurrency(value: string) {
+  const normalized = value.trim().replaceAll(".", "").replace(",", ".");
+
+  if (!normalized) return null;
+
+  const amount = Number(normalized);
+
+  if (Number.isNaN(amount) || amount < 0) return Number.NaN;
+
+  return Math.round(amount * 100) / 100;
+}
+
+function parseOptionalInteger(value: string) {
+  const normalized = value.trim();
+
+  if (!normalized) return null;
+
+  const amount = Number(normalized);
+
+  if (!Number.isInteger(amount) || amount < 0) return Number.NaN;
+
+  return amount;
+}
+
+function formatMoney(value: number | null | undefined) {
+  if (value === null || value === undefined) return "No indicado";
+
+  return new Intl.NumberFormat("es-UY", {
+    style: "currency",
+    currency: "UYU",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function getEventTotalIncome(reservation: Pick<Reservation, "deposit_amount" | "settlement_amount">) {
+  return Number(reservation.deposit_amount ?? 0) + Number(reservation.settlement_amount ?? 0);
 }
 
 function createLocalDate(dateValue: string) {
@@ -255,6 +444,9 @@ export default function AdminReservationsPage() {
   const [reservationPage, setReservationPage] = useState(1);
   const [reservationTotalCount, setReservationTotalCount] = useState(0);
   const [reservationSearch, setReservationSearch] = useState("");
+  const [debouncedReservationSearch, setDebouncedReservationSearch] = useState("");
+  const [reservationDateFromFilter, setReservationDateFromFilter] = useState("");
+  const [reservationDateToFilter, setReservationDateToFilter] = useState("");
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState("");
@@ -301,7 +493,7 @@ export default function AdminReservationsPage() {
     createLocalDate(getMinReservationDate()),
   );
 
-  const [manualForm, setManualForm] = useState({
+  const [manualForm, setManualForm] = useState<ManualReservationFormValues>({
     customer_name: "",
     event_type: "",
     phone: "",
@@ -313,6 +505,10 @@ export default function AdminReservationsPage() {
     end_time: "20:00",
     notes: "",
     deposit_paid: false,
+    agreed_price: "",
+    settlement_amount: "",
+    deposit_amount: "",
+    staff_count: "",
     discovery_source: "",
   });
 
@@ -323,6 +519,14 @@ export default function AdminReservationsPage() {
 
     return getAvailableSlots(manualForm.event_date, manualBlocks);
   }, [manualForm.event_date, manualBlocks, disabledRanges]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedReservationSearch(reservationSearch.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [reservationSearch]);
 
   useEffect(() => {
     let mounted = true;
@@ -342,10 +546,6 @@ export default function AdminReservationsPage() {
         setIsLoggedIn(hasSession);
         setSessionReady(true);
 
-        if (hasSession) {
-          fetchReviews();
-          fetchDisabledRanges();
-        }
       } catch (error) {
         console.error("Unexpected admin session error:", error);
 
@@ -365,10 +565,7 @@ export default function AdminReservationsPage() {
 
       setIsLoggedIn(hasSession);
 
-      if (hasSession) {
-        fetchReviews();
-        fetchDisabledRanges();
-      } else {
+      if (!hasSession) {
         setReservations([]);
         setReviews([]);
         setDisabledRanges([]);
@@ -386,24 +583,67 @@ export default function AdminReservationsPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchReviews();
       fetchDisabledRanges();
     }
   }, [isLoggedIn]);
 
   useEffect(() => {
-    fetchManualBlocks();
-  }, [manualForm.event_date, isLoggedIn]);
+    if (isLoggedIn && activeSection === "reviews") {
+      fetchReviews();
+    }
+  }, [isLoggedIn, activeSection]);
 
   useEffect(() => {
-    fetchManualMonthBlocks();
-  }, [manualCalendarMonth, isLoggedIn]);
+    if (isLoggedIn && activeSection === "reservations") {
+      fetchManualBlocks();
+    }
+  }, [manualForm.event_date, isLoggedIn, activeSection]);
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && activeSection === "reservations") {
+      fetchManualMonthBlocks();
+    }
+  }, [manualCalendarMonth, isLoggedIn, activeSection]);
+
+  useEffect(() => {
+    if (
+      isLoggedIn &&
+      (activeSection === "reservations" || activeSection === "completed_events")
+    ) {
       fetchReservations();
     }
-  }, [isLoggedIn, filter, reservationPage, reservationSearch]);
+  }, [
+    isLoggedIn,
+    activeSection,
+    filter,
+    reservationPage,
+    debouncedReservationSearch,
+    reservationDateFromFilter,
+    reservationDateToFilter,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isLoggedIn ||
+      (activeSection !== "reservations" && activeSection !== "completed_events")
+    ) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void fetchReservations(true);
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [
+    isLoggedIn,
+    activeSection,
+    filter,
+    reservationPage,
+    debouncedReservationSearch,
+    reservationDateFromFilter,
+    reservationDateToFilter,
+  ]);
 
   const reservationTotalPages = Math.max(
     1,
@@ -419,6 +659,22 @@ export default function AdminReservationsPage() {
     reservationPage * RESERVATIONS_PER_PAGE,
     reservationTotalCount,
   );
+
+  const hasReservationFilters = Boolean(
+    reservationSearch.trim() ||
+      reservationDateFromFilter ||
+      reservationDateToFilter ||
+      (activeSection === "reservations" && filter !== "all"),
+  );
+
+  function clearReservationFilters() {
+    setReservationSearch("");
+    setDebouncedReservationSearch("");
+    setReservationDateFromFilter("");
+    setReservationDateToFilter("");
+    setFilter("all");
+    setReservationPage(1);
+  }
 
   async function fetchDisabledRanges() {
     if (!isLoggedIn) return;
@@ -468,12 +724,27 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    const reservationsInRange = reservations.filter(
-      (reservation) =>
-        reservation.event_date >= disabledForm.start_date &&
-        reservation.event_date <= disabledForm.end_date &&
-        reservation.status !== "rejected",
-    );
+    const { data: rangeReservations, error: rangeReservationsError } = await supabase
+      .from("reservations")
+      .select("id, customer_name, event_date, start_time, end_time, status")
+      .gte("event_date", disabledForm.start_date)
+      .lte("event_date", disabledForm.end_date)
+      .neq("status", "rejected")
+      .order("event_date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (rangeReservationsError) {
+      console.error("Error checking reservations in disabled range:", rangeReservationsError);
+      setGlobalError(
+        "No pudimos verificar las reservas existentes para ese rango. Intentá nuevamente.",
+      );
+      return;
+    }
+
+    const reservationsInRange = (rangeReservations || []) as Pick<
+      Reservation,
+      "id" | "customer_name" | "event_date" | "start_time" | "end_time" | "status"
+    >[];
 
     if (reservationsInRange.length > 0) {
       const reservationSummary = reservationsInRange
@@ -615,7 +886,7 @@ export default function AdminReservationsPage() {
         supabase
           .from("reservations")
           .select(
-            "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, created_at, updated_at",
+            "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, created_at, updated_at",
           )
           .gte("event_date", start)
           .lte("event_date", end)
@@ -646,8 +917,10 @@ export default function AdminReservationsPage() {
     }
   }
 
-  async function fetchReservations() {
-    setLoadingReservations(true);
+  async function fetchReservations(silent = false) {
+    if (!silent) {
+      setLoadingReservations(true);
+    }
     setGlobalError("");
 
     try {
@@ -674,19 +947,33 @@ export default function AdminReservationsPage() {
         .from("reservations")
         .select("*", { count: "exact" });
 
-      if (filter !== "all") {
-        query = query.eq("status", filter);
+      if (activeSection === "completed_events") {
+        query = query.eq("status", "completed");
+      } else {
+        query = query.neq("status", "completed");
+
+        if (filter !== "all") {
+          query = query.eq("status", filter);
+        }
       }
 
-      const normalizedSearch = reservationSearch.trim();
-
-      if (normalizedSearch) {
-        query = query.ilike("customer_name", `%${normalizedSearch}%`);
+      if (debouncedReservationSearch) {
+        query = query.ilike("customer_name", `%${debouncedReservationSearch}%`);
       }
+
+      if (reservationDateFromFilter) {
+        query = query.gte("event_date", reservationDateFromFilter);
+      }
+
+      if (reservationDateToFilter) {
+        query = query.lte("event_date", reservationDateToFilter);
+      }
+
+      const showNewestFirst = activeSection === "completed_events";
 
       const { data, error, count } = await query
-        .order("event_date", { ascending: true })
-        .order("start_time", { ascending: true })
+        .order("event_date", { ascending: !showNewestFirst })
+        .order("start_time", { ascending: !showNewestFirst })
         .range(from, to);
 
       if (error) {
@@ -715,7 +1002,9 @@ export default function AdminReservationsPage() {
       setReservations([]);
       setReservationTotalCount(0);
     } finally {
-      setLoadingReservations(false);
+      if (!silent) {
+        setLoadingReservations(false);
+      }
     }
   }
 
@@ -788,11 +1077,27 @@ export default function AdminReservationsPage() {
   }
 
   async function refreshAll() {
-    await fetchReservations();
+    if (activeSection === "reservations") {
+      await Promise.all([
+        fetchReservations(),
+        fetchDisabledRanges(),
+        fetchManualBlocks(),
+        fetchManualMonthBlocks(),
+      ]);
+      return;
+    }
+
+    if (activeSection === "completed_events") {
+      await Promise.all([fetchReservations(), fetchDisabledRanges()]);
+      return;
+    }
+
+    if (activeSection === "disabled_dates") {
+      await fetchDisabledRanges();
+      return;
+    }
+
     await fetchReviews();
-    await fetchDisabledRanges();
-    await fetchManualBlocks();
-    await fetchManualMonthBlocks();
   }
 
   async function handleLogin(event: FormEvent) {
@@ -839,7 +1144,19 @@ export default function AdminReservationsPage() {
       return false;
     }
 
-    await refreshAll();
+    const affectsAvailability = [
+      "event_date",
+      "start_time",
+      "end_time",
+      "status",
+    ].some((field) => field in values);
+
+    await fetchReservations(true);
+
+    if (affectsAvailability) {
+      await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
+    }
+
     setActionLoadingId(null);
     return true;
   }
@@ -860,7 +1177,8 @@ export default function AdminReservationsPage() {
       console.error("Error deleting reservation:", error);
       setGlobalError("No pudimos borrar la reserva.");
     } else {
-      await refreshAll();
+      await fetchReservations(true);
+      await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
     }
 
     setActionLoadingId(null);
@@ -924,6 +1242,31 @@ export default function AdminReservationsPage() {
       return;
     }
 
+    const agreedPrice = parseOptionalCurrency(manualForm.agreed_price);
+    const settlementAmount = parseOptionalCurrency(manualForm.settlement_amount);
+    const depositAmount = parseOptionalCurrency(manualForm.deposit_amount);
+    const staffCount = parseOptionalInteger(manualForm.staff_count);
+
+    if (Number.isNaN(agreedPrice)) {
+      setGlobalError("El precio pautado debe ser un importe válido.");
+      return;
+    }
+
+    if (Number.isNaN(settlementAmount)) {
+      setGlobalError("La liquidación debe ser un importe válido.");
+      return;
+    }
+
+    if (Number.isNaN(depositAmount)) {
+      setGlobalError("La seña debe ser un importe válido.");
+      return;
+    }
+
+    if (Number.isNaN(staffCount)) {
+      setGlobalError("La cantidad de mozos/animadores debe ser un número entero.");
+      return;
+    }
+
     if (isDateInDisabledRange(manualForm.event_date, disabledRanges)) {
       setGlobalError(
         "Esta fecha está inhabilitada. Habilitala primero para crear una reserva.",
@@ -961,6 +1304,10 @@ export default function AdminReservationsPage() {
       p_deposit_paid: manualForm.deposit_paid,
       p_notes: manualForm.notes.trim(),
       p_discovery_source: manualForm.discovery_source,
+      p_agreed_price: agreedPrice,
+      p_settlement_amount: settlementAmount,
+      p_deposit_amount: depositAmount,
+      p_staff_count: staffCount,
     });
 
     if (error) {
@@ -984,12 +1331,17 @@ export default function AdminReservationsPage() {
       end_time: "20:00",
       notes: "",
       deposit_paid: false,
+      agreed_price: "",
+      settlement_amount: "",
+      deposit_amount: "",
+      staff_count: "",
       discovery_source: "",
     });
 
     setManualCalendarMonth(createLocalDate(getMinReservationDate()));
 
-    await refreshAll();
+    await fetchReservations(true);
+    await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
   }
 
   function applyManualSlot(slot: ReservationSlot) {
@@ -1000,103 +1352,160 @@ export default function AdminReservationsPage() {
     }));
   }
 
-  async function downloadApprovedAndCompletedCsv() {
+  async function fetchCompletedReservationsForExport() {
+    const { error: completeError } = await supabase.rpc(
+      "mark_completed_reservations",
+    );
+
+    if (completeError) {
+      console.error("Error marking completed before export:", completeError);
+    }
+
+    const { data, error } = await supabase
+      .from("reservations")
+      .select(
+        "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, created_at, updated_at",
+      )
+      .eq("status", "completed")
+      .order("event_date", { ascending: false })
+      .order("end_time", { ascending: false });
+
+    if (error) {
+      console.error("Error exporting completed reservations:", error);
+      throw new Error("No pudimos obtener los eventos finalizados.");
+    }
+
+    return (data || []) as Reservation[];
+  }
+
+  async function downloadClientsExcel() {
     setGlobalError("");
 
     try {
-      const { error: completeError } = await supabase.rpc(
-        "mark_completed_reservations",
-      );
-
-      if (completeError) {
-        console.error("Error marking completed before export:", completeError);
-      }
-
       const { data, error } = await supabase
         .from("reservations")
         .select(
-          "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, created_at, updated_at",
+          "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, created_at, updated_at",
         )
-        .in("status", ["approved", "completed"])
-        .order("event_date", { ascending: true })
-        .order("start_time", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error exporting reservations:", error);
-        setGlobalError("No pudimos generar el archivo de reservas.");
+        console.error("Error exporting clients:", error);
+        setGlobalError("No pudimos obtener la información de los clientes.");
         return;
       }
 
-      const rows = (data || []) as Reservation[];
+      const allReservations = (data || []) as Reservation[];
 
-      if (rows.length === 0) {
+      if (allReservations.length === 0) {
+        setGlobalError("No hay clientes registrados todavía.");
+        return;
+      }
+
+      const uniqueClients = new Map<string, Reservation>();
+
+      for (const reservation of allReservations) {
+        const key = getClientExportKey(reservation);
+
+        // La consulta viene ordenada por creación, de la más reciente a la más antigua.
+        // Si un cliente aparece en varias reservas, conservamos sus datos más recientes.
+        if (!uniqueClients.has(key)) {
+          uniqueClients.set(key, reservation);
+        }
+      }
+
+      const headers = [
+        "Nombre del cliente",
+        "Teléfono",
+        "Email",
+        "Cómo conoció Calypso",
+      ];
+
+      const rows = Array.from(uniqueClients.values())
+        .sort((a, b) => a.customer_name.localeCompare(b.customer_name, "es-UY"))
+        .map((reservation) => [
+          reservation.customer_name,
+          reservation.phone,
+          reservation.email || "",
+          reservation.discovery_source || "",
+        ]);
+
+      await downloadExcelFile({
+        filename: `clientes-calypso-${getTodayInputValue()}.xlsx`,
+        sheetName: "Clientes",
+        headers,
+        rows,
+        columnOptions: [
+          { index: 1, minWidth: 20, maxWidth: 40 },
+          { index: 2, minWidth: 16, maxWidth: 24 },
+          { index: 3, minWidth: 24, maxWidth: 42 },
+          { index: 4, minWidth: 22, maxWidth: 38 },
+        ],
+      });
+    } catch (error) {
+      console.error("Unexpected client export error:", error);
+      setGlobalError(
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error generando el archivo de clientes.",
+      );
+    }
+  }
+
+  async function downloadEventsExcel() {
+    setGlobalError("");
+
+    try {
+      const completedReservations = await fetchCompletedReservationsForExport();
+
+      if (completedReservations.length === 0) {
         setGlobalError(
-          "No hay reservas aprobadas o finalizadas para exportar todavía.",
+          "No hay eventos finalizados todavía para generar el archivo de eventos.",
         );
         return;
       }
 
       const headers = [
-        "Estado",
-        "Cliente",
+        "Nombre del cliente",
         "Evento",
         "Fecha",
-        "Inicio",
-        "Fin",
-        "Telefono",
-        "Email",
-        "Ninos",
-        "Adultos",
-        "Como conocio Calypso",
-        "Pago sena",
-        "Origen",
-        "Notas",
-        "Creada",
+        "Cantidad de adultos",
+        "Cantidad de niños",
+        "Ingreso total",
       ];
 
-      const csvRows = rows.map((reservation) => [
-        statusLabels[reservation.status],
+      const rows = completedReservations.map((reservation) => [
         reservation.customer_name,
         reservation.event_type,
-        reservation.event_date,
-        normalizeTime(reservation.start_time),
-        normalizeTime(reservation.end_time),
-        reservation.phone,
-        reservation.email || "",
-        reservation.children_count ?? "",
+        new Date(`${reservation.event_date}T12:00:00`),
         reservation.adults_count ?? "",
-        reservation.discovery_source || "",
-        reservation.deposit_paid ? "Si" : "No",
-        reservation.source === "website" ? "Web" : "Admin",
-        reservation.notes || "",
-        new Date(reservation.created_at).toLocaleString("es-UY"),
+        reservation.children_count ?? "",
+        getEventTotalIncome(reservation),
       ]);
 
-      const csvContent = [
-        "sep=;",
-        headers.map(escapeCsvValue).join(";"),
-        ...csvRows.map((row) => row.map(escapeCsvValue).join(";")),
-      ].join("\r\n");
-
-      const blob = new Blob([`\uFEFF${csvContent}`], {
-        type: "text/csv;charset=utf-8;",
+      await downloadExcelFile({
+        filename: `eventos-finalizados-calypso-${getTodayInputValue()}.xlsx`,
+        sheetName: "Eventos finalizados",
+        headers,
+        rows,
+        columnOptions: [
+          { index: 1, minWidth: 20, maxWidth: 40 },
+          { index: 2, minWidth: 20, maxWidth: 38 },
+          { index: 3, numberFormat: "dd/mm/yyyy", minWidth: 14, maxWidth: 16 },
+          { index: 4, minWidth: 18, maxWidth: 22 },
+          { index: 5, minWidth: 16, maxWidth: 20 },
+          { index: 6, numberFormat: '$ #,##0', minWidth: 16, maxWidth: 24 },
+        ],
       });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = `reservas-calypso-${getTodayInputValue()}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      URL.revokeObjectURL(url);
 
       await fetchReservations();
     } catch (error) {
-      console.error("Unexpected export error:", error);
-      setGlobalError("Ocurrió un error generando el archivo.");
+      console.error("Unexpected event export error:", error);
+      setGlobalError(
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error generando el archivo de eventos.",
+      );
     }
   }
 
@@ -1110,7 +1519,7 @@ export default function AdminReservationsPage() {
 
   if (!isLoggedIn) {
     return (
-      <main className="relative min-h-[100svh] overflow-hidden bg-[#f6f0e7] pt-32">
+      <main className="relative min-h-[100svh] overflow-x-clip bg-[#f6f0e7] pt-32">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-[-130px] top-[-120px] h-80 w-80 rounded-full bg-[#0BB3A6]/12 blur-3xl" />
           <div className="absolute right-[-140px] bottom-[-130px] h-96 w-96 rounded-full bg-[#e8c17f]/14 blur-3xl" />
@@ -1207,7 +1616,7 @@ export default function AdminReservationsPage() {
   }
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-[#f6f0e7] pt-32">
+    <main className="relative min-h-[100svh] overflow-x-clip bg-[#f6f0e7] pt-32">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-130px] top-[-120px] h-80 w-80 rounded-full bg-[#0BB3A6]/12 blur-3xl" />
         <div className="absolute right-[-140px] bottom-[-130px] h-96 w-96 rounded-full bg-[#e8c17f]/14 blur-3xl" />
@@ -1240,13 +1649,44 @@ export default function AdminReservationsPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button
-              onClick={downloadApprovedAndCompletedCsv}
-              className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/55 px-5 py-3 text-sm font-semibold text-[#2f241e] transition hover:bg-white"
-            >
-              <Download size={16} />
-              Descargar Excel
-            </button>
+            <details className="group relative">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/55 px-5 py-3 text-sm font-semibold text-[#2f241e] transition hover:bg-white [&::-webkit-details-marker]:hidden">
+                <Download size={16} />
+                Exportar Excel
+                <ChevronDown
+                  size={15}
+                  className="transition-transform group-open:rotate-180"
+                />
+              </summary>
+
+              <div className="absolute right-0 z-30 mt-2 w-72 overflow-hidden rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0] p-2 shadow-[0_18px_45px_rgba(90,64,50,0.16)]">
+                <button
+                  type="button"
+                  onClick={downloadClientsExcel}
+                  className="w-full rounded-[0.9rem] px-4 py-3 text-left transition hover:bg-white"
+                >
+                  <span className="block text-sm font-bold text-[#2f241e]">
+                    Clientes
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-[#6d5748]">
+                    Todos los clientes registrados, sin importar el estado del evento.
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={downloadEventsExcel}
+                  className="w-full rounded-[0.9rem] px-4 py-3 text-left transition hover:bg-white"
+                >
+                  <span className="block text-sm font-bold text-[#2f241e]">
+                    Eventos finalizados
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-[#6d5748]">
+                    Cliente, evento, fecha, invitados e ingreso total.
+                  </span>
+                </button>
+              </div>
+            </details>
 
             <button
               onClick={refreshAll}
@@ -1266,12 +1706,16 @@ export default function AdminReservationsPage() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="-mx-1 mt-8 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max gap-2 sm:gap-3">
           <button
             type="button"
-            onClick={() => setActiveSection("reservations")}
+            onClick={() => {
+              setActiveSection("reservations");
+              setReservationPage(1);
+            }}
             className={[
-              "rounded-full border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition",
+              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
               activeSection === "reservations"
                 ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
                 : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
@@ -1282,9 +1726,25 @@ export default function AdminReservationsPage() {
 
           <button
             type="button"
+            onClick={() => {
+              setActiveSection("completed_events");
+              setReservationPage(1);
+            }}
+            className={[
+              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
+              activeSection === "completed_events"
+                ? "border-[#2f241e] bg-[#2f241e] text-white"
+                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+            ].join(" ")}
+          >
+            Eventos finalizados
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveSection("disabled_dates")}
             className={[
-              "rounded-full border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition",
+              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
               activeSection === "disabled_dates"
                 ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
                 : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
@@ -1297,7 +1757,7 @@ export default function AdminReservationsPage() {
             type="button"
             onClick={() => setActiveSection("reviews")}
             className={[
-              "rounded-full border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition",
+              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
               activeSection === "reviews"
                 ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
                 : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
@@ -1305,6 +1765,7 @@ export default function AdminReservationsPage() {
           >
             Reseñas
           </button>
+          </div>
         </div>
 
         {globalError && (
@@ -1315,7 +1776,44 @@ export default function AdminReservationsPage() {
 
         {activeSection === "reservations" && (
           <div className="mt-10 grid gap-7 xl:grid-cols-[0.72fr_1.28fr]">
-            <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
+            <details className="group rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-5 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur lg:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.2rem] border border-[#dfc8ab] bg-white/50 px-4 py-3 text-left transition hover:bg-white [&::-webkit-details-marker]:hidden">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#087d75]">
+                    Reserva manual
+                  </p>
+                  <h2 className="mt-1 font-display text-2xl text-[#2f241e]">
+                    Crear reserva
+                  </h2>
+                  <p className="mt-1 text-xs leading-relaxed text-[#6d5748]">
+                    Tocalo solo si necesitás cargar una reserva desde el celular.
+                  </p>
+                </div>
+
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0BB3A6]/12 text-[#0BB3A6] transition group-open:rotate-45">
+                  <Plus size={18} />
+                </span>
+              </summary>
+
+              <div className="mt-5 border-t border-[#e4cfad] pt-5">
+              <ManualReservationForm
+                  form={manualForm}
+                  setForm={setManualForm}
+                  onSubmit={handleCreateManualReservation}
+                  calendarMonth={manualCalendarMonth}
+                  onCalendarMonthChange={setManualCalendarMonth}
+                  monthBlocks={manualMonthBlocks}
+                  monthReservations={manualMonthReservations}
+                  disabledRanges={disabledRanges}
+                  loadingMonth={loadingManualMonthBlocks}
+                  manualSlots={manualSlots}
+                  loadingSlots={loadingManualSlots}
+                  onApplySlot={applyManualSlot}
+                />
+              </div>
+            </details>
+
+            <section className="hidden rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur lg:block xl:sticky xl:top-24 xl:self-start">
               <div className="flex items-start justify-between gap-4 border-b border-[#e4cfad] pb-5">
                 <div>
                   <h2 className="font-display text-3xl text-[#2f241e]">
@@ -1331,308 +1829,20 @@ export default function AdminReservationsPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateManualReservation} className="mt-6">
-                <div className="grid gap-5">
-                  <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Cliente
-                    </span>
-                    <input
-                      value={manualForm.customer_name}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          customer_name: event.target.value,
-                        }))
-                      }
-                      className="input-contact"
-                      placeholder="Nombre y apellido"
-                    />
-                  </label>
-
-                  <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Tipo de evento
-                    </span>
-                    <select
-                      value={manualForm.event_type}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          event_type: event.target.value,
-                        }))
-                      }
-                      className="input-contact"
-                    >
-                      <option value="">Seleccioná una opción</option>
-                      {EVENT_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Cómo conoció Calypso
-                    </span>
-
-                    <select
-                      value={manualForm.discovery_source}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          discovery_source: event.target.value,
-                        }))
-                      }
-                      className="input-contact"
-                    >
-                      <option value="">No indicado</option>
-                      {DISCOVERY_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Teléfono
-                      </span>
-                      <input
-                        value={manualForm.phone}
-                        onChange={(event) =>
-                          setManualForm((prev) => ({
-                            ...prev,
-                            phone: event.target.value,
-                          }))
-                        }
-                        className="input-contact"
-                        placeholder="+598..."
-                      />
-                    </label>
-
-                    <label>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Email
-                      </span>
-                      <input
-                        value={manualForm.email}
-                        onChange={(event) =>
-                          setManualForm((prev) => ({
-                            ...prev,
-                            email: event.target.value,
-                          }))
-                        }
-                        className="input-contact"
-                        placeholder="cliente@email.com"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Cantidad de niños
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        value={manualForm.children_count}
-                        onChange={(event) =>
-                          setManualForm((prev) => ({
-                            ...prev,
-                            children_count: event.target.value,
-                          }))
-                        }
-                        className="input-contact"
-                        placeholder="Ej: 15"
-                      />
-                    </label>
-
-                    <label>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Cantidad de adultos
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        value={manualForm.adults_count}
-                        onChange={(event) =>
-                          setManualForm((prev) => ({
-                            ...prev,
-                            adults_count: event.target.value,
-                          }))
-                        }
-                        className="input-contact"
-                        placeholder="Ej: 40"
-                      />
-                    </label>
-                  </div>
-
-                  <div>
-                    <span className="mb-3 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Fecha
-                    </span>
-
-                    <ReservationCalendar
-                      selectedDate={manualForm.event_date}
-                      calendarMonth={manualCalendarMonth}
-                      monthBlocks={manualMonthBlocks}
-                      monthReservations={manualMonthReservations}
-                      disabledRanges={disabledRanges}
-                      loading={loadingManualMonthBlocks}
-                      minDate={getMinReservationDate()}
-                      onMonthChange={setManualCalendarMonth}
-                      onSelectDate={(dateValue) => {
-                        setManualForm((prev) => ({
-                          ...prev,
-                          event_date: dateValue,
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Horarios sugeridos
-                      </span>
-
-                      {loadingManualSlots && (
-                        <span className="text-xs font-semibold text-[#087d75]">
-                          Consultando...
-                        </span>
-                      )}
-                    </div>
-
-                    {manualSlots.length === 0 ? (
-                      <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm leading-relaxed text-[#5c473b]">
-                        No hay horarios sugeridos para esta fecha. Igual podés
-                        ingresar un horario libre abajo.
-                      </div>
-                    ) : (
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {manualSlots.map((slot) => {
-                          const active =
-                            manualForm.start_time === slot.startTime &&
-                            manualForm.end_time === slot.endTime;
-
-                          return (
-                            <button
-                              key={`${slot.period}-${slot.startTime}`}
-                              type="button"
-                              onClick={() => applyManualSlot(slot)}
-                              className={[
-                                "rounded-[1rem] border px-3 py-2 text-left text-sm font-semibold transition",
-                                active
-                                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                                  : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-                              ].join(" ")}
-                            >
-                              {slot.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <p className="mt-2 text-xs leading-relaxed text-[#6d5748]/75">
-                      Son accesos rápidos. Para un caso especial, escribí un
-                      horario libre en Inicio y Fin usando formato 24 horas.
-                    </p>
-                  </div>
-
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Inicio
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-2][0-9]:[0-5][0-9]"
-                        maxLength={5}
-                        placeholder="17:00"
-                        value={manualForm.start_time}
-                        onChange={(event) =>
-                          setManualForm((prev) => ({
-                            ...prev,
-                            start_time: event.target.value,
-                          }))
-                        }
-                        className="input-contact"
-                      />
-                    </label>
-
-                    <label>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                        Fin
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-2][0-9]:[0-5][0-9]"
-                        maxLength={5}
-                        placeholder="20:00"
-                        value={manualForm.end_time}
-                        onChange={(event) =>
-                          setManualForm((prev) => ({
-                            ...prev,
-                            end_time: event.target.value,
-                          }))
-                        }
-                        className="input-contact"
-                      />
-                    </label>
-                  </div>
-
-                  <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm font-semibold text-[#2f241e]">
-                    <input
-                      type="checkbox"
-                      checked={manualForm.deposit_paid}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          deposit_paid: event.target.checked,
-                        }))
-                      }
-                      className="h-4 w-4 accent-[#0BB3A6]"
-                    />
-                    Pagó seña
-                  </label>
-
-                  <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                      Notas internas
-                    </span>
-                    <textarea
-                      value={manualForm.notes}
-                      onChange={(event) =>
-                        setManualForm((prev) => ({
-                          ...prev,
-                          notes: event.target.value,
-                        }))
-                      }
-                      className="input-contact min-h-28 resize-none"
-                      placeholder="Menú, personal requerido, condiciones especiales..."
-                    />
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  className="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
-                >
-                  <Plus size={18} />
-                  Crear reserva aprobada
-                </button>
-              </form>
+              <ManualReservationForm
+                  form={manualForm}
+                  setForm={setManualForm}
+                  onSubmit={handleCreateManualReservation}
+                  calendarMonth={manualCalendarMonth}
+                  onCalendarMonthChange={setManualCalendarMonth}
+                  monthBlocks={manualMonthBlocks}
+                  monthReservations={manualMonthReservations}
+                  disabledRanges={disabledRanges}
+                  loadingMonth={loadingManualMonthBlocks}
+                  manualSlots={manualSlots}
+                  loadingSlots={loadingManualSlots}
+                  onApplySlot={applyManualSlot}
+                />
             </section>
 
             <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
@@ -1642,8 +1852,8 @@ export default function AdminReservationsPage() {
                     Reservas
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-                    Pendientes, aprobadas, rechazadas, vencidas y finalizadas.
-                    La lista carga de a {RESERVATIONS_PER_PAGE} para no traer todo de una.
+                    Pendientes, aprobadas, rechazadas y vencidas. Cuando termina el horario del evento,
+                    pasa automáticamente a Eventos finalizados. La lista carga de a {RESERVATIONS_PER_PAGE}.
                   </p>
                 </div>
 
@@ -1655,7 +1865,6 @@ export default function AdminReservationsPage() {
                       "approved",
                       "rejected",
                       "expired",
-                      "completed",
                     ] as const
                   ).map((item) => (
                     <button
@@ -1677,28 +1886,32 @@ export default function AdminReservationsPage() {
                 </div>
               </div>
 
-              <label className="mt-5 block">
-                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                  Buscar por cliente
-                </span>
-
-                <div className="relative">
-                  <Search
-                    size={17}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a7667]"
-                  />
-                  <input
-                    type="search"
-                    value={reservationSearch}
-                    onChange={(event) => {
-                      setReservationSearch(event.target.value);
-                      setReservationPage(1);
-                    }}
-                    placeholder="Ej: Santiago, Victoria, Rivas..."
-                    className="input-contact !pl-11"
-                  />
-                </div>
-              </label>
+              <ReservationSearchFilters
+                search={reservationSearch}
+                dateFrom={reservationDateFromFilter}
+                dateTo={reservationDateToFilter}
+                totalCount={reservationTotalCount}
+                loading={loadingReservations}
+                hasFilters={hasReservationFilters}
+                resultLabel="reservas"
+                ariaContext="reservas"
+                onSearchChange={(value) => {
+                  setReservationSearch(value);
+                  setReservationPage(1);
+                }}
+                onDateFromChange={(value) => {
+                  setReservationDateFromFilter(value);
+                  setReservationDateToFilter((currentTo) =>
+                    currentTo && value && currentTo < value ? value : currentTo,
+                  );
+                  setReservationPage(1);
+                }}
+                onDateToChange={(value) => {
+                  setReservationDateToFilter(value);
+                  setReservationPage(1);
+                }}
+                onClear={clearReservationFilters}
+              />
 
               {loadingReservations ? (
                 <div className="grid min-h-64 place-items-center">
@@ -1706,7 +1919,9 @@ export default function AdminReservationsPage() {
                 </div>
               ) : reservations.length === 0 ? (
                 <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
-                  {reservationSearch.trim() ? "No hay reservas para esa búsqueda." : "No hay reservas para este filtro."}
+                  {reservationSearch.trim() || reservationDateFromFilter || reservationDateToFilter
+                    ? "No hay reservas para esa búsqueda o rango de fechas."
+                    : "No hay reservas para este filtro."}
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
@@ -1718,6 +1933,7 @@ export default function AdminReservationsPage() {
                     <ReservationCard
                       key={reservation.id}
                       reservation={reservation}
+                      isCompletedView={false}
                       disabledRanges={disabledRanges}
                       loading={actionLoadingId === reservation.id}
                       onApprove={() =>
@@ -1782,6 +1998,130 @@ export default function AdminReservationsPage() {
           </div>
         )}
 
+        {activeSection === "completed_events" && (
+          <section className="mt-10 rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
+            <div className="flex flex-col gap-4 border-b border-[#e4cfad] pb-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-[#2f241e]">
+                  <CalendarCheck size={20} />
+                  <h2 className="font-display text-3xl">Eventos finalizados</h2>
+                </div>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#5c473b]">
+                  Historial de eventos cuyo horario ya terminó. Se muestran primero los más recientes.
+                  El estado se sincroniza automáticamente mientras el panel permanece abierto.
+                </p>
+              </div>
+
+              <span className="w-fit rounded-full border border-[#2f241e]/15 bg-[#2f241e]/8 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#2f241e]">
+                {reservationTotalCount} finalizado{reservationTotalCount === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <ReservationSearchFilters
+              search={reservationSearch}
+              dateFrom={reservationDateFromFilter}
+              dateTo={reservationDateToFilter}
+              totalCount={reservationTotalCount}
+              loading={loadingReservations}
+              hasFilters={hasReservationFilters}
+              resultLabel="eventos finalizados"
+              ariaContext="eventos finalizados"
+              onSearchChange={(value) => {
+                setReservationSearch(value);
+                setReservationPage(1);
+              }}
+              onDateFromChange={(value) => {
+                setReservationDateFromFilter(value);
+                setReservationDateToFilter((currentTo) =>
+                  currentTo && value && currentTo < value ? value : currentTo,
+                );
+                setReservationPage(1);
+              }}
+              onDateToChange={(value) => {
+                setReservationDateToFilter(value);
+                setReservationPage(1);
+              }}
+              onClear={clearReservationFilters}
+            />
+
+            {loadingReservations ? (
+              <div className="grid min-h-64 place-items-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#0BB3A6]" />
+              </div>
+            ) : reservations.length === 0 ? (
+              <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
+                {reservationSearch.trim() || reservationDateFromFilter || reservationDateToFilter
+                  ? "No hay eventos finalizados para esa búsqueda o rango de fechas."
+                  : "Todavía no hay eventos finalizados."}
+              </div>
+            ) : (
+              <div className="mt-6 space-y-4">
+                <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6d5748]">
+                  Mostrando {reservationFirstItem}-{reservationLastItem} de {reservationTotalCount}
+                </div>
+
+                {reservations.map((reservation) => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    isCompletedView
+                    disabledRanges={disabledRanges}
+                    loading={actionLoadingId === reservation.id}
+                    onApprove={() =>
+                      updateReservation(reservation.id, { status: "approved" })
+                    }
+                    onReject={() =>
+                      updateReservation(reservation.id, { status: "rejected" })
+                    }
+                    onDepositChange={(value) =>
+                      updateReservation(reservation.id, { deposit_paid: value })
+                    }
+                    onSaveDetails={(values) =>
+                      updateReservation(reservation.id, values)
+                    }
+                    onSaveNotes={(notes) =>
+                      updateReservation(reservation.id, { notes })
+                    }
+                    onDelete={() => deleteReservation(reservation.id)}
+                  />
+                ))}
+
+                {reservationTotalPages > 1 && (
+                  <div className="flex flex-col gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs font-semibold text-[#6d5748]">
+                      Página {reservationPage} de {reservationTotalPages}
+                    </p>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={reservationPage <= 1 || loadingReservations}
+                        onClick={() => setReservationPage((page) => Math.max(1, page - 1))}
+                        className="rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        Anterior
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={reservationPage >= reservationTotalPages || loadingReservations}
+                        onClick={() =>
+                          setReservationPage((page) =>
+                            Math.min(reservationTotalPages, page + 1),
+                          )
+                        }
+                        className="rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {activeSection === "disabled_dates" && (
           <DisabledDatesAdminSection
             disabledRanges={disabledRanges}
@@ -1808,6 +2148,479 @@ export default function AdminReservationsPage() {
         )}
       </section>
     </main>
+  );
+}
+
+
+function ReservationSearchFilters({
+  search,
+  dateFrom,
+  dateTo,
+  totalCount,
+  loading,
+  hasFilters,
+  resultLabel,
+  ariaContext,
+  onSearchChange,
+  onDateFromChange,
+  onDateToChange,
+  onClear,
+}: {
+  search: string;
+  dateFrom: string;
+  dateTo: string;
+  totalCount: number;
+  loading: boolean;
+  hasFilters: boolean;
+  resultLabel: string;
+  ariaContext: string;
+  onSearchChange: (value: string) => void;
+  onDateFromChange: (value: string) => void;
+  onDateToChange: (value: string) => void;
+  onClear: () => void;
+}) {
+  const rangeText =
+    dateFrom && dateTo
+      ? `${formatDateForDisplay(dateFrom)} → ${formatDateForDisplay(dateTo)}`
+      : dateFrom
+        ? `Desde ${formatDateForDisplay(dateFrom)}`
+        : dateTo
+          ? `Hasta ${formatDateForDisplay(dateTo)}`
+          : "";
+
+  return (
+    <div className="mt-5">
+      <div className="grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+            Buscar por cliente
+          </span>
+
+          <div className="relative">
+            <Search
+              size={17}
+              className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[#8a7667]"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Ej: Santiago, Victoria, Rivas..."
+              className="input-contact !pl-12"
+              aria-label={`Buscar ${ariaContext} por cliente`}
+            />
+          </div>
+        </label>
+
+        <div className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+            Filtrar por rango de fechas
+          </span>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a7667]">
+                Desde
+              </span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(event) => onDateFromChange(event.target.value)}
+                className="input-contact"
+                aria-label={`Filtrar ${ariaContext} desde`}
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a7667]">
+                Hasta
+              </span>
+              <input
+                type="date"
+                min={dateFrom || undefined}
+                value={dateTo}
+                onChange={(event) => onDateToChange(event.target.value)}
+                className="input-contact"
+                aria-label={`Filtrar ${ariaContext} hasta`}
+              />
+            </label>
+          </div>
+
+          <p className="mt-2 text-xs leading-relaxed text-[#6d5748]/75">
+            Para un solo día, usá la misma fecha en Desde y Hasta.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs font-semibold text-[#6d5748]">
+          {loading ? "Actualizando resultados..." : `${totalCount} ${resultLabel}`}
+          {search.trim() ? ` · Cliente: “${search.trim()}”` : ""}
+          {rangeText ? ` · ${rangeText}` : ""}
+        </p>
+
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#dfc8ab] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#2f241e] transition hover:bg-[#fff9f0]"
+          >
+            <X size={13} />
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ManualReservationForm({
+  form,
+  setForm,
+  onSubmit,
+  calendarMonth,
+  onCalendarMonthChange,
+  monthBlocks,
+  monthReservations,
+  disabledRanges,
+  loadingMonth,
+  manualSlots,
+  loadingSlots,
+  onApplySlot,
+}: {
+  form: ManualReservationFormValues;
+  setForm: Dispatch<SetStateAction<ManualReservationFormValues>>;
+  onSubmit: (event: FormEvent) => void;
+  calendarMonth: Date;
+  onCalendarMonthChange: (date: Date) => void;
+  monthBlocks: ReservationBlock[];
+  monthReservations: Reservation[];
+  disabledRanges: DisabledReservationDateRange[];
+  loadingMonth: boolean;
+  manualSlots: ReservationSlot[];
+  loadingSlots: boolean;
+  onApplySlot: (slot: ReservationSlot) => void;
+}) {
+  const deposit = parseOptionalCurrency(form.deposit_amount);
+  const settlement = parseOptionalCurrency(form.settlement_amount);
+  const currentIncome =
+    (Number.isNaN(deposit) ? 0 : Number(deposit ?? 0)) +
+    (Number.isNaN(settlement) ? 0 : Number(settlement ?? 0));
+
+  const sectionClass =
+    "rounded-[1.2rem] border border-[#dfc8ab] bg-white/35 p-4 sm:p-5";
+  const sectionTitleClass =
+    "text-xs font-bold uppercase tracking-[0.16em] text-[#087d75]";
+  const fieldLabelClass =
+    "mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]";
+
+  return (
+    <form onSubmit={onSubmit} className="mt-6 grid gap-5">
+      <section className={sectionClass}>
+        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+          <p className={sectionTitleClass}>Cliente</p>
+          <p className="mt-1 text-xs text-[#8a7667]">Datos de contacto y origen de la consulta.</p>
+        </div>
+
+        <div className="grid gap-4">
+          <label>
+            <span className={fieldLabelClass}>Nombre y apellido</span>
+            <input
+              value={form.customer_name}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, customer_name: event.target.value }))
+              }
+              className="input-contact"
+              placeholder="Nombre y apellido"
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label>
+              <span className={fieldLabelClass}>Teléfono</span>
+              <input
+                value={form.phone}
+                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                className="input-contact"
+                placeholder="+598..."
+              />
+            </label>
+
+            <label>
+              <span className={fieldLabelClass}>Email</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                className="input-contact"
+                placeholder="cliente@email.com"
+              />
+            </label>
+          </div>
+
+          <label>
+            <span className={fieldLabelClass}>Cómo conoció Calypso</span>
+            <select
+              value={form.discovery_source}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, discovery_source: event.target.value }))
+              }
+              className="input-contact"
+            >
+              <option value="">No indicado</option>
+              {DISCOVERY_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className={sectionClass}>
+        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+          <p className={sectionTitleClass}>Evento</p>
+          <p className="mt-1 text-xs text-[#8a7667]">Tipo de evento, invitados y personal.</p>
+        </div>
+
+        <div className="grid gap-4">
+          <label>
+            <span className={fieldLabelClass}>Tipo de evento</span>
+            <select
+              value={form.event_type}
+              onChange={(event) => setForm((prev) => ({ ...prev, event_type: event.target.value }))}
+              className="input-contact"
+            >
+              <option value="">Seleccioná una opción</option>
+              {EVENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+            </select>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label>
+              <span className={fieldLabelClass}>Cantidad de niños</span>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={form.children_count}
+                onChange={(event) => setForm((prev) => ({ ...prev, children_count: event.target.value }))}
+                className="input-contact"
+                placeholder="Ej: 15"
+              />
+            </label>
+
+            <label>
+              <span className={fieldLabelClass}>Cantidad de adultos</span>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={form.adults_count}
+                onChange={(event) => setForm((prev) => ({ ...prev, adults_count: event.target.value }))}
+                className="input-contact"
+                placeholder="Ej: 40"
+              />
+            </label>
+          </div>
+
+          <label>
+            <span className={fieldLabelClass}>Mozos / animadores</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              value={form.staff_count}
+              onChange={(event) => setForm((prev) => ({ ...prev, staff_count: event.target.value }))}
+              className="input-contact"
+              placeholder="Ej: 2"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className={sectionClass}>
+        <div className="mb-4 flex flex-col gap-3 border-b border-[#ead9c0] pb-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className={sectionTitleClass}>Cobro</p>
+            <p className="mt-1 text-xs text-[#8a7667]">Importes administrativos del evento.</p>
+          </div>
+          <div className="rounded-full border border-[#0BB3A6]/30 bg-[#0BB3A6]/10 px-4 py-2 text-xs font-bold text-[#087d75]">
+            Ingreso actual: {formatMoney(currentIncome)}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label>
+            <span className={fieldLabelClass}>Precio pautado</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="decimal"
+              value={form.agreed_price}
+              onChange={(event) => setForm((prev) => ({ ...prev, agreed_price: event.target.value }))}
+              className="input-contact"
+              placeholder="$"
+            />
+          </label>
+
+          <label>
+            <span className={fieldLabelClass}>Seña</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="decimal"
+              value={form.deposit_amount}
+              onChange={(event) =>
+                setForm((prev) => ({
+                  ...prev,
+                  deposit_amount: event.target.value,
+                  deposit_paid: Number(event.target.value) > 0 ? true : prev.deposit_paid,
+                }))
+              }
+              className="input-contact"
+              placeholder="$"
+            />
+          </label>
+
+          <label>
+            <span className={fieldLabelClass}>Liquidación</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="decimal"
+              value={form.settlement_amount}
+              onChange={(event) => setForm((prev) => ({ ...prev, settlement_amount: event.target.value }))}
+              className="input-contact"
+              placeholder="$"
+            />
+          </label>
+
+          <div className="flex items-end">
+            <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
+              <input
+                type="checkbox"
+                checked={form.deposit_paid}
+                onChange={(event) => setForm((prev) => ({ ...prev, deposit_paid: event.target.checked }))}
+                className="h-3.5 w-3.5 accent-[#0BB3A6]"
+              />
+              Seña paga
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section className={sectionClass}>
+        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+          <p className={sectionTitleClass}>Fecha y horario</p>
+          <p className="mt-1 text-xs text-[#8a7667]">Disponibilidad del salón y horario acordado.</p>
+        </div>
+
+        <ReservationCalendar
+          selectedDate={form.event_date}
+          calendarMonth={calendarMonth}
+          monthBlocks={monthBlocks}
+          monthReservations={monthReservations}
+          disabledRanges={disabledRanges}
+          loading={loadingMonth}
+          minDate={getMinReservationDate()}
+          onMonthChange={onCalendarMonthChange}
+          onSelectDate={(dateValue) => {
+            setForm((prev) => ({ ...prev, event_date: dateValue }));
+          }}
+        />
+
+        <div className="mt-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className={fieldLabelClass}>Horarios sugeridos</span>
+            {loadingSlots && (
+              <span className="text-xs font-semibold text-[#087d75]">Consultando...</span>
+            )}
+          </div>
+
+          {manualSlots.length === 0 ? (
+            <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/55 px-4 py-3 text-sm leading-relaxed text-[#5c473b]">
+              No hay horarios sugeridos para esta fecha. Igual podés ingresar un horario libre abajo.
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {manualSlots.map((slot) => {
+                const active = form.start_time === slot.startTime && form.end_time === slot.endTime;
+                return (
+                  <button
+                    key={`${slot.period}-${slot.startTime}`}
+                    type="button"
+                    onClick={() => onApplySlot(slot)}
+                    className={[
+                      "rounded-[1rem] border px-3 py-2 text-left text-sm font-semibold transition",
+                      active
+                        ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                        : "border-[#dfc8ab] bg-white/65 text-[#2f241e] hover:bg-white",
+                    ].join(" ")}
+                  >
+                    {slot.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label>
+            <span className={fieldLabelClass}>Inicio</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-2][0-9]:[0-5][0-9]"
+              maxLength={5}
+              placeholder="17:00"
+              value={form.start_time}
+              onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))}
+              className="input-contact"
+            />
+          </label>
+
+          <label>
+            <span className={fieldLabelClass}>Fin</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-2][0-9]:[0-5][0-9]"
+              maxLength={5}
+              placeholder="20:00"
+              value={form.end_time}
+              onChange={(event) => setForm((prev) => ({ ...prev, end_time: event.target.value }))}
+              className="input-contact"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className={sectionClass}>
+        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+          <p className={sectionTitleClass}>Notas</p>
+          <p className="mt-1 text-xs text-[#8a7667]">Detalles operativos o acuerdos especiales.</p>
+        </div>
+        <textarea
+          value={form.notes}
+          onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+          className="input-contact min-h-36 resize-y leading-relaxed"
+          placeholder="Menú, personal requerido, decoración, condiciones especiales..."
+        />
+      </section>
+
+      <button
+        type="submit"
+        className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
+      >
+        <Plus size={18} />
+        Crear reserva aprobada
+      </button>
+    </form>
   );
 }
 
@@ -2198,6 +3011,7 @@ function ReviewAdminCard({
 
 function ReservationCard({
   reservation,
+  isCompletedView,
   disabledRanges,
   loading,
   onApprove,
@@ -2208,6 +3022,7 @@ function ReservationCard({
   onDelete,
 }: {
   reservation: Reservation;
+  isCompletedView: boolean;
   disabledRanges: DisabledReservationDateRange[];
   loading: boolean;
   onApprove: () => void;
@@ -2218,8 +3033,19 @@ function ReservationCard({
   onDelete: () => void;
 }) {
   const [notesDraft, setNotesDraft] = useState(reservation.notes || "");
+  const [notesOpen, setNotesOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editError, setEditError] = useState("");
+  const [clientInfoOpen, setClientInfoOpen] = useState(false);
+  const [reservationInfoOpen, setReservationInfoOpen] = useState(() => {
+    if (isCompletedView) return false;
+    if (typeof window === "undefined") return true;
+    return window.matchMedia("(min-width: 640px)").matches;
+  });
+
+  const totalIncome = getEventTotalIncome(reservation);
+  const hasIncomeData =
+    reservation.deposit_amount !== null || reservation.settlement_amount !== null;
 
   const [editDraft, setEditDraft] = useState({
     customer_name: reservation.customer_name,
@@ -2233,6 +3059,10 @@ function ReservationCard({
     end_time: normalizeTime(reservation.end_time),
     status: reservation.status,
     deposit_paid: reservation.deposit_paid,
+    agreed_price: String(reservation.agreed_price ?? ""),
+    settlement_amount: String(reservation.settlement_amount ?? ""),
+    deposit_amount: String(reservation.deposit_amount ?? ""),
+    staff_count: String(reservation.staff_count ?? ""),
     discovery_source: reservation.discovery_source || "",
   });
 
@@ -2250,6 +3080,10 @@ function ReservationCard({
       end_time: normalizeTime(reservation.end_time),
       status: reservation.status,
       deposit_paid: reservation.deposit_paid,
+      agreed_price: String(reservation.agreed_price ?? ""),
+      settlement_amount: String(reservation.settlement_amount ?? ""),
+      deposit_amount: String(reservation.deposit_amount ?? ""),
+      staff_count: String(reservation.staff_count ?? ""),
       discovery_source: reservation.discovery_source || "",
     });
     setEditError("");
@@ -2257,7 +3091,6 @@ function ReservationCard({
 
   async function handleSaveDetails(event: FormEvent) {
     event.preventDefault();
-
     setEditError("");
 
     if (!editDraft.customer_name.trim()) {
@@ -2313,6 +3146,31 @@ function ReservationCard({
       return;
     }
 
+    const agreedPrice = parseOptionalCurrency(editDraft.agreed_price);
+    const settlementAmount = parseOptionalCurrency(editDraft.settlement_amount);
+    const depositAmount = parseOptionalCurrency(editDraft.deposit_amount);
+    const staffCount = parseOptionalInteger(editDraft.staff_count);
+
+    if (Number.isNaN(agreedPrice)) {
+      setEditError("El precio pautado debe ser un importe válido.");
+      return;
+    }
+
+    if (Number.isNaN(settlementAmount)) {
+      setEditError("La liquidación debe ser un importe válido.");
+      return;
+    }
+
+    if (Number.isNaN(depositAmount)) {
+      setEditError("La seña debe ser un importe válido.");
+      return;
+    }
+
+    if (Number.isNaN(staffCount)) {
+      setEditError("La cantidad de mozos/animadores debe ser un número entero.");
+      return;
+    }
+
     if (!editDraft.event_date.trim()) {
       setEditError("Seleccioná la fecha del evento.");
       return;
@@ -2329,16 +3187,12 @@ function ReservationCard({
     const endTime = normalizeTime(editDraft.end_time);
 
     if (!isValid24HourTime(startTime) || !isValid24HourTime(endTime)) {
-      setEditError(
-        "Ingresá inicio y fin en formato 24 horas. Ejemplo: 17:00.",
-      );
+      setEditError("Ingresá inicio y fin en formato 24 horas. Ejemplo: 17:00.");
       return;
     }
 
     if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-      setEditError(
-        "El horario de inicio debe ser anterior al horario de fin.",
-      );
+      setEditError("El horario de inicio debe ser anterior al horario de fin.");
       return;
     }
 
@@ -2354,6 +3208,10 @@ function ReservationCard({
       end_time: endTime,
       status: editDraft.status,
       deposit_paid: editDraft.deposit_paid,
+      agreed_price: agreedPrice,
+      settlement_amount: settlementAmount,
+      deposit_amount: depositAmount,
+      staff_count: staffCount,
       discovery_source: editDraft.discovery_source || null,
     });
 
@@ -2375,6 +3233,10 @@ function ReservationCard({
       end_time: normalizeTime(reservation.end_time),
       status: reservation.status,
       deposit_paid: reservation.deposit_paid,
+      agreed_price: String(reservation.agreed_price ?? ""),
+      settlement_amount: String(reservation.settlement_amount ?? ""),
+      deposit_amount: String(reservation.deposit_amount ?? ""),
+      staff_count: String(reservation.staff_count ?? ""),
       discovery_source: reservation.discovery_source || "",
     });
     setEditError("");
@@ -2382,9 +3244,16 @@ function ReservationCard({
   }
 
   return (
-    <article className="rounded-[1.45rem] border border-[#dfc8ab] bg-white/55 p-5 shadow-[0_12px_32px_rgba(90,64,50,0.06)]">
+    <article
+      className={[
+        "rounded-[1.45rem] border p-5 shadow-[0_12px_32px_rgba(90,64,50,0.06)]",
+        isCompletedView
+          ? "border-[#d8c9b9] bg-[#f7f2eb]/88"
+          : "border-[#dfc8ab] bg-white/55",
+      ].join(" ")}
+    >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={[
@@ -2406,87 +3275,163 @@ function ReservationCard({
             )}
           </div>
 
-          <h3 className="mt-3 font-display text-2xl text-[#2f241e]">
-            {reservation.customer_name}
-          </h3>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="font-display text-2xl text-[#2f241e]">
+                {reservation.customer_name}
+              </h3>
+              {isCompletedView && (
+                <p className="mt-1 text-sm font-semibold text-[#6d5748]">
+                  {formatDateForDisplay(reservation.event_date)} · {normalizeTime(reservation.start_time)}–{normalizeTime(reservation.end_time)}
+                </p>
+              )}
+            </div>
 
-          <div className="mt-2 grid gap-1 text-sm text-[#5c473b]">
-            <p>
-              <b>Evento:</b> {reservation.event_type}
-            </p>
-            <p>
-              <b>Fecha:</b> {formatDateForDisplay(reservation.event_date)}
-            </p>
-            <p>
-              <b>Horario:</b> {normalizeTime(reservation.start_time)} a{" "}
-              {normalizeTime(reservation.end_time)}
-            </p>
-            <p>
-              <b>Tel:</b> {reservation.phone}
-            </p>
-            <p>
-              <b>Email:</b> {reservation.email || "No indicado"}
-            </p>
-            <p>
-              <b>Niños:</b> {reservation.children_count ?? "No indicado"}
-            </p>
-            <p>
-              <b>Adultos:</b> {reservation.adults_count ?? "No indicado"}
-            </p>
-            {reservation.discovery_source && (
-              <p>
-                <b>Conoció Calypso por:</b> {reservation.discovery_source}
-              </p>
+            {isCompletedView && (
+              <div className="w-fit rounded-[1rem] border border-[#2f241e]/10 bg-white/65 px-4 py-2 text-right">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a7667]">Ingreso total</p>
+                <p className="mt-0.5 text-base font-bold text-[#2f241e]">
+                  {formatMoney(hasIncomeData ? totalIncome : null)}
+                </p>
+              </div>
             )}
+          </div>
+
+          <div className="mt-4 grid gap-3">
+            <details
+              open={clientInfoOpen}
+              onToggle={(event) => setClientInfoOpen(event.currentTarget.open)}
+              className="group rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75] [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex items-center gap-2">
+                  <User size={15} />
+                  Información del cliente
+                </span>
+                <ChevronRight size={16} className="transition group-open:rotate-90" />
+              </summary>
+
+              <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
+                <p><b>Nombre:</b> {reservation.customer_name}</p>
+                <p><b>Tel:</b> {reservation.phone}</p>
+                <p><b>Email:</b> {reservation.email || "No indicado"}</p>
+                <p><b>Conoció Calypso por:</b> {reservation.discovery_source || "No indicado"}</p>
+              </div>
+            </details>
+
+            <details
+              open={reservationInfoOpen}
+              onToggle={(event) => setReservationInfoOpen(event.currentTarget.open)}
+              className="group rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f] [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex items-center gap-2">
+                  <CalendarCheck size={15} />
+                  Información de la reserva
+                </span>
+                <ChevronRight size={16} className="transition group-open:rotate-90" />
+              </summary>
+
+              <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
+                <p><b>Evento:</b> {reservation.event_type}</p>
+                <p><b>Fecha:</b> {formatDateForDisplay(reservation.event_date)}</p>
+                <p><b>Horario:</b> {normalizeTime(reservation.start_time)} a {normalizeTime(reservation.end_time)}</p>
+                <p><b>Niños:</b> {reservation.children_count ?? "No indicado"}</p>
+                <p><b>Adultos:</b> {reservation.adults_count ?? "No indicado"}</p>
+                <p><b>Mozos/animadores:</b> {reservation.staff_count ?? "No indicado"}</p>
+              </div>
+            </details>
+
+            <div className="rounded-[1.05rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">
+                  <WalletCards size={16} />
+                  Resumen económico
+                </div>
+
+                <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#0BB3A6]/25 bg-white/75 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.09em] text-[#2f241e]">
+                  <input
+                    type="checkbox"
+                    checked={reservation.deposit_paid}
+                    onChange={(event) => onDepositChange(event.target.checked)}
+                    className="h-3.5 w-3.5 accent-[#0BB3A6]"
+                  />
+                  Seña paga
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Precio pautado</p>
+                  <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.agreed_price)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Seña</p>
+                  <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.deposit_amount)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Liquidación</p>
+                  <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.settlement_amount)}</p>
+                </div>
+                <div className="rounded-[0.9rem] bg-white/70 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#087d75]">Ingreso total</p>
+                  <p className="mt-1 text-lg font-bold text-[#087d75]">{formatMoney(hasIncomeData ? totalIncome : null)}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-start gap-2 lg:max-w-[230px] lg:justify-end">
+          {reservation.status !== "approved" && reservation.status !== "completed" && (
+            <button
+              onClick={onApprove}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+            >
+              <Check size={15} />
+              Aprobar
+            </button>
+          )}
+
           <button
             onClick={() => setIsEditing((prev) => !prev)}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
           >
             <Pencil size={15} />
-            {isEditing ? "Cerrar edición" : "Editar"}
+            {isEditing ? "Cerrar" : "Editar"}
           </button>
 
-          {reservation.status !== "approved" &&
-            reservation.status !== "completed" && (
-              <button
-                onClick={onApprove}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
-              >
-                <Check size={15} />
-                Aprobar
-              </button>
-            )}
+          <details className="group relative">
+            <summary className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#dfc8ab] bg-white text-[#2f241e] transition hover:bg-[#fff9f0] [&::-webkit-details-marker]:hidden" aria-label="Más acciones">
+              <MoreHorizontal size={17} />
+            </summary>
 
-          {reservation.status !== "rejected" &&
-            reservation.status !== "completed" && (
-              <button
-                onClick={onReject}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-red-700 transition hover:bg-red-100 disabled:opacity-60"
-              >
-                <X size={15} />
-                Rechazar
-              </button>
-            )}
+            <div className="absolute right-0 z-30 mt-2 min-w-40 rounded-[1rem] border border-[#dfc8ab] bg-[#fffdf9] p-2 shadow-[0_18px_42px_rgba(90,64,50,0.16)]">
+              {reservation.status !== "rejected" && reservation.status !== "completed" && (
+                <button
+                  type="button"
+                  onClick={onReject}
+                  disabled={loading}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                >
+                  <X size={14} />
+                  Rechazar
+                </button>
+              )}
 
-          <button
-            onClick={onDelete}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-red-700 transition hover:bg-red-50 disabled:opacity-60"
-          >
-            {loading ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Trash2 size={15} />
-            )}
-            Borrar
-          </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={loading}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+              >
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Borrar
+              </button>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -2495,248 +3440,104 @@ function ReservationCard({
           onSubmit={handleSaveDetails}
           className="mt-5 rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Cliente
-              </span>
-              <input
-                value={editDraft.customer_name}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    customer_name: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="Nombre y apellido"
-              />
-            </label>
+          <div className="grid gap-5">
+            <section>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">Cliente</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Nombre</span>
+                  <input value={editDraft.customer_name} onChange={(event) => setEditDraft((prev) => ({ ...prev, customer_name: event.target.value }))} className="input-contact" placeholder="Nombre y apellido" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Teléfono</span>
+                  <input value={editDraft.phone} onChange={(event) => setEditDraft((prev) => ({ ...prev, phone: event.target.value }))} className="input-contact" placeholder="+598..." />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Email</span>
+                  <input type="email" value={editDraft.email} onChange={(event) => setEditDraft((prev) => ({ ...prev, email: event.target.value }))} className="input-contact" placeholder="cliente@email.com" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Cómo conoció Calypso</span>
+                  <select value={editDraft.discovery_source} onChange={(event) => setEditDraft((prev) => ({ ...prev, discovery_source: event.target.value }))} className="input-contact">
+                    <option value="">No indicado</option>
+                    {DISCOVERY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+              </div>
+            </section>
 
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Tipo de evento
-              </span>
-              <select
-                value={editDraft.event_type}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    event_type: event.target.value,
-                  }))
-                }
-                className="input-contact"
-              >
-                <option value="">Seleccioná una opción</option>
-                {EVENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <section className="border-t border-[#ead9c0] pt-5">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">Evento</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Tipo de evento</span>
+                  <select value={editDraft.event_type} onChange={(event) => setEditDraft((prev) => ({ ...prev, event_type: event.target.value }))} className="input-contact">
+                    <option value="">Seleccioná una opción</option>
+                    {EVENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Estado</span>
+                  <select value={editDraft.status} onChange={(event) => setEditDraft((prev) => ({ ...prev, status: event.target.value as ReservationStatus }))} className="input-contact">
+                    {(["pending", "approved", "rejected", "expired", "completed"] as ReservationStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Niños</span>
+                  <input type="number" min="0" inputMode="numeric" value={editDraft.children_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, children_count: event.target.value }))} className="input-contact" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Adultos</span>
+                  <input type="number" min="0" inputMode="numeric" value={editDraft.adults_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, adults_count: event.target.value }))} className="input-contact" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Mozos / animadores</span>
+                  <input type="number" min="0" step="1" inputMode="numeric" value={editDraft.staff_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, staff_count: event.target.value }))} className="input-contact" />
+                </label>
+              </div>
+            </section>
 
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Teléfono
-              </span>
-              <input
-                value={editDraft.phone}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    phone: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="+598..."
-              />
-            </label>
+            <section className="border-t border-[#ead9c0] pt-5">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">Fecha y horario</p>
+              <div className="grid gap-4 md:grid-cols-3">
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Fecha</span>
+                  <input type="date" value={editDraft.event_date} onChange={(event) => setEditDraft((prev) => ({ ...prev, event_date: event.target.value }))} className="input-contact" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Inicio</span>
+                  <input type="text" inputMode="numeric" pattern="[0-2][0-9]:[0-5][0-9]" maxLength={5} value={editDraft.start_time} onChange={(event) => setEditDraft((prev) => ({ ...prev, start_time: event.target.value }))} className="input-contact" placeholder="17:00" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Fin</span>
+                  <input type="text" inputMode="numeric" pattern="[0-2][0-9]:[0-5][0-9]" maxLength={5} value={editDraft.end_time} onChange={(event) => setEditDraft((prev) => ({ ...prev, end_time: event.target.value }))} className="input-contact" placeholder="20:00" />
+                </label>
+              </div>
+            </section>
 
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Email
-              </span>
-              <input
-                type="email"
-                value={editDraft.email}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    email: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="cliente@email.com"
-              />
-            </label>
-
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Cantidad de niños
-              </span>
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
-                value={editDraft.children_count}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    children_count: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="Ej: 15"
-              />
-            </label>
-
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Cantidad de adultos
-              </span>
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
-                value={editDraft.adults_count}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    adults_count: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="Ej: 40"
-              />
-            </label>
-
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Fecha
-              </span>
-              <input
-                type="date"
-                value={editDraft.event_date}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    event_date: event.target.value,
-                  }))
-                }
-                className="input-contact"
-              />
-            </label>
-
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Estado
-              </span>
-              <select
-                value={editDraft.status}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    status: event.target.value as ReservationStatus,
-                  }))
-                }
-                className="input-contact"
-              >
-                {(
-                  [
-                    "pending",
-                    "approved",
-                    "rejected",
-                    "expired",
-                    "completed",
-                  ] as ReservationStatus[]
-                ).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Inicio
-              </span>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-2][0-9]:[0-5][0-9]"
-                maxLength={5}
-                value={editDraft.start_time}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    start_time: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="17:00"
-              />
-            </label>
-
-            <label>
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Fin
-              </span>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-2][0-9]:[0-5][0-9]"
-                maxLength={5}
-                value={editDraft.end_time}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    end_time: event.target.value,
-                  }))
-                }
-                className="input-contact"
-                placeholder="20:00"
-              />
-            </label>
-
-            <label className="md:col-span-2">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
-                Cómo conoció Calypso
-              </span>
-              <select
-                value={editDraft.discovery_source}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    discovery_source: event.target.value,
-                  }))
-                }
-                className="input-contact"
-              >
-                <option value="">No indicado</option>
-                {DISCOVERY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-sm font-semibold text-[#2f241e] md:col-span-2">
-              <input
-                type="checkbox"
-                checked={editDraft.deposit_paid}
-                onChange={(event) =>
-                  setEditDraft((prev) => ({
-                    ...prev,
-                    deposit_paid: event.target.checked,
-                  }))
-                }
-                className="h-4 w-4 accent-[#0BB3A6]"
-              />
-              Pagó seña
-            </label>
+            <section className="border-t border-[#ead9c0] pt-5">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">Cobro</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Precio pautado</span>
+                  <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.agreed_price} onChange={(event) => setEditDraft((prev) => ({ ...prev, agreed_price: event.target.value }))} className="input-contact" placeholder="$" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Seña</span>
+                  <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.deposit_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_amount: event.target.value, deposit_paid: Number(event.target.value) > 0 ? true : prev.deposit_paid }))} className="input-contact" placeholder="$" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Liquidación</span>
+                  <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.settlement_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, settlement_amount: event.target.value }))} className="input-contact" placeholder="$" />
+                </label>
+                <div className="flex items-end">
+                  <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
+                    <input type="checkbox" checked={editDraft.deposit_paid} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_paid: event.target.checked }))} className="h-3.5 w-3.5 accent-[#0BB3A6]" />
+                    Seña paga
+                  </label>
+                </div>
+              </div>
+            </section>
           </div>
 
           {editError && (
@@ -2745,70 +3546,62 @@ function ReservationCard({
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Save size={15} />
-              )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60">
+              {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
               Guardar cambios
             </button>
-
-            <button
-              type="button"
-              onClick={cancelEdit}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
-            >
+            <button type="button" onClick={cancelEdit} disabled={loading} className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60">
               <X size={15} />
               Cancelar
             </button>
           </div>
-
-          <p className="mt-3 text-xs leading-relaxed text-[#6d5748]/75">
-            Usá esta edición para completar datos faltantes, como email, teléfono,
-            cantidad de niños/adultos, fecha, horario, estado o cómo conoció Calypso.
-          </p>
         </form>
       )}
 
-      <div className="mt-5 grid gap-4 border-t border-[#e4cfad] pt-5 lg:grid-cols-[0.8fr_1.2fr]">
-        <label className="flex items-center gap-3 rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 px-4 py-3 text-sm font-semibold text-[#2f241e]">
-          <input
-            type="checkbox"
-            checked={reservation.deposit_paid}
-            onChange={(event) => onDepositChange(event.target.checked)}
-            className="h-4 w-4 accent-[#0BB3A6]"
-          />
-          Pagó seña
-        </label>
-
-        <div>
-          <textarea
-            value={notesDraft}
-            onChange={(event) => setNotesDraft(event.target.value)}
-            className="input-contact min-h-24 resize-none"
-            placeholder="Notas internas: menú, personal requerido, detalles..."
-          />
+      <div className="mt-5 rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+              <StickyNote size={15} />
+              Notas internas
+            </p>
+            {!notesOpen && (
+              <p className="mt-2 max-h-[4.5rem] overflow-hidden whitespace-pre-wrap text-sm leading-6 text-[#5c473b]">
+                {reservation.notes?.trim() || "Sin notas internas todavía."}
+              </p>
+            )}
+          </div>
 
           <button
-            onClick={() => onSaveNotes(notesDraft)}
-            disabled={loading}
-            className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-white disabled:opacity-60"
+            type="button"
+            onClick={() => setNotesOpen((prev) => !prev)}
+            className="shrink-0 rounded-full border border-[#dfc8ab] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#2f241e] transition hover:bg-white"
           >
-            {loading ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Save size={15} />
-            )}
-            Guardar notas
+            {notesOpen ? "Cerrar" : reservation.notes?.trim() ? "Ver / editar" : "Agregar nota"}
           </button>
         </div>
+
+        {notesOpen && (
+          <div className="mt-4 border-t border-[#ead9c0] pt-4">
+            <textarea
+              value={notesDraft}
+              onChange={(event) => setNotesDraft(event.target.value)}
+              className="input-contact min-h-48 resize-y leading-relaxed"
+              placeholder="Notas internas: menú, personal requerido, detalles, decoración, condiciones especiales..."
+            />
+
+            <button
+              type="button"
+              onClick={() => onSaveNotes(notesDraft)}
+              disabled={loading}
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-white disabled:opacity-60"
+            >
+              {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              Guardar notas
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );
