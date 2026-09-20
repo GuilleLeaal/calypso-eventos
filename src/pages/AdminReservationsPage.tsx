@@ -63,7 +63,9 @@ type Reservation = {
   agreed_price: number | null;
   settlement_amount: number | null;
   deposit_amount: number | null;
-  staff_count: number | null;
+  staff_count: number | null; // Legacy: reservas anteriores al desglose de personal.
+  waiters_count: number | null;
+  animators_count: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -100,7 +102,8 @@ type ManualReservationFormValues = {
   agreed_price: string;
   settlement_amount: string;
   deposit_amount: string;
-  staff_count: string;
+  waiters_count: string;
+  animators_count: string;
   discovery_source: string;
 };
 
@@ -122,6 +125,8 @@ type ReservationUpdateValues = Partial<
     | "settlement_amount"
     | "deposit_amount"
     | "staff_count"
+    | "waiters_count"
+    | "animators_count"
     | "notes"
     | "discovery_source"
   >
@@ -305,23 +310,23 @@ function normalizeClientIdentityValue(value: string | null | undefined) {
 }
 
 function getClientExportKey(reservation: Reservation) {
-  const email = normalizeClientIdentityValue(reservation.email);
-  if (email) return `email:${email}`;
-
   const phone = (reservation.phone || "").replace(/\D/g, "");
   if (phone) return `phone:${phone}`;
+
+  const email = normalizeClientIdentityValue(reservation.email);
+  if (email) return `email:${email}`;
 
   return `name:${normalizeClientIdentityValue(reservation.customer_name)}`;
 }
 
 function parseOptionalCurrency(value: string) {
-  const normalized = value.trim().replaceAll(".", "").replace(",", ".");
+  const normalized = value.trim().replace(",", ".");
 
   if (!normalized) return null;
 
   const amount = Number(normalized);
 
-  if (Number.isNaN(amount) || amount < 0) return Number.NaN;
+  if (!Number.isFinite(amount) || amount < 0) return Number.NaN;
 
   return Math.round(amount * 100) / 100;
 }
@@ -508,7 +513,8 @@ export default function AdminReservationsPage() {
     agreed_price: "",
     settlement_amount: "",
     deposit_amount: "",
-    staff_count: "",
+    waiters_count: "",
+    animators_count: "",
     discovery_source: "",
   });
 
@@ -886,7 +892,7 @@ export default function AdminReservationsPage() {
         supabase
           .from("reservations")
           .select(
-            "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, created_at, updated_at",
+            "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at",
           )
           .gte("event_date", start)
           .lte("event_date", end)
@@ -1245,7 +1251,8 @@ export default function AdminReservationsPage() {
     const agreedPrice = parseOptionalCurrency(manualForm.agreed_price);
     const settlementAmount = parseOptionalCurrency(manualForm.settlement_amount);
     const depositAmount = parseOptionalCurrency(manualForm.deposit_amount);
-    const staffCount = parseOptionalInteger(manualForm.staff_count);
+    const waitersCount = parseOptionalInteger(manualForm.waiters_count);
+    const animatorsCount = parseOptionalInteger(manualForm.animators_count);
 
     if (Number.isNaN(agreedPrice)) {
       setGlobalError("El precio pautado debe ser un importe válido.");
@@ -1262,8 +1269,13 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    if (Number.isNaN(staffCount)) {
-      setGlobalError("La cantidad de mozos/animadores debe ser un número entero.");
+    if (Number.isNaN(waitersCount)) {
+      setGlobalError("La cantidad de mozos debe ser un número entero.");
+      return;
+    }
+
+    if (Number.isNaN(animatorsCount)) {
+      setGlobalError("La cantidad de animadores debe ser un número entero.");
       return;
     }
 
@@ -1291,7 +1303,7 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    const { error } = await supabase.rpc("create_admin_reservation", {
+    const { error } = await supabase.rpc("create_admin_reservation_v2", {
       p_customer_name: manualForm.customer_name.trim(),
       p_event_type: manualForm.event_type,
       p_phone: manualForm.phone.trim(),
@@ -1307,7 +1319,8 @@ export default function AdminReservationsPage() {
       p_agreed_price: agreedPrice,
       p_settlement_amount: settlementAmount,
       p_deposit_amount: depositAmount,
-      p_staff_count: staffCount,
+      p_waiters_count: waitersCount,
+      p_animators_count: animatorsCount,
     });
 
     if (error) {
@@ -1334,7 +1347,8 @@ export default function AdminReservationsPage() {
       agreed_price: "",
       settlement_amount: "",
       deposit_amount: "",
-      staff_count: "",
+      waiters_count: "",
+      animators_count: "",
       discovery_source: "",
     });
 
@@ -1364,7 +1378,7 @@ export default function AdminReservationsPage() {
     const { data, error } = await supabase
       .from("reservations")
       .select(
-        "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, created_at, updated_at",
+        "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at",
       )
       .eq("status", "completed")
       .order("event_date", { ascending: false })
@@ -1385,7 +1399,7 @@ export default function AdminReservationsPage() {
       const { data, error } = await supabase
         .from("reservations")
         .select(
-          "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, created_at, updated_at",
+          "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at",
         )
         .order("created_at", { ascending: false });
 
@@ -1471,6 +1485,8 @@ export default function AdminReservationsPage() {
         "Fecha",
         "Cantidad de adultos",
         "Cantidad de niños",
+        "Cantidad de mozos",
+        "Cantidad de animadores",
         "Ingreso total",
       ];
 
@@ -1480,6 +1496,8 @@ export default function AdminReservationsPage() {
         new Date(`${reservation.event_date}T12:00:00`),
         reservation.adults_count ?? "",
         reservation.children_count ?? "",
+        reservation.waiters_count ?? "",
+        reservation.animators_count ?? "",
         getEventTotalIncome(reservation),
       ]);
 
@@ -1494,7 +1512,9 @@ export default function AdminReservationsPage() {
           { index: 3, numberFormat: "dd/mm/yyyy", minWidth: 14, maxWidth: 16 },
           { index: 4, minWidth: 18, maxWidth: 22 },
           { index: 5, minWidth: 16, maxWidth: 20 },
-          { index: 6, numberFormat: '$ #,##0', minWidth: 16, maxWidth: 24 },
+          { index: 6, minWidth: 18, maxWidth: 22 },
+          { index: 7, minWidth: 20, maxWidth: 24 },
+          { index: 8, numberFormat: '$ #,##0', minWidth: 16, maxWidth: 24 },
         ],
       });
 
@@ -1682,7 +1702,7 @@ export default function AdminReservationsPage() {
                     Eventos finalizados
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-[#6d5748]">
-                    Cliente, evento, fecha, invitados e ingreso total.
+                    Cliente, evento, fecha, invitados, personal e ingreso total.
                   </span>
                 </button>
               </div>
@@ -2423,19 +2443,39 @@ function ManualReservationForm({
             </label>
           </div>
 
-          <label>
-            <span className={fieldLabelClass}>Mozos / animadores</span>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              value={form.staff_count}
-              onChange={(event) => setForm((prev) => ({ ...prev, staff_count: event.target.value }))}
-              className="input-contact"
-              placeholder="Ej: 2"
-            />
-          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label>
+              <span className={fieldLabelClass}>Cantidad de mozos</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                value={form.waiters_count}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, waiters_count: event.target.value }))
+                }
+                className="input-contact"
+                placeholder="Ej: 2"
+              />
+            </label>
+
+            <label>
+              <span className={fieldLabelClass}>Cantidad de animadores</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                value={form.animators_count}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, animators_count: event.target.value }))
+                }
+                className="input-contact"
+                placeholder="Ej: 1"
+              />
+            </label>
+          </div>
         </div>
       </section>
 
@@ -3062,32 +3102,40 @@ function ReservationCard({
     agreed_price: String(reservation.agreed_price ?? ""),
     settlement_amount: String(reservation.settlement_amount ?? ""),
     deposit_amount: String(reservation.deposit_amount ?? ""),
-    staff_count: String(reservation.staff_count ?? ""),
+    waiters_count: String(reservation.waiters_count ?? ""),
+    animators_count: String(reservation.animators_count ?? ""),
     discovery_source: reservation.discovery_source || "",
   });
 
   useEffect(() => {
-    setNotesDraft(reservation.notes || "");
-    setEditDraft({
-      customer_name: reservation.customer_name,
-      event_type: reservation.event_type,
-      phone: reservation.phone,
-      email: reservation.email || "",
-      children_count: String(reservation.children_count ?? ""),
-      adults_count: String(reservation.adults_count ?? ""),
-      event_date: reservation.event_date,
-      start_time: normalizeTime(reservation.start_time),
-      end_time: normalizeTime(reservation.end_time),
-      status: reservation.status,
-      deposit_paid: reservation.deposit_paid,
-      agreed_price: String(reservation.agreed_price ?? ""),
-      settlement_amount: String(reservation.settlement_amount ?? ""),
-      deposit_amount: String(reservation.deposit_amount ?? ""),
-      staff_count: String(reservation.staff_count ?? ""),
-      discovery_source: reservation.discovery_source || "",
-    });
-    setEditError("");
-  }, [reservation]);
+    // Los refresh automáticos no deben pisar lo que el usuario está escribiendo.
+    if (!notesOpen) {
+      setNotesDraft(reservation.notes || "");
+    }
+
+    if (!isEditing) {
+      setEditDraft({
+        customer_name: reservation.customer_name,
+        event_type: reservation.event_type,
+        phone: reservation.phone,
+        email: reservation.email || "",
+        children_count: String(reservation.children_count ?? ""),
+        adults_count: String(reservation.adults_count ?? ""),
+        event_date: reservation.event_date,
+        start_time: normalizeTime(reservation.start_time),
+        end_time: normalizeTime(reservation.end_time),
+        status: reservation.status,
+        deposit_paid: reservation.deposit_paid,
+        agreed_price: String(reservation.agreed_price ?? ""),
+        settlement_amount: String(reservation.settlement_amount ?? ""),
+        deposit_amount: String(reservation.deposit_amount ?? ""),
+        waiters_count: String(reservation.waiters_count ?? ""),
+        animators_count: String(reservation.animators_count ?? ""),
+        discovery_source: reservation.discovery_source || "",
+      });
+      setEditError("");
+    }
+  }, [reservation, isEditing, notesOpen]);
 
   async function handleSaveDetails(event: FormEvent) {
     event.preventDefault();
@@ -3149,7 +3197,8 @@ function ReservationCard({
     const agreedPrice = parseOptionalCurrency(editDraft.agreed_price);
     const settlementAmount = parseOptionalCurrency(editDraft.settlement_amount);
     const depositAmount = parseOptionalCurrency(editDraft.deposit_amount);
-    const staffCount = parseOptionalInteger(editDraft.staff_count);
+    const waitersCount = parseOptionalInteger(editDraft.waiters_count);
+    const animatorsCount = parseOptionalInteger(editDraft.animators_count);
 
     if (Number.isNaN(agreedPrice)) {
       setEditError("El precio pautado debe ser un importe válido.");
@@ -3166,8 +3215,13 @@ function ReservationCard({
       return;
     }
 
-    if (Number.isNaN(staffCount)) {
-      setEditError("La cantidad de mozos/animadores debe ser un número entero.");
+    if (Number.isNaN(waitersCount)) {
+      setEditError("La cantidad de mozos debe ser un número entero.");
+      return;
+    }
+
+    if (Number.isNaN(animatorsCount)) {
+      setEditError("La cantidad de animadores debe ser un número entero.");
       return;
     }
 
@@ -3176,10 +3230,11 @@ function ReservationCard({
       return;
     }
 
-    if (isDateInDisabledRange(editDraft.event_date, disabledRanges)) {
-      setEditError(
-        "Esta fecha está inhabilitada. Habilitala primero para guardar la reserva.",
-      );
+    if (
+      editDraft.event_date !== reservation.event_date &&
+      isDateInDisabledRange(editDraft.event_date, disabledRanges)
+    ) {
+      setEditError("La nueva fecha seleccionada está inhabilitada.");
       return;
     }
 
@@ -3196,7 +3251,7 @@ function ReservationCard({
       return;
     }
 
-    const saved = await onSaveDetails({
+    const updateValues: ReservationUpdateValues = {
       customer_name: editDraft.customer_name.trim(),
       event_type: editDraft.event_type,
       phone: editDraft.phone.trim(),
@@ -3211,9 +3266,18 @@ function ReservationCard({
       agreed_price: agreedPrice,
       settlement_amount: settlementAmount,
       deposit_amount: depositAmount,
-      staff_count: staffCount,
+      waiters_count: waitersCount,
+      animators_count: animatorsCount,
       discovery_source: editDraft.discovery_source || null,
-    });
+    };
+
+    // El dato combinado se conserva en reservas antiguas hasta que el usuario
+    // cargue al menos uno de los dos campos separados.
+    if (waitersCount !== null || animatorsCount !== null) {
+      updateValues.staff_count = null;
+    }
+
+    const saved = await onSaveDetails(updateValues);
 
     if (saved) {
       setIsEditing(false);
@@ -3236,7 +3300,8 @@ function ReservationCard({
       agreed_price: String(reservation.agreed_price ?? ""),
       settlement_amount: String(reservation.settlement_amount ?? ""),
       deposit_amount: String(reservation.deposit_amount ?? ""),
-      staff_count: String(reservation.staff_count ?? ""),
+      waiters_count: String(reservation.waiters_count ?? ""),
+      animators_count: String(reservation.animators_count ?? ""),
       discovery_source: reservation.discovery_source || "",
     });
     setEditError("");
@@ -3338,7 +3403,15 @@ function ReservationCard({
                 <p><b>Horario:</b> {normalizeTime(reservation.start_time)} a {normalizeTime(reservation.end_time)}</p>
                 <p><b>Niños:</b> {reservation.children_count ?? "No indicado"}</p>
                 <p><b>Adultos:</b> {reservation.adults_count ?? "No indicado"}</p>
-                <p><b>Mozos/animadores:</b> {reservation.staff_count ?? "No indicado"}</p>
+                <p><b>Mozos:</b> {reservation.waiters_count ?? "No indicado"}</p>
+                <p><b>Animadores:</b> {reservation.animators_count ?? "No indicado"}</p>
+                {reservation.staff_count !== null &&
+                  reservation.waiters_count === null &&
+                  reservation.animators_count === null && (
+                    <p className="text-[#8a5b1f]">
+                      <b>Personal histórico sin separar:</b> {reservation.staff_count}
+                    </p>
+                  )}
               </div>
             </details>
 
@@ -3491,8 +3564,12 @@ function ReservationCard({
                   <input type="number" min="0" inputMode="numeric" value={editDraft.adults_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, adults_count: event.target.value }))} className="input-contact" />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Mozos / animadores</span>
-                  <input type="number" min="0" step="1" inputMode="numeric" value={editDraft.staff_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, staff_count: event.target.value }))} className="input-contact" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Mozos</span>
+                  <input type="number" min="0" step="1" inputMode="numeric" value={editDraft.waiters_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, waiters_count: event.target.value }))} className="input-contact" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Animadores</span>
+                  <input type="number" min="0" step="1" inputMode="numeric" value={editDraft.animators_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, animators_count: event.target.value }))} className="input-contact" />
                 </label>
               </div>
             </section>
