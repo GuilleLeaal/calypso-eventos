@@ -100,7 +100,6 @@ type ManualReservationFormValues = {
   notes: string;
   deposit_paid: boolean;
   agreed_price: string;
-  settlement_amount: string;
   deposit_amount: string;
   waiters_count: string;
   animators_count: string;
@@ -511,7 +510,6 @@ export default function AdminReservationsPage() {
     notes: "",
     deposit_paid: false,
     agreed_price: "",
-    settlement_amount: "",
     deposit_amount: "",
     waiters_count: "",
     animators_count: "",
@@ -1249,7 +1247,6 @@ export default function AdminReservationsPage() {
     }
 
     const agreedPrice = parseOptionalCurrency(manualForm.agreed_price);
-    const settlementAmount = parseOptionalCurrency(manualForm.settlement_amount);
     const depositAmount = parseOptionalCurrency(manualForm.deposit_amount);
     const waitersCount = parseOptionalInteger(manualForm.waiters_count);
     const animatorsCount = parseOptionalInteger(manualForm.animators_count);
@@ -1259,10 +1256,6 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    if (Number.isNaN(settlementAmount)) {
-      setGlobalError("La liquidación debe ser un importe válido.");
-      return;
-    }
 
     if (Number.isNaN(depositAmount)) {
       setGlobalError("La seña debe ser un importe válido.");
@@ -1317,7 +1310,6 @@ export default function AdminReservationsPage() {
       p_notes: manualForm.notes.trim(),
       p_discovery_source: manualForm.discovery_source,
       p_agreed_price: agreedPrice,
-      p_settlement_amount: settlementAmount,
       p_deposit_amount: depositAmount,
       p_waiters_count: waitersCount,
       p_animators_count: animatorsCount,
@@ -1345,7 +1337,6 @@ export default function AdminReservationsPage() {
       notes: "",
       deposit_paid: false,
       agreed_price: "",
-      settlement_amount: "",
       deposit_amount: "",
       waiters_count: "",
       animators_count: "",
@@ -2322,10 +2313,7 @@ function ManualReservationForm({
   onApplySlot: (slot: ReservationSlot) => void;
 }) {
   const deposit = parseOptionalCurrency(form.deposit_amount);
-  const settlement = parseOptionalCurrency(form.settlement_amount);
-  const currentIncome =
-    (Number.isNaN(deposit) ? 0 : Number(deposit ?? 0)) +
-    (Number.isNaN(settlement) ? 0 : Number(settlement ?? 0));
+  const depositPreview = Number.isNaN(deposit) ? 0 : Number(deposit ?? 0);
 
   const sectionClass =
     "rounded-[1.2rem] border border-[#dfc8ab] bg-white/35 p-4 sm:p-5";
@@ -2486,7 +2474,7 @@ function ManualReservationForm({
             <p className="mt-1 text-xs text-[#8a7667]">Importes administrativos del evento.</p>
           </div>
           <div className="rounded-full border border-[#0BB3A6]/30 bg-[#0BB3A6]/10 px-4 py-2 text-xs font-bold text-[#087d75]">
-            Ingreso actual: {formatMoney(currentIncome)}
+            Seña registrada: {formatMoney(depositPreview)}
           </div>
         </div>
 
@@ -2525,19 +2513,6 @@ function ManualReservationForm({
             />
           </label>
 
-          <label>
-            <span className={fieldLabelClass}>Liquidación</span>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              inputMode="decimal"
-              value={form.settlement_amount}
-              onChange={(event) => setForm((prev) => ({ ...prev, settlement_amount: event.target.value }))}
-              className="input-contact"
-              placeholder="$"
-            />
-          </label>
 
           <div className="flex items-end">
             <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
@@ -3442,10 +3417,12 @@ function ReservationCard({
                   <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Seña</p>
                   <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.deposit_amount)}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Liquidación</p>
-                  <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.settlement_amount)}</p>
-                </div>
+                {(reservation.status === "completed" || reservation.settlement_amount !== null) && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Liquidación</p>
+                    <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.settlement_amount)}</p>
+                  </div>
+                )}
                 <div className="rounded-[0.9rem] bg-white/70 px-3 py-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#087d75]">Ingreso total</p>
                   <p className="mt-1 text-lg font-bold text-[#087d75]">{formatMoney(hasIncomeData ? totalIncome : null)}</p>
@@ -3603,10 +3580,12 @@ function ReservationCard({
                   <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Seña</span>
                   <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.deposit_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_amount: event.target.value, deposit_paid: Number(event.target.value) > 0 ? true : prev.deposit_paid }))} className="input-contact" placeholder="$" />
                 </label>
-                <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Liquidación</span>
-                  <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.settlement_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, settlement_amount: event.target.value }))} className="input-contact" placeholder="$" />
-                </label>
+                {reservation.status === "completed" && (
+                  <label>
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Liquidación</span>
+                    <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.settlement_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, settlement_amount: event.target.value }))} className="input-contact" placeholder="$" />
+                  </label>
+                )}
                 <div className="flex items-end">
                   <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
                     <input type="checkbox" checked={editDraft.deposit_paid} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_paid: event.target.checked }))} className="h-3.5 w-3.5 accent-[#0BB3A6]" />
