@@ -195,6 +195,27 @@ function timeToMinutes(value: string) {
   return hours * 60 + minutes;
 }
 
+function isOvernightTimeRange(startTime: string, endTime: string) {
+  const start = normalizeTime(startTime);
+  const end = normalizeTime(endTime);
+
+  if (!isValid24HourTime(start) || !isValid24HourTime(end)) {
+    return false;
+  }
+
+  return timeToMinutes(end) < timeToMinutes(start);
+}
+
+function formatReservationTimeRange(startTime: string, endTime: string) {
+  const start = normalizeTime(startTime);
+  const end = normalizeTime(endTime);
+  const nextDayLabel = isOvernightTimeRange(start, end)
+    ? " (día siguiente)"
+    : "";
+
+  return `${start} a ${end}${nextDayLabel}`;
+}
+
 type ExcelColumnOptions = {
   index: number;
   numberFormat?: string;
@@ -755,11 +776,10 @@ export default function AdminReservationsPage() {
         .slice(0, 8)
         .map(
           (reservation) =>
-            `• ${formatDateForDisplay(reservation.event_date)} - ${normalizeTime(
+            `• ${formatDateForDisplay(reservation.event_date)} - ${formatReservationTimeRange(
               reservation.start_time,
-            )} a ${normalizeTime(reservation.end_time)} - ${
-              reservation.customer_name
-            } (${statusLabels[reservation.status]})`,
+              reservation.end_time,
+            )} - ${reservation.customer_name} (${statusLabels[reservation.status]})`,
         )
         .join("\n");
 
@@ -1289,9 +1309,9 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+    if (timeToMinutes(startTime) === timeToMinutes(endTime)) {
       setGlobalError(
-        "El horario de inicio debe ser anterior al horario de fin.",
+        "El horario de inicio y fin no pueden ser iguales.",
       );
       return;
     }
@@ -2314,6 +2334,10 @@ function ManualReservationForm({
 }) {
   const deposit = parseOptionalCurrency(form.deposit_amount);
   const depositPreview = Number.isNaN(deposit) ? 0 : Number(deposit ?? 0);
+  const manualEndsNextDay = isOvernightTimeRange(
+    form.start_time,
+    form.end_time,
+  );
 
   const sectionClass =
     "rounded-[1.2rem] border border-[#dfc8ab] bg-white/35 p-4 sm:p-5";
@@ -2613,6 +2637,12 @@ function ManualReservationForm({
             />
           </label>
         </div>
+
+        {manualEndsNextDay && (
+          <p className="mt-3 rounded-[0.9rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#087d75]">
+            Este horario termina al día siguiente. Por ejemplo, 20:30 a 00:30 se interpreta como un evento de la fecha seleccionada que finaliza a las 00:30 del día siguiente.
+          </p>
+        )}
       </section>
 
       <section className={sectionClass}>
@@ -3221,8 +3251,8 @@ function ReservationCard({
       return;
     }
 
-    if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-      setEditError("El horario de inicio debe ser anterior al horario de fin.");
+    if (timeToMinutes(startTime) === timeToMinutes(endTime)) {
+      setEditError("El horario de inicio y fin no pueden ser iguales.");
       return;
     }
 
@@ -3322,7 +3352,10 @@ function ReservationCard({
               </h3>
               {isCompletedView && (
                 <p className="mt-1 text-sm font-semibold text-[#6d5748]">
-                  {formatDateForDisplay(reservation.event_date)} · {normalizeTime(reservation.start_time)}–{normalizeTime(reservation.end_time)}
+                  {formatDateForDisplay(reservation.event_date)} · {formatReservationTimeRange(
+                    reservation.start_time,
+                    reservation.end_time,
+                  )}
                 </p>
               )}
             </div>
@@ -3375,7 +3408,7 @@ function ReservationCard({
               <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
                 <p><b>Evento:</b> {reservation.event_type}</p>
                 <p><b>Fecha:</b> {formatDateForDisplay(reservation.event_date)}</p>
-                <p><b>Horario:</b> {normalizeTime(reservation.start_time)} a {normalizeTime(reservation.end_time)}</p>
+                <p><b>Horario:</b> {formatReservationTimeRange(reservation.start_time, reservation.end_time)}</p>
                 <p><b>Niños:</b> {reservation.children_count ?? "No indicado"}</p>
                 <p><b>Adultos:</b> {reservation.adults_count ?? "No indicado"}</p>
                 <p><b>Mozos:</b> {reservation.waiters_count ?? "No indicado"}</p>
@@ -3567,6 +3600,12 @@ function ReservationCard({
                   <input type="text" inputMode="numeric" pattern="[0-2][0-9]:[0-5][0-9]" maxLength={5} value={editDraft.end_time} onChange={(event) => setEditDraft((prev) => ({ ...prev, end_time: event.target.value }))} className="input-contact" placeholder="20:00" />
                 </label>
               </div>
+
+              {isOvernightTimeRange(editDraft.start_time, editDraft.end_time) && (
+                <p className="mt-3 rounded-[0.9rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#087d75]">
+                  Este horario termina al día siguiente.
+                </p>
+              )}
             </section>
 
             <section className="border-t border-[#ead9c0] pt-5">
@@ -3713,7 +3752,8 @@ function ReservationCalendar({
       .slice(0, 4)
       .map(
         (reservation) =>
-          `${reservation.customer_name} - ${normalizeTime(reservation.start_time)} a ${normalizeTime(
+          `${reservation.customer_name} - ${formatReservationTimeRange(
+            reservation.start_time,
             reservation.end_time,
           )} (${statusLabels[reservation.status]})`,
       )

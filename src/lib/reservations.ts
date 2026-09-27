@@ -141,10 +141,11 @@ export function hasSlotConflict(
   slot: ReservationSlot,
   block: ReservationBlock,
 ) {
-  const newStart = toMinutes(slot.startTime);
-  const newEnd = toMinutes(slot.endTime);
-  const existingStart = toMinutes(normalizeTime(block.start_time));
-  const existingEnd = toMinutes(normalizeTime(block.end_time));
+  const [newStart, newEnd] = toMinuteRange(slot.startTime, slot.endTime);
+  const [existingStart, existingEnd] = toMinuteRange(
+    normalizeTime(block.start_time),
+    normalizeTime(block.end_time),
+  );
 
   return (
     newStart < existingEnd + RESERVATION_BUFFER_MINUTES &&
@@ -183,6 +184,19 @@ function getActiveReservationBlocks(blocks: ReservationBlock[]) {
 function toMinutes(time: string) {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
+}
+
+function toMinuteRange(startTime: string, endTime: string): [number, number] {
+  const start = toMinutes(startTime);
+  let end = toMinutes(endTime);
+
+  // Si el fin es menor al inicio, el evento termina al día siguiente.
+  // Ejemplo: 20:30 -> 00:30 se representa como 1230 -> 1470 minutos.
+  if (end < start) {
+    end += 24 * 60;
+  }
+
+  return [start, end];
 }
 
 function createLocalDate(dateValue: string) {
