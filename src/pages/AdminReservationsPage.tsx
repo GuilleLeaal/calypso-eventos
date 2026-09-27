@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { motion, circOut } from "framer-motion";
 import {
@@ -130,6 +130,29 @@ type ReservationUpdateValues = Partial<
     | "discovery_source"
   >
 >;
+
+type ReservationDetailsUpdateValues = Pick<
+  Reservation,
+  | "customer_name"
+  | "event_type"
+  | "phone"
+  | "email"
+  | "children_count"
+  | "adults_count"
+  | "event_date"
+  | "start_time"
+  | "end_time"
+  | "status"
+  | "deposit_paid"
+  | "agreed_price"
+  | "settlement_amount"
+  | "deposit_amount"
+  | "waiters_count"
+  | "animators_count"
+  | "discovery_source"
+> & {
+  staff_count?: number | null;
+};
 
 const FIRST_RESERVATION_DATE = "2026-07-01";
 const MAX_CHILDREN_COUNT = 30;
@@ -474,6 +497,8 @@ export default function AdminReservationsPage() {
   const [reservationDateToFilter, setReservationDateToFilter] = useState("");
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [creatingReservation, setCreatingReservation] = useState(false);
+  const creatingReservationRef = useRef(false);
   const [globalError, setGlobalError] = useState("");
 
   const [filter, setFilter] = useState<"all" | ReservationStatus>("all");
@@ -1185,6 +1210,84 @@ export default function AdminReservationsPage() {
     return true;
   }
 
+  async function updateReservationStatus(
+    id: string,
+    status: ReservationStatus,
+  ) {
+    setActionLoadingId(id);
+    setGlobalError("");
+
+    try {
+      const { error } = await supabase.rpc("set_admin_reservation_status_v2", {
+        p_reservation_id: id,
+        p_status: status,
+      });
+
+      if (error) {
+        console.error("Error updating reservation status:", error);
+        setGlobalError(error.message || "No pudimos actualizar el estado de la reserva.");
+        return false;
+      }
+
+      await fetchReservations(true);
+      await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
+
+      return true;
+    } catch (error) {
+      console.error("Unexpected reservation status update error:", error);
+      setGlobalError("Ocurrió un error actualizando el estado de la reserva.");
+      return false;
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function updateReservationDetails(
+    id: string,
+    values: ReservationDetailsUpdateValues,
+  ): Promise<string | null> {
+    setActionLoadingId(id);
+
+    try {
+      const { error } = await supabase.rpc("update_admin_reservation_v2", {
+        p_reservation_id: id,
+        p_customer_name: values.customer_name,
+        p_event_type: values.event_type,
+        p_phone: values.phone,
+        p_email: values.email,
+        p_children_count: values.children_count,
+        p_adults_count: values.adults_count,
+        p_event_date: values.event_date,
+        p_start_time: values.start_time,
+        p_end_time: values.end_time,
+        p_status: values.status,
+        p_deposit_paid: values.deposit_paid,
+        p_agreed_price: values.agreed_price,
+        p_settlement_amount: values.settlement_amount,
+        p_deposit_amount: values.deposit_amount,
+        p_waiters_count: values.waiters_count,
+        p_animators_count: values.animators_count,
+        p_discovery_source: values.discovery_source,
+        p_clear_legacy_staff: values.staff_count === null,
+      });
+
+      if (error) {
+        console.error("Error updating reservation details:", error);
+        return error.message || "No pudimos actualizar la reserva.";
+      }
+
+      await fetchReservations(true);
+      await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
+
+      return null;
+    } catch (error) {
+      console.error("Unexpected reservation details update error:", error);
+      return "Ocurrió un error actualizando la reserva.";
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
   async function deleteReservation(id: string) {
     const confirmed = window.confirm(
       "¿Seguro que querés borrar esta reserva? Esta acción no se puede deshacer.",
@@ -1316,57 +1419,67 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    const { error } = await supabase.rpc("create_admin_reservation_v2", {
-      p_customer_name: manualForm.customer_name.trim(),
-      p_event_type: manualForm.event_type,
-      p_phone: manualForm.phone.trim(),
-      p_email: manualForm.email.trim(),
-      p_event_date: manualForm.event_date,
-      p_start_time: startTime,
-      p_end_time: endTime,
-      p_children_count: childrenCount,
-      p_adults_count: adultsCount,
-      p_deposit_paid: manualForm.deposit_paid,
-      p_notes: manualForm.notes.trim(),
-      p_discovery_source: manualForm.discovery_source,
-      p_agreed_price: agreedPrice,
-      p_deposit_amount: depositAmount,
-      p_waiters_count: waitersCount,
-      p_animators_count: animatorsCount,
-    });
+    if (creatingReservationRef.current) return;
 
-    if (error) {
-      console.error("Error creating manual reservation:", error);
-      setGlobalError(
-        error.message ||
-          "No pudimos crear la reserva manual. Revisá los datos ingresados.",
-      );
-      return;
+    creatingReservationRef.current = true;
+    setCreatingReservation(true);
+
+    try {
+      const { error } = await supabase.rpc("create_admin_reservation_v2", {
+        p_customer_name: manualForm.customer_name.trim(),
+        p_event_type: manualForm.event_type,
+        p_phone: manualForm.phone.trim(),
+        p_email: manualForm.email.trim(),
+        p_event_date: manualForm.event_date,
+        p_start_time: startTime,
+        p_end_time: endTime,
+        p_children_count: childrenCount,
+        p_adults_count: adultsCount,
+        p_deposit_paid: manualForm.deposit_paid,
+        p_notes: manualForm.notes.trim(),
+        p_discovery_source: manualForm.discovery_source,
+        p_agreed_price: agreedPrice,
+        p_deposit_amount: depositAmount,
+        p_waiters_count: waitersCount,
+        p_animators_count: animatorsCount,
+      });
+
+      if (error) {
+        console.error("Error creating manual reservation:", error);
+        setGlobalError(
+          error.message ||
+            "No pudimos crear la reserva manual. Revisá los datos ingresados.",
+        );
+        return;
+      }
+
+      setManualForm({
+        customer_name: "",
+        event_type: "",
+        phone: "",
+        email: "",
+        children_count: "",
+        adults_count: "",
+        event_date: getMinReservationDate(),
+        start_time: "17:00",
+        end_time: "20:00",
+        notes: "",
+        deposit_paid: false,
+        agreed_price: "",
+        deposit_amount: "",
+        waiters_count: "",
+        animators_count: "",
+        discovery_source: "",
+      });
+
+      setManualCalendarMonth(createLocalDate(getMinReservationDate()));
+
+      await fetchReservations(true);
+      await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
+    } finally {
+      creatingReservationRef.current = false;
+      setCreatingReservation(false);
     }
-
-    setManualForm({
-      customer_name: "",
-      event_type: "",
-      phone: "",
-      email: "",
-      children_count: "",
-      adults_count: "",
-      event_date: getMinReservationDate(),
-      start_time: "17:00",
-      end_time: "20:00",
-      notes: "",
-      deposit_paid: false,
-      agreed_price: "",
-      deposit_amount: "",
-      waiters_count: "",
-      animators_count: "",
-      discovery_source: "",
-    });
-
-    setManualCalendarMonth(createLocalDate(getMinReservationDate()));
-
-    await fetchReservations(true);
-    await Promise.all([fetchManualBlocks(), fetchManualMonthBlocks()]);
   }
 
   function applyManualSlot(slot: ReservationSlot) {
@@ -1831,6 +1944,7 @@ export default function AdminReservationsPage() {
                   form={manualForm}
                   setForm={setManualForm}
                   onSubmit={handleCreateManualReservation}
+                  creating={creatingReservation}
                   calendarMonth={manualCalendarMonth}
                   onCalendarMonthChange={setManualCalendarMonth}
                   monthBlocks={manualMonthBlocks}
@@ -1864,6 +1978,7 @@ export default function AdminReservationsPage() {
                   form={manualForm}
                   setForm={setManualForm}
                   onSubmit={handleCreateManualReservation}
+                  creating={creatingReservation}
                   calendarMonth={manualCalendarMonth}
                   onCalendarMonthChange={setManualCalendarMonth}
                   monthBlocks={manualMonthBlocks}
@@ -1968,14 +2083,10 @@ export default function AdminReservationsPage() {
                       disabledRanges={disabledRanges}
                       loading={actionLoadingId === reservation.id}
                       onApprove={() =>
-                        updateReservation(reservation.id, {
-                          status: "approved",
-                        })
+                        updateReservationStatus(reservation.id, "approved")
                       }
                       onReject={() =>
-                        updateReservation(reservation.id, {
-                          status: "rejected",
-                        })
+                        updateReservationStatus(reservation.id, "rejected")
                       }
                       onDepositChange={(value) =>
                         updateReservation(reservation.id, {
@@ -1983,7 +2094,7 @@ export default function AdminReservationsPage() {
                         })
                       }
                       onSaveDetails={(values) =>
-                        updateReservation(reservation.id, values)
+                        updateReservationDetails(reservation.id, values)
                       }
                       onSaveNotes={(notes) =>
                         updateReservation(reservation.id, { notes })
@@ -2099,16 +2210,16 @@ export default function AdminReservationsPage() {
                     disabledRanges={disabledRanges}
                     loading={actionLoadingId === reservation.id}
                     onApprove={() =>
-                      updateReservation(reservation.id, { status: "approved" })
+                      updateReservationStatus(reservation.id, "approved")
                     }
                     onReject={() =>
-                      updateReservation(reservation.id, { status: "rejected" })
+                      updateReservationStatus(reservation.id, "rejected")
                     }
                     onDepositChange={(value) =>
                       updateReservation(reservation.id, { deposit_paid: value })
                     }
                     onSaveDetails={(values) =>
-                      updateReservation(reservation.id, values)
+                      updateReservationDetails(reservation.id, values)
                     }
                     onSaveNotes={(notes) =>
                       updateReservation(reservation.id, { notes })
@@ -2309,6 +2420,7 @@ function ManualReservationForm({
   form,
   setForm,
   onSubmit,
+  creating,
   calendarMonth,
   onCalendarMonthChange,
   monthBlocks,
@@ -2322,6 +2434,7 @@ function ManualReservationForm({
   form: ManualReservationFormValues;
   setForm: Dispatch<SetStateAction<ManualReservationFormValues>>;
   onSubmit: (event: FormEvent) => void;
+  creating: boolean;
   calendarMonth: Date;
   onCalendarMonthChange: (date: Date) => void;
   monthBlocks: ReservationBlock[];
@@ -2660,10 +2773,11 @@ function ManualReservationForm({
 
       <button
         type="submit"
-        className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
+        disabled={creating}
+        className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Plus size={18} />
-        Crear reserva aprobada
+        {creating ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+        {creating ? "Creando reserva..." : "Crear reserva aprobada"}
       </button>
     </form>
   );
@@ -3073,7 +3187,7 @@ function ReservationCard({
   onApprove: () => void;
   onReject: () => void;
   onDepositChange: (value: boolean) => void;
-  onSaveDetails: (values: ReservationUpdateValues) => Promise<boolean>;
+  onSaveDetails: (values: ReservationDetailsUpdateValues) => Promise<string | null>;
   onSaveNotes: (notes: string) => void;
   onDelete: () => void;
 }) {
@@ -3256,7 +3370,7 @@ function ReservationCard({
       return;
     }
 
-    const updateValues: ReservationUpdateValues = {
+    const updateValues: ReservationDetailsUpdateValues = {
       customer_name: editDraft.customer_name.trim(),
       event_type: editDraft.event_type,
       phone: editDraft.phone.trim(),
@@ -3282,11 +3396,14 @@ function ReservationCard({
       updateValues.staff_count = null;
     }
 
-    const saved = await onSaveDetails(updateValues);
+    const saveError = await onSaveDetails(updateValues);
 
-    if (saved) {
-      setIsEditing(false);
+    if (saveError) {
+      setEditError(saveError);
+      return;
     }
+
+    setIsEditing(false);
   }
 
   function cancelEdit() {
@@ -3619,7 +3736,7 @@ function ReservationCard({
                   <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Seña</span>
                   <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.deposit_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_amount: event.target.value, deposit_paid: Number(event.target.value) > 0 ? true : prev.deposit_paid }))} className="input-contact" placeholder="$" />
                 </label>
-                {reservation.status === "completed" && (
+                {editDraft.status === "completed" && (
                   <label>
                     <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Liquidación</span>
                     <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.settlement_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, settlement_amount: event.target.value }))} className="input-contact" placeholder="$" />
