@@ -38,9 +38,17 @@ import {
 } from "../lib/reservations";
 
 type ReservationStatus =
-  "pending" | "approved" | "rejected" | "expired" | "completed";
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "expired"
+  | "completed";
 
-type AdminSection = "reservations" | "completed_events" | "disabled_dates" | "reviews";
+type AdminSection =
+  | "reservations"
+  | "completed_events"
+  | "disabled_dates"
+  | "reviews";
 
 type ReservationSource = "website" | "admin";
 
@@ -158,6 +166,10 @@ const FIRST_RESERVATION_DATE = "2026-07-01";
 const MAX_CHILDREN_COUNT = 30;
 const MAX_ADULTS_COUNT = 50;
 const RESERVATIONS_PER_PAGE = 4;
+const EXPORT_BATCH_SIZE = 500;
+
+const RESERVATION_EXPORT_COLUMNS =
+  "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at";
 
 function getMinReservationDate() {
   const today = getTodayInputValue();
@@ -301,7 +313,9 @@ async function downloadExcelFile({
     // worksheet.columns expone columnas parciales en los tipos de ExcelJS,
     // por eso obtenemos la columna concreta con getColumn antes de usar eachCell.
     const column = worksheet.getColumn(columnIndex + 1);
-    const options = columnOptions.find((item) => item.index === columnIndex + 1);
+    const options = columnOptions.find(
+      (item) => item.index === columnIndex + 1,
+    );
     const minWidth = options?.minWidth ?? 12;
     const maxWidth = options?.maxWidth ?? 42;
     let longestText = headers[columnIndex]?.length ?? 0;
@@ -346,10 +360,7 @@ async function downloadExcelFile({
 }
 
 function normalizeClientIdentityValue(value: string | null | undefined) {
-  return (value || "")
-    .trim()
-    .toLocaleLowerCase("es-UY")
-    .replace(/\s+/g, " ");
+  return (value || "").trim().toLocaleLowerCase("es-UY").replace(/\s+/g, " ");
 }
 
 function getClientExportKey(reservation: Reservation) {
@@ -396,8 +407,34 @@ function formatMoney(value: number | null | undefined) {
   }).format(value);
 }
 
-function getEventTotalIncome(reservation: Pick<Reservation, "deposit_amount" | "settlement_amount">) {
-  return Number(reservation.deposit_amount ?? 0) + Number(reservation.settlement_amount ?? 0);
+function getEventTotalIncome(
+  reservation: Pick<Reservation, "deposit_amount" | "settlement_amount">,
+) {
+  return (
+    Number(reservation.deposit_amount ?? 0) +
+    Number(reservation.settlement_amount ?? 0)
+  );
+}
+
+async function fetchAllReservationPages(
+  fetchPage: (from: number, to: number) => Promise<Reservation[]>,
+) {
+  const reservations: Reservation[] = [];
+  let from = 0;
+
+  while (true) {
+    const page = await fetchPage(from, from + EXPORT_BATCH_SIZE - 1);
+
+    reservations.push(...page);
+
+    if (page.length < EXPORT_BATCH_SIZE) {
+      break;
+    }
+
+    from += EXPORT_BATCH_SIZE;
+  }
+
+  return reservations;
 }
 
 function createLocalDate(dateValue: string) {
@@ -492,13 +529,18 @@ export default function AdminReservationsPage() {
   const [reservationPage, setReservationPage] = useState(1);
   const [reservationTotalCount, setReservationTotalCount] = useState(0);
   const [reservationSearch, setReservationSearch] = useState("");
-  const [debouncedReservationSearch, setDebouncedReservationSearch] = useState("");
-  const [reservationDateFromFilter, setReservationDateFromFilter] = useState("");
+  const [debouncedReservationSearch, setDebouncedReservationSearch] =
+    useState("");
+  const [reservationDateFromFilter, setReservationDateFromFilter] =
+    useState("");
   const [reservationDateToFilter, setReservationDateToFilter] = useState("");
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [creatingReservation, setCreatingReservation] = useState(false);
   const creatingReservationRef = useRef(false);
+  const reservationsRequestIdRef = useRef(0);
+  const manualBlocksRequestIdRef = useRef(0);
+  const manualMonthBlocksRequestIdRef = useRef(0);
   const [globalError, setGlobalError] = useState("");
 
   const [filter, setFilter] = useState<"all" | ReservationStatus>("all");
@@ -595,7 +637,6 @@ export default function AdminReservationsPage() {
 
         setIsLoggedIn(hasSession);
         setSessionReady(true);
-
       } catch (error) {
         console.error("Unexpected admin session error:", error);
 
@@ -680,11 +721,26 @@ export default function AdminReservationsPage() {
       return;
     }
 
-    const intervalId = window.setInterval(() => {
-      void fetchReservations(true);
-    }, 60_000);
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void fetchReservations(true);
+      }
+    };
 
-    return () => window.clearInterval(intervalId);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchReservations(true);
+      }
+    };
+
+    const intervalId = window.setInterval(refreshIfVisible, 60_000);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [
     isLoggedIn,
     activeSection,
@@ -712,9 +768,9 @@ export default function AdminReservationsPage() {
 
   const hasReservationFilters = Boolean(
     reservationSearch.trim() ||
-      reservationDateFromFilter ||
-      reservationDateToFilter ||
-      (activeSection === "reservations" && filter !== "all"),
+    reservationDateFromFilter ||
+    reservationDateToFilter ||
+    (activeSection === "reservations" && filter !== "all"),
   );
 
   function clearReservationFilters() {
@@ -765,26 +821,34 @@ export default function AdminReservationsPage() {
     }
 
     if (disabledForm.start_date < getMinReservationDate()) {
-      setGlobalError("No se pueden inhabilitar fechas anteriores a la fecha mínima.");
+      setGlobalError(
+        "No se pueden inhabilitar fechas anteriores a la fecha mínima.",
+      );
       return;
     }
 
     if (disabledForm.end_date < disabledForm.start_date) {
-      setGlobalError("La fecha de fin no puede ser anterior a la fecha de inicio.");
+      setGlobalError(
+        "La fecha de fin no puede ser anterior a la fecha de inicio.",
+      );
       return;
     }
 
-    const { data: rangeReservations, error: rangeReservationsError } = await supabase
-      .from("reservations")
-      .select("id, customer_name, event_date, start_time, end_time, status")
-      .gte("event_date", disabledForm.start_date)
-      .lte("event_date", disabledForm.end_date)
-      .neq("status", "rejected")
-      .order("event_date", { ascending: true })
-      .order("start_time", { ascending: true });
+    const { data: rangeReservations, error: rangeReservationsError } =
+      await supabase
+        .from("reservations")
+        .select("id, customer_name, event_date, start_time, end_time, status")
+        .gte("event_date", disabledForm.start_date)
+        .lte("event_date", disabledForm.end_date)
+        .neq("status", "rejected")
+        .order("event_date", { ascending: true })
+        .order("start_time", { ascending: true });
 
     if (rangeReservationsError) {
-      console.error("Error checking reservations in disabled range:", rangeReservationsError);
+      console.error(
+        "Error checking reservations in disabled range:",
+        rangeReservationsError,
+      );
       setGlobalError(
         "No pudimos verificar las reservas existentes para ese rango. Intentá nuevamente.",
       );
@@ -793,7 +857,12 @@ export default function AdminReservationsPage() {
 
     const reservationsInRange = (rangeReservations || []) as Pick<
       Reservation,
-      "id" | "customer_name" | "event_date" | "start_time" | "end_time" | "status"
+      | "id"
+      | "customer_name"
+      | "event_date"
+      | "start_time"
+      | "end_time"
+      | "status"
     >[];
 
     if (reservationsInRange.length > 0) {
@@ -893,15 +962,22 @@ export default function AdminReservationsPage() {
   async function fetchManualBlocks() {
     if (!manualForm.event_date || !isLoggedIn) return;
 
+    const requestId = ++manualBlocksRequestIdRef.current;
+    const targetDate = manualForm.event_date;
+
     setLoadingManualSlots(true);
 
     try {
       const { data, error } = await supabase.rpc(
         "get_public_reservation_blocks",
         {
-          target_date: manualForm.event_date,
+          target_date: targetDate,
         },
       );
+
+      if (requestId !== manualBlocksRequestIdRef.current) {
+        return;
+      }
 
       if (error) {
         console.error("Error fetching manual reservation blocks:", error);
@@ -911,15 +987,23 @@ export default function AdminReservationsPage() {
 
       setManualBlocks((data || []) as ReservationBlock[]);
     } catch (error) {
+      if (requestId !== manualBlocksRequestIdRef.current) {
+        return;
+      }
+
       console.error("Unexpected manual blocks error:", error);
       setManualBlocks([]);
     } finally {
-      setLoadingManualSlots(false);
+      if (requestId === manualBlocksRequestIdRef.current) {
+        setLoadingManualSlots(false);
+      }
     }
   }
 
   async function fetchManualMonthBlocks() {
     if (!isLoggedIn) return;
+
+    const requestId = ++manualMonthBlocksRequestIdRef.current;
 
     const start = toInputDate(getMonthStart(manualCalendarMonth));
     const end = toInputDate(getMonthEnd(manualCalendarMonth));
@@ -934,9 +1018,7 @@ export default function AdminReservationsPage() {
         }),
         supabase
           .from("reservations")
-          .select(
-            "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at",
-          )
+          .select(RESERVATION_EXPORT_COLUMNS)
           .gte("event_date", start)
           .lte("event_date", end)
           .neq("status", "rejected")
@@ -944,33 +1026,54 @@ export default function AdminReservationsPage() {
           .order("start_time", { ascending: true }),
       ]);
 
+      if (requestId !== manualMonthBlocksRequestIdRef.current) {
+        return;
+      }
+
       if (blocksResult.error) {
-        console.error("Error fetching manual month blocks:", blocksResult.error);
+        console.error(
+          "Error fetching manual month blocks:",
+          blocksResult.error,
+        );
         setManualMonthBlocks([]);
       } else {
         setManualMonthBlocks((blocksResult.data || []) as ReservationBlock[]);
       }
 
       if (reservationsResult.error) {
-        console.error("Error fetching month reservations:", reservationsResult.error);
+        console.error(
+          "Error fetching month reservations:",
+          reservationsResult.error,
+        );
         setManualMonthReservations([]);
       } else {
-        setManualMonthReservations((reservationsResult.data || []) as Reservation[]);
+        setManualMonthReservations(
+          (reservationsResult.data || []) as Reservation[],
+        );
       }
     } catch (error) {
+      if (requestId !== manualMonthBlocksRequestIdRef.current) {
+        return;
+      }
+
       console.error("Unexpected manual month blocks error:", error);
+
       setManualMonthBlocks([]);
       setManualMonthReservations([]);
     } finally {
-      setLoadingManualMonthBlocks(false);
+      if (requestId === manualMonthBlocksRequestIdRef.current) {
+        setLoadingManualMonthBlocks(false);
+      }
     }
   }
 
   async function fetchReservations(silent = false) {
+    const requestId = ++reservationsRequestIdRef.current;
+
     if (!silent) {
       setLoadingReservations(true);
+      setGlobalError("");
     }
-    setGlobalError("");
 
     try {
       const { error: expiredError } = await supabase.rpc(
@@ -989,12 +1092,14 @@ export default function AdminReservationsPage() {
         console.error("Error marking completed reservations:", completeError);
       }
 
+      if (requestId !== reservationsRequestIdRef.current) {
+        return;
+      }
+
       const from = (reservationPage - 1) * RESERVATIONS_PER_PAGE;
       const to = from + RESERVATIONS_PER_PAGE - 1;
 
-      let query = supabase
-        .from("reservations")
-        .select("*", { count: "exact" });
+      let query = supabase.from("reservations").select("*", { count: "exact" });
 
       if (activeSection === "completed_events") {
         query = query.eq("status", "completed");
@@ -1021,15 +1126,25 @@ export default function AdminReservationsPage() {
       const showNewestFirst = activeSection === "completed_events";
 
       const { data, error, count } = await query
-        .order("event_date", { ascending: !showNewestFirst })
-        .order("start_time", { ascending: !showNewestFirst })
+        .order("event_date", {
+          ascending: !showNewestFirst,
+        })
+        .order("start_time", {
+          ascending: !showNewestFirst,
+        })
         .range(from, to);
+
+      if (requestId !== reservationsRequestIdRef.current) {
+        return;
+      }
 
       if (error) {
         console.error("Error fetching reservations:", error);
+
         setGlobalError(
           "No pudimos cargar las reservas. Revisá permisos de Supabase.",
         );
+
         setReservations([]);
         setReservationTotalCount(0);
         return;
@@ -1046,12 +1161,18 @@ export default function AdminReservationsPage() {
       setReservations((data || []) as Reservation[]);
       setReservationTotalCount(total);
     } catch (error) {
+      if (requestId !== reservationsRequestIdRef.current) {
+        return;
+      }
+
       console.error("Unexpected fetch reservations error:", error);
+
       setGlobalError("Ocurrió un error cargando las reservas.");
+
       setReservations([]);
       setReservationTotalCount(0);
     } finally {
-      if (!silent) {
+      if (requestId === reservationsRequestIdRef.current) {
         setLoadingReservations(false);
       }
     }
@@ -1225,7 +1346,9 @@ export default function AdminReservationsPage() {
 
       if (error) {
         console.error("Error updating reservation status:", error);
-        setGlobalError(error.message || "No pudimos actualizar el estado de la reserva.");
+        setGlobalError(
+          error.message || "No pudimos actualizar el estado de la reserva.",
+        );
         return false;
       }
 
@@ -1334,7 +1457,11 @@ export default function AdminReservationsPage() {
     const childrenCount = Number(manualForm.children_count);
     const adultsCount = Number(manualForm.adults_count);
 
-    if (!manualForm.children_count.trim() || Number.isNaN(childrenCount) || childrenCount < 0) {
+    if (
+      !manualForm.children_count.trim() ||
+      Number.isNaN(childrenCount) ||
+      childrenCount < 0
+    ) {
       setGlobalError("Ingresá la cantidad de niños.");
       return;
     }
@@ -1345,11 +1472,17 @@ export default function AdminReservationsPage() {
     }
 
     if (childrenCount > MAX_CHILDREN_COUNT) {
-      setGlobalError(`La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`);
+      setGlobalError(
+        `La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`,
+      );
       return;
     }
 
-    if (!manualForm.adults_count.trim() || Number.isNaN(adultsCount) || adultsCount < 0) {
+    if (
+      !manualForm.adults_count.trim() ||
+      Number.isNaN(adultsCount) ||
+      adultsCount < 0
+    ) {
       setGlobalError("Ingresá la cantidad de adultos.");
       return;
     }
@@ -1360,7 +1493,9 @@ export default function AdminReservationsPage() {
     }
 
     if (adultsCount > MAX_ADULTS_COUNT) {
-      setGlobalError(`La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`);
+      setGlobalError(
+        `La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`,
+      );
       return;
     }
 
@@ -1378,7 +1513,6 @@ export default function AdminReservationsPage() {
       setGlobalError("El precio pautado debe ser un importe válido.");
       return;
     }
-
 
     if (Number.isNaN(depositAmount)) {
       setGlobalError("La seña debe ser un importe válido.");
@@ -1413,9 +1547,7 @@ export default function AdminReservationsPage() {
     }
 
     if (timeToMinutes(startTime) === timeToMinutes(endTime)) {
-      setGlobalError(
-        "El horario de inicio y fin no pueden ser iguales.",
-      );
+      setGlobalError("El horario de inicio y fin no pueden ser iguales.");
       return;
     }
 
@@ -1499,41 +1631,50 @@ export default function AdminReservationsPage() {
       console.error("Error marking completed before export:", completeError);
     }
 
-    const { data, error } = await supabase
-      .from("reservations")
-      .select(
-        "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at",
-      )
-      .eq("status", "completed")
-      .order("event_date", { ascending: false })
-      .order("end_time", { ascending: false });
+    return fetchAllReservationPages(async (from, to) => {
+      const { data, error } = await supabase
+        .from("reservations")
+        .select(RESERVATION_EXPORT_COLUMNS)
+        .eq("status", "completed")
+        .order("event_date", { ascending: false })
+        .order("end_time", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, to);
 
-    if (error) {
-      console.error("Error exporting completed reservations:", error);
-      throw new Error("No pudimos obtener los eventos finalizados.");
-    }
+      if (error) {
+        console.error("Error exporting completed reservations:", error);
 
-    return (data || []) as Reservation[];
+        throw new Error("No pudimos obtener los eventos finalizados.");
+      }
+
+      return (data || []) as Reservation[];
+    });
   }
 
   async function downloadClientsExcel() {
     setGlobalError("");
 
     try {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select(
-          "id, customer_name, event_type, phone, email, children_count, adults_count, event_date, start_time, end_time, status, deposit_paid, notes, source, discovery_source, agreed_price, settlement_amount, deposit_amount, staff_count, waiters_count, animators_count, created_at, updated_at",
-        )
-        .order("created_at", { ascending: false });
+      const allReservations = await fetchAllReservationPages(
+        async (from, to) => {
+          const { data, error } = await supabase
+            .from("reservations")
+            .select(RESERVATION_EXPORT_COLUMNS)
+            .order("created_at", { ascending: false })
+            .order("id", { ascending: true })
+            .range(from, to);
 
-      if (error) {
-        console.error("Error exporting clients:", error);
-        setGlobalError("No pudimos obtener la información de los clientes.");
-        return;
-      }
+          if (error) {
+            console.error("Error exporting clients:", error);
 
-      const allReservations = (data || []) as Reservation[];
+            throw new Error(
+              "No pudimos obtener la información de los clientes.",
+            );
+          }
+
+          return (data || []) as Reservation[];
+        },
+      );
 
       if (allReservations.length === 0) {
         setGlobalError("No hay clientes registrados todavía.");
@@ -1638,7 +1779,7 @@ export default function AdminReservationsPage() {
           { index: 5, minWidth: 16, maxWidth: 20 },
           { index: 6, minWidth: 18, maxWidth: 22 },
           { index: 7, minWidth: 20, maxWidth: 24 },
-          { index: 8, numberFormat: '$ #,##0', minWidth: 16, maxWidth: 24 },
+          { index: 8, numberFormat: "$ #,##0", minWidth: 16, maxWidth: 24 },
         ],
       });
 
@@ -1813,7 +1954,8 @@ export default function AdminReservationsPage() {
                     Clientes
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-[#6d5748]">
-                    Todos los clientes registrados, sin importar el estado del evento.
+                    Todos los clientes registrados, sin importar el estado del
+                    evento.
                   </span>
                 </button>
 
@@ -1852,63 +1994,63 @@ export default function AdminReservationsPage() {
 
         <div className="-mx-1 mt-8 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-w-max gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSection("reservations");
-              setReservationPage(1);
-            }}
-            className={[
-              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-              activeSection === "reservations"
-                ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-            ].join(" ")}
-          >
-            Reservas
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSection("reservations");
+                setReservationPage(1);
+              }}
+              className={[
+                "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
+                activeSection === "reservations"
+                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                  : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+              ].join(" ")}
+            >
+              Reservas
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSection("completed_events");
-              setReservationPage(1);
-            }}
-            className={[
-              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-              activeSection === "completed_events"
-                ? "border-[#2f241e] bg-[#2f241e] text-white"
-                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-            ].join(" ")}
-          >
-            Eventos finalizados
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSection("completed_events");
+                setReservationPage(1);
+              }}
+              className={[
+                "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
+                activeSection === "completed_events"
+                  ? "border-[#2f241e] bg-[#2f241e] text-white"
+                  : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+              ].join(" ")}
+            >
+              Eventos finalizados
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveSection("disabled_dates")}
-            className={[
-              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-              activeSection === "disabled_dates"
-                ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-            ].join(" ")}
-          >
-            Fechas inhabilitadas
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveSection("disabled_dates")}
+              className={[
+                "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
+                activeSection === "disabled_dates"
+                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                  : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+              ].join(" ")}
+            >
+              Fechas inhabilitadas
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveSection("reviews")}
-            className={[
-              "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-              activeSection === "reviews"
-                ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-            ].join(" ")}
-          >
-            Reseñas
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveSection("reviews")}
+              className={[
+                "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
+                activeSection === "reviews"
+                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+                  : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+              ].join(" ")}
+            >
+              Reseñas
+            </button>
           </div>
         </div>
 
@@ -1930,7 +2072,8 @@ export default function AdminReservationsPage() {
                     Crear reserva
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-[#6d5748]">
-                    Tocalo solo si necesitás cargar una reserva desde el celular.
+                    Tocalo solo si necesitás cargar una reserva desde el
+                    celular.
                   </p>
                 </div>
 
@@ -1940,7 +2083,7 @@ export default function AdminReservationsPage() {
               </summary>
 
               <div className="mt-5 border-t border-[#e4cfad] pt-5">
-              <ManualReservationForm
+                <ManualReservationForm
                   form={manualForm}
                   setForm={setManualForm}
                   onSubmit={handleCreateManualReservation}
@@ -1975,20 +2118,20 @@ export default function AdminReservationsPage() {
               </div>
 
               <ManualReservationForm
-                  form={manualForm}
-                  setForm={setManualForm}
-                  onSubmit={handleCreateManualReservation}
-                  creating={creatingReservation}
-                  calendarMonth={manualCalendarMonth}
-                  onCalendarMonthChange={setManualCalendarMonth}
-                  monthBlocks={manualMonthBlocks}
-                  monthReservations={manualMonthReservations}
-                  disabledRanges={disabledRanges}
-                  loadingMonth={loadingManualMonthBlocks}
-                  manualSlots={manualSlots}
-                  loadingSlots={loadingManualSlots}
-                  onApplySlot={applyManualSlot}
-                />
+                form={manualForm}
+                setForm={setManualForm}
+                onSubmit={handleCreateManualReservation}
+                creating={creatingReservation}
+                calendarMonth={manualCalendarMonth}
+                onCalendarMonthChange={setManualCalendarMonth}
+                monthBlocks={manualMonthBlocks}
+                monthReservations={manualMonthReservations}
+                disabledRanges={disabledRanges}
+                loadingMonth={loadingManualMonthBlocks}
+                manualSlots={manualSlots}
+                loadingSlots={loadingManualSlots}
+                onApplySlot={applyManualSlot}
+              />
             </section>
 
             <section className="rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
@@ -1998,8 +2141,9 @@ export default function AdminReservationsPage() {
                     Reservas
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-                    Pendientes, aprobadas, rechazadas y vencidas. Cuando termina el horario del evento,
-                    pasa automáticamente a Eventos finalizados. La lista carga de a {RESERVATIONS_PER_PAGE}.
+                    Pendientes, aprobadas, rechazadas y vencidas. Cuando termina
+                    el horario del evento, pasa automáticamente a Eventos
+                    finalizados. La lista carga de a {RESERVATIONS_PER_PAGE}.
                   </p>
                 </div>
 
@@ -2065,14 +2209,17 @@ export default function AdminReservationsPage() {
                 </div>
               ) : reservations.length === 0 ? (
                 <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
-                  {reservationSearch.trim() || reservationDateFromFilter || reservationDateToFilter
+                  {reservationSearch.trim() ||
+                  reservationDateFromFilter ||
+                  reservationDateToFilter
                     ? "No hay reservas para esa búsqueda o rango de fechas."
                     : "No hay reservas para este filtro."}
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
                   <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6d5748]">
-                    Mostrando {reservationFirstItem}-{reservationLastItem} de {reservationTotalCount}
+                    Mostrando {reservationFirstItem}-{reservationLastItem} de{" "}
+                    {reservationTotalCount}
                   </div>
 
                   {reservations.map((reservation) => (
@@ -2113,7 +2260,9 @@ export default function AdminReservationsPage() {
                         <button
                           type="button"
                           disabled={reservationPage <= 1 || loadingReservations}
-                          onClick={() => setReservationPage((page) => Math.max(1, page - 1))}
+                          onClick={() =>
+                            setReservationPage((page) => Math.max(1, page - 1))
+                          }
                           className="rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:cursor-not-allowed disabled:opacity-45"
                         >
                           Anterior
@@ -2121,7 +2270,10 @@ export default function AdminReservationsPage() {
 
                         <button
                           type="button"
-                          disabled={reservationPage >= reservationTotalPages || loadingReservations}
+                          disabled={
+                            reservationPage >= reservationTotalPages ||
+                            loadingReservations
+                          }
                           onClick={() =>
                             setReservationPage((page) =>
                               Math.min(reservationTotalPages, page + 1),
@@ -2149,13 +2301,15 @@ export default function AdminReservationsPage() {
                   <h2 className="font-display text-3xl">Eventos finalizados</h2>
                 </div>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#5c473b]">
-                  Historial de eventos cuyo horario ya terminó. Se muestran primero los más recientes.
-                  El estado se sincroniza automáticamente mientras el panel permanece abierto.
+                  Historial de eventos cuyo horario ya terminó. Se muestran
+                  primero los más recientes. El estado se sincroniza
+                  automáticamente mientras el panel permanece abierto.
                 </p>
               </div>
 
               <span className="w-fit rounded-full border border-[#2f241e]/15 bg-[#2f241e]/8 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#2f241e]">
-                {reservationTotalCount} finalizado{reservationTotalCount === 1 ? "" : "s"}
+                {reservationTotalCount} finalizado
+                {reservationTotalCount === 1 ? "" : "s"}
               </span>
             </div>
 
@@ -2192,14 +2346,17 @@ export default function AdminReservationsPage() {
               </div>
             ) : reservations.length === 0 ? (
               <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
-                {reservationSearch.trim() || reservationDateFromFilter || reservationDateToFilter
+                {reservationSearch.trim() ||
+                reservationDateFromFilter ||
+                reservationDateToFilter
                   ? "No hay eventos finalizados para esa búsqueda o rango de fechas."
                   : "Todavía no hay eventos finalizados."}
               </div>
             ) : (
               <div className="mt-6 space-y-4">
                 <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6d5748]">
-                  Mostrando {reservationFirstItem}-{reservationLastItem} de {reservationTotalCount}
+                  Mostrando {reservationFirstItem}-{reservationLastItem} de{" "}
+                  {reservationTotalCount}
                 </div>
 
                 {reservations.map((reservation) => (
@@ -2238,7 +2395,9 @@ export default function AdminReservationsPage() {
                       <button
                         type="button"
                         disabled={reservationPage <= 1 || loadingReservations}
-                        onClick={() => setReservationPage((page) => Math.max(1, page - 1))}
+                        onClick={() =>
+                          setReservationPage((page) => Math.max(1, page - 1))
+                        }
                         className="rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         Anterior
@@ -2246,7 +2405,10 @@ export default function AdminReservationsPage() {
 
                       <button
                         type="button"
-                        disabled={reservationPage >= reservationTotalPages || loadingReservations}
+                        disabled={
+                          reservationPage >= reservationTotalPages ||
+                          loadingReservations
+                        }
                         onClick={() =>
                           setReservationPage((page) =>
                             Math.min(reservationTotalPages, page + 1),
@@ -2292,7 +2454,6 @@ export default function AdminReservationsPage() {
     </main>
   );
 }
-
 
 function ReservationSearchFilters({
   search,
@@ -2396,7 +2557,9 @@ function ReservationSearchFilters({
 
       <div className="mt-3 flex flex-col gap-2 rounded-[1rem] border border-[#dfc8ab] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-semibold text-[#6d5748]">
-          {loading ? "Actualizando resultados..." : `${totalCount} ${resultLabel}`}
+          {loading
+            ? "Actualizando resultados..."
+            : `${totalCount} ${resultLabel}`}
           {search.trim() ? ` · Cliente: “${search.trim()}”` : ""}
           {rangeText ? ` · ${rangeText}` : ""}
         </p>
@@ -2464,7 +2627,9 @@ function ManualReservationForm({
       <section className={sectionClass}>
         <div className="mb-4 border-b border-[#ead9c0] pb-3">
           <p className={sectionTitleClass}>Cliente</p>
-          <p className="mt-1 text-xs text-[#8a7667]">Datos de contacto y origen de la consulta.</p>
+          <p className="mt-1 text-xs text-[#8a7667]">
+            Datos de contacto y origen de la consulta.
+          </p>
         </div>
 
         <div className="grid gap-4">
@@ -2473,7 +2638,10 @@ function ManualReservationForm({
             <input
               value={form.customer_name}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, customer_name: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  customer_name: event.target.value,
+                }))
               }
               className="input-contact"
               placeholder="Nombre y apellido"
@@ -2485,7 +2653,9 @@ function ManualReservationForm({
               <span className={fieldLabelClass}>Teléfono</span>
               <input
                 value={form.phone}
-                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, phone: event.target.value }))
+                }
                 className="input-contact"
                 placeholder="+598..."
               />
@@ -2496,7 +2666,9 @@ function ManualReservationForm({
               <input
                 type="email"
                 value={form.email}
-                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, email: event.target.value }))
+                }
                 className="input-contact"
                 placeholder="cliente@email.com"
               />
@@ -2508,13 +2680,18 @@ function ManualReservationForm({
             <select
               value={form.discovery_source}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, discovery_source: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  discovery_source: event.target.value,
+                }))
               }
               className="input-contact"
             >
               <option value="">No indicado</option>
               {DISCOVERY_OPTIONS.map((option) => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </label>
@@ -2524,7 +2701,9 @@ function ManualReservationForm({
       <section className={sectionClass}>
         <div className="mb-4 border-b border-[#ead9c0] pb-3">
           <p className={sectionTitleClass}>Evento</p>
-          <p className="mt-1 text-xs text-[#8a7667]">Tipo de evento, invitados y personal.</p>
+          <p className="mt-1 text-xs text-[#8a7667]">
+            Tipo de evento, invitados y personal.
+          </p>
         </div>
 
         <div className="grid gap-4">
@@ -2532,11 +2711,17 @@ function ManualReservationForm({
             <span className={fieldLabelClass}>Tipo de evento</span>
             <select
               value={form.event_type}
-              onChange={(event) => setForm((prev) => ({ ...prev, event_type: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, event_type: event.target.value }))
+              }
               className="input-contact"
             >
               <option value="">Seleccioná una opción</option>
-              {EVENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+              {EVENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -2548,7 +2733,12 @@ function ManualReservationForm({
                 min="0"
                 inputMode="numeric"
                 value={form.children_count}
-                onChange={(event) => setForm((prev) => ({ ...prev, children_count: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    children_count: event.target.value,
+                  }))
+                }
                 className="input-contact"
                 placeholder="Ej: 15"
               />
@@ -2561,7 +2751,12 @@ function ManualReservationForm({
                 min="0"
                 inputMode="numeric"
                 value={form.adults_count}
-                onChange={(event) => setForm((prev) => ({ ...prev, adults_count: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    adults_count: event.target.value,
+                  }))
+                }
                 className="input-contact"
                 placeholder="Ej: 40"
               />
@@ -2578,7 +2773,10 @@ function ManualReservationForm({
                 inputMode="numeric"
                 value={form.waiters_count}
                 onChange={(event) =>
-                  setForm((prev) => ({ ...prev, waiters_count: event.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    waiters_count: event.target.value,
+                  }))
                 }
                 className="input-contact"
                 placeholder="Ej: 2"
@@ -2594,7 +2792,10 @@ function ManualReservationForm({
                 inputMode="numeric"
                 value={form.animators_count}
                 onChange={(event) =>
-                  setForm((prev) => ({ ...prev, animators_count: event.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    animators_count: event.target.value,
+                  }))
                 }
                 className="input-contact"
                 placeholder="Ej: 1"
@@ -2608,7 +2809,9 @@ function ManualReservationForm({
         <div className="mb-4 flex flex-col gap-3 border-b border-[#ead9c0] pb-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className={sectionTitleClass}>Cobro</p>
-            <p className="mt-1 text-xs text-[#8a7667]">Importes administrativos del evento.</p>
+            <p className="mt-1 text-xs text-[#8a7667]">
+              Importes administrativos del evento.
+            </p>
           </div>
           <div className="rounded-full border border-[#0BB3A6]/30 bg-[#0BB3A6]/10 px-4 py-2 text-xs font-bold text-[#087d75]">
             Seña registrada: {formatMoney(depositPreview)}
@@ -2624,7 +2827,12 @@ function ManualReservationForm({
               step="1"
               inputMode="decimal"
               value={form.agreed_price}
-              onChange={(event) => setForm((prev) => ({ ...prev, agreed_price: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({
+                  ...prev,
+                  agreed_price: event.target.value,
+                }))
+              }
               className="input-contact"
               placeholder="$"
             />
@@ -2642,7 +2850,8 @@ function ManualReservationForm({
                 setForm((prev) => ({
                   ...prev,
                   deposit_amount: event.target.value,
-                  deposit_paid: Number(event.target.value) > 0 ? true : prev.deposit_paid,
+                  deposit_paid:
+                    Number(event.target.value) > 0 ? true : prev.deposit_paid,
                 }))
               }
               className="input-contact"
@@ -2650,13 +2859,17 @@ function ManualReservationForm({
             />
           </label>
 
-
           <div className="flex items-end">
             <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
               <input
                 type="checkbox"
                 checked={form.deposit_paid}
-                onChange={(event) => setForm((prev) => ({ ...prev, deposit_paid: event.target.checked }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    deposit_paid: event.target.checked,
+                  }))
+                }
                 className="h-3.5 w-3.5 accent-[#0BB3A6]"
               />
               Seña paga
@@ -2668,7 +2881,9 @@ function ManualReservationForm({
       <section className={sectionClass}>
         <div className="mb-4 border-b border-[#ead9c0] pb-3">
           <p className={sectionTitleClass}>Fecha y horario</p>
-          <p className="mt-1 text-xs text-[#8a7667]">Disponibilidad del salón y horario acordado.</p>
+          <p className="mt-1 text-xs text-[#8a7667]">
+            Disponibilidad del salón y horario acordado.
+          </p>
         </div>
 
         <ReservationCalendar
@@ -2689,18 +2904,23 @@ function ManualReservationForm({
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className={fieldLabelClass}>Horarios sugeridos</span>
             {loadingSlots && (
-              <span className="text-xs font-semibold text-[#087d75]">Consultando...</span>
+              <span className="text-xs font-semibold text-[#087d75]">
+                Consultando...
+              </span>
             )}
           </div>
 
           {manualSlots.length === 0 ? (
             <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/55 px-4 py-3 text-sm leading-relaxed text-[#5c473b]">
-              No hay horarios sugeridos para esta fecha. Igual podés ingresar un horario libre abajo.
+              No hay horarios sugeridos para esta fecha. Igual podés ingresar un
+              horario libre abajo.
             </div>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {manualSlots.map((slot) => {
-                const active = form.start_time === slot.startTime && form.end_time === slot.endTime;
+                const active =
+                  form.start_time === slot.startTime &&
+                  form.end_time === slot.endTime;
                 return (
                   <button
                     key={`${slot.period}-${slot.startTime}`}
@@ -2731,7 +2951,9 @@ function ManualReservationForm({
               maxLength={5}
               placeholder="17:00"
               value={form.start_time}
-              onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, start_time: event.target.value }))
+              }
               className="input-contact"
             />
           </label>
@@ -2745,7 +2967,9 @@ function ManualReservationForm({
               maxLength={5}
               placeholder="20:00"
               value={form.end_time}
-              onChange={(event) => setForm((prev) => ({ ...prev, end_time: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, end_time: event.target.value }))
+              }
               className="input-contact"
             />
           </label>
@@ -2753,7 +2977,9 @@ function ManualReservationForm({
 
         {manualEndsNextDay && (
           <p className="mt-3 rounded-[0.9rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#087d75]">
-            Este horario termina al día siguiente. Por ejemplo, 20:30 a 00:30 se interpreta como un evento de la fecha seleccionada que finaliza a las 00:30 del día siguiente.
+            Este horario termina al día siguiente. Por ejemplo, 20:30 a 00:30 se
+            interpreta como un evento de la fecha seleccionada que finaliza a
+            las 00:30 del día siguiente.
           </p>
         )}
       </section>
@@ -2761,11 +2987,15 @@ function ManualReservationForm({
       <section className={sectionClass}>
         <div className="mb-4 border-b border-[#ead9c0] pb-3">
           <p className={sectionTitleClass}>Notas</p>
-          <p className="mt-1 text-xs text-[#8a7667]">Detalles operativos o acuerdos especiales.</p>
+          <p className="mt-1 text-xs text-[#8a7667]">
+            Detalles operativos o acuerdos especiales.
+          </p>
         </div>
         <textarea
           value={form.notes}
-          onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+          onChange={(event) =>
+            setForm((prev) => ({ ...prev, notes: event.target.value }))
+          }
           className="input-contact min-h-36 resize-y leading-relaxed"
           placeholder="Menú, personal requerido, decoración, condiciones especiales..."
         />
@@ -2776,7 +3006,11 @@ function ManualReservationForm({
         disabled={creating}
         className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {creating ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+        {creating ? (
+          <Loader2 size={18} className="animate-spin" />
+        ) : (
+          <Plus size={18} />
+        )}
         {creating ? "Creando reserva..." : "Crear reserva aprobada"}
       </button>
     </form>
@@ -2823,8 +3057,8 @@ function DisabledDatesAdminSection({
               Inhabilitar fechas
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
-              Marcá un día puntual o un rango para que no se puedan tomar
-              nuevas reservas.
+              Marcá un día puntual o un rango para que no se puedan tomar nuevas
+              reservas.
             </p>
           </div>
 
@@ -2962,7 +3196,8 @@ function DisabledDatesAdminSection({
                     </p>
 
                     <p className="mt-3 text-xs font-medium text-[#8a7667]">
-                      Creada el {new Date(range.created_at).toLocaleString("es-UY")}
+                      Creada el{" "}
+                      {new Date(range.created_at).toLocaleString("es-UY")}
                     </p>
                   </div>
 
@@ -3187,7 +3422,9 @@ function ReservationCard({
   onApprove: () => void;
   onReject: () => void;
   onDepositChange: (value: boolean) => void;
-  onSaveDetails: (values: ReservationDetailsUpdateValues) => Promise<string | null>;
+  onSaveDetails: (
+    values: ReservationDetailsUpdateValues,
+  ) => Promise<string | null>;
   onSaveNotes: (notes: string) => void;
   onDelete: () => void;
 }) {
@@ -3204,7 +3441,8 @@ function ReservationCard({
 
   const totalIncome = getEventTotalIncome(reservation);
   const hasIncomeData =
-    reservation.deposit_amount !== null || reservation.settlement_amount !== null;
+    reservation.deposit_amount !== null ||
+    reservation.settlement_amount !== null;
 
   const [editDraft, setEditDraft] = useState({
     customer_name: reservation.customer_name,
@@ -3278,7 +3516,11 @@ function ReservationCard({
     const childrenCount = Number(editDraft.children_count);
     const adultsCount = Number(editDraft.adults_count);
 
-    if (!editDraft.children_count.trim() || Number.isNaN(childrenCount) || childrenCount < 0) {
+    if (
+      !editDraft.children_count.trim() ||
+      Number.isNaN(childrenCount) ||
+      childrenCount < 0
+    ) {
       setEditError("Ingresá la cantidad de niños.");
       return;
     }
@@ -3289,11 +3531,17 @@ function ReservationCard({
     }
 
     if (childrenCount > MAX_CHILDREN_COUNT) {
-      setEditError(`La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`);
+      setEditError(
+        `La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`,
+      );
       return;
     }
 
-    if (!editDraft.adults_count.trim() || Number.isNaN(adultsCount) || adultsCount < 0) {
+    if (
+      !editDraft.adults_count.trim() ||
+      Number.isNaN(adultsCount) ||
+      adultsCount < 0
+    ) {
       setEditError("Ingresá la cantidad de adultos.");
       return;
     }
@@ -3304,7 +3552,9 @@ function ReservationCard({
     }
 
     if (adultsCount > MAX_ADULTS_COUNT) {
-      setEditError(`La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`);
+      setEditError(
+        `La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`,
+      );
       return;
     }
 
@@ -3469,7 +3719,8 @@ function ReservationCard({
               </h3>
               {isCompletedView && (
                 <p className="mt-1 text-sm font-semibold text-[#6d5748]">
-                  {formatDateForDisplay(reservation.event_date)} · {formatReservationTimeRange(
+                  {formatDateForDisplay(reservation.event_date)} ·{" "}
+                  {formatReservationTimeRange(
                     reservation.start_time,
                     reservation.end_time,
                   )}
@@ -3479,7 +3730,9 @@ function ReservationCard({
 
             {isCompletedView && (
               <div className="w-fit rounded-[1rem] border border-[#2f241e]/10 bg-white/65 px-4 py-2 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a7667]">Ingreso total</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a7667]">
+                  Ingreso total
+                </p>
                 <p className="mt-0.5 text-base font-bold text-[#2f241e]">
                   {formatMoney(hasIncomeData ? totalIncome : null)}
                 </p>
@@ -3498,20 +3751,34 @@ function ReservationCard({
                   <User size={15} />
                   Información del cliente
                 </span>
-                <ChevronRight size={16} className="transition group-open:rotate-90" />
+                <ChevronRight
+                  size={16}
+                  className="transition group-open:rotate-90"
+                />
               </summary>
 
               <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
-                <p><b>Nombre:</b> {reservation.customer_name}</p>
-                <p><b>Tel:</b> {reservation.phone}</p>
-                <p><b>Email:</b> {reservation.email || "No indicado"}</p>
-                <p><b>Conoció Calypso por:</b> {reservation.discovery_source || "No indicado"}</p>
+                <p>
+                  <b>Nombre:</b> {reservation.customer_name}
+                </p>
+                <p>
+                  <b>Tel:</b> {reservation.phone}
+                </p>
+                <p>
+                  <b>Email:</b> {reservation.email || "No indicado"}
+                </p>
+                <p>
+                  <b>Conoció Calypso por:</b>{" "}
+                  {reservation.discovery_source || "No indicado"}
+                </p>
               </div>
             </details>
 
             <details
               open={reservationInfoOpen}
-              onToggle={(event) => setReservationInfoOpen(event.currentTarget.open)}
+              onToggle={(event) =>
+                setReservationInfoOpen(event.currentTarget.open)
+              }
               className="group rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f] [&::-webkit-details-marker]:hidden">
@@ -3519,22 +3786,45 @@ function ReservationCard({
                   <CalendarCheck size={15} />
                   Información de la reserva
                 </span>
-                <ChevronRight size={16} className="transition group-open:rotate-90" />
+                <ChevronRight
+                  size={16}
+                  className="transition group-open:rotate-90"
+                />
               </summary>
 
               <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
-                <p><b>Evento:</b> {reservation.event_type}</p>
-                <p><b>Fecha:</b> {formatDateForDisplay(reservation.event_date)}</p>
-                <p><b>Horario:</b> {formatReservationTimeRange(reservation.start_time, reservation.end_time)}</p>
-                <p><b>Niños:</b> {reservation.children_count ?? "No indicado"}</p>
-                <p><b>Adultos:</b> {reservation.adults_count ?? "No indicado"}</p>
-                <p><b>Mozos:</b> {reservation.waiters_count ?? "No indicado"}</p>
-                <p><b>Animadores:</b> {reservation.animators_count ?? "No indicado"}</p>
+                <p>
+                  <b>Evento:</b> {reservation.event_type}
+                </p>
+                <p>
+                  <b>Fecha:</b> {formatDateForDisplay(reservation.event_date)}
+                </p>
+                <p>
+                  <b>Horario:</b>{" "}
+                  {formatReservationTimeRange(
+                    reservation.start_time,
+                    reservation.end_time,
+                  )}
+                </p>
+                <p>
+                  <b>Niños:</b> {reservation.children_count ?? "No indicado"}
+                </p>
+                <p>
+                  <b>Adultos:</b> {reservation.adults_count ?? "No indicado"}
+                </p>
+                <p>
+                  <b>Mozos:</b> {reservation.waiters_count ?? "No indicado"}
+                </p>
+                <p>
+                  <b>Animadores:</b>{" "}
+                  {reservation.animators_count ?? "No indicado"}
+                </p>
                 {reservation.staff_count !== null &&
                   reservation.waiters_count === null &&
                   reservation.animators_count === null && (
                     <p className="text-[#8a5b1f]">
-                      <b>Personal histórico sin separar:</b> {reservation.staff_count}
+                      <b>Personal histórico sin separar:</b>{" "}
+                      {reservation.staff_count}
                     </p>
                   )}
               </div>
@@ -3560,22 +3850,39 @@ function ReservationCard({
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Precio pautado</p>
-                  <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.agreed_price)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">
+                    Precio pautado
+                  </p>
+                  <p className="mt-1 font-semibold text-[#2f241e]">
+                    {formatMoney(reservation.agreed_price)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Seña</p>
-                  <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.deposit_amount)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">
+                    Seña
+                  </p>
+                  <p className="mt-1 font-semibold text-[#2f241e]">
+                    {formatMoney(reservation.deposit_amount)}
+                  </p>
                 </div>
-                {(reservation.status === "completed" || reservation.settlement_amount !== null) && (
+                {(reservation.status === "completed" ||
+                  reservation.settlement_amount !== null) && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">Liquidación</p>
-                    <p className="mt-1 font-semibold text-[#2f241e]">{formatMoney(reservation.settlement_amount)}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">
+                      Liquidación
+                    </p>
+                    <p className="mt-1 font-semibold text-[#2f241e]">
+                      {formatMoney(reservation.settlement_amount)}
+                    </p>
                   </div>
                 )}
                 <div className="rounded-[0.9rem] bg-white/70 px-3 py-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#087d75]">Ingreso total</p>
-                  <p className="mt-1 text-lg font-bold text-[#087d75]">{formatMoney(hasIncomeData ? totalIncome : null)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#087d75]">
+                    Ingreso total
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-[#087d75]">
+                    {formatMoney(hasIncomeData ? totalIncome : null)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -3583,16 +3890,17 @@ function ReservationCard({
         </div>
 
         <div className="flex flex-wrap items-start gap-2 lg:max-w-[230px] lg:justify-end">
-          {reservation.status !== "approved" && reservation.status !== "completed" && (
-            <button
-              onClick={onApprove}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
-            >
-              <Check size={15} />
-              Aprobar
-            </button>
-          )}
+          {reservation.status !== "approved" &&
+            reservation.status !== "completed" && (
+              <button
+                onClick={onApprove}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+              >
+                <Check size={15} />
+                Aprobar
+              </button>
+            )}
 
           <button
             onClick={() => setIsEditing((prev) => !prev)}
@@ -3604,22 +3912,26 @@ function ReservationCard({
           </button>
 
           <details className="group relative">
-            <summary className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#dfc8ab] bg-white text-[#2f241e] transition hover:bg-[#fff9f0] [&::-webkit-details-marker]:hidden" aria-label="Más acciones">
+            <summary
+              className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#dfc8ab] bg-white text-[#2f241e] transition hover:bg-[#fff9f0] [&::-webkit-details-marker]:hidden"
+              aria-label="Más acciones"
+            >
               <MoreHorizontal size={17} />
             </summary>
 
             <div className="absolute right-0 z-30 mt-2 min-w-40 rounded-[1rem] border border-[#dfc8ab] bg-[#fffdf9] p-2 shadow-[0_18px_42px_rgba(90,64,50,0.16)]">
-              {reservation.status !== "rejected" && reservation.status !== "completed" && (
-                <button
-                  type="button"
-                  onClick={onReject}
-                  disabled={loading}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
-                >
-                  <X size={14} />
-                  Rechazar
-                </button>
-              )}
+              {reservation.status !== "rejected" &&
+                reservation.status !== "completed" && (
+                  <button
+                    type="button"
+                    onClick={onReject}
+                    disabled={loading}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <X size={14} />
+                    Rechazar
+                  </button>
+                )}
 
               <button
                 type="button"
@@ -3627,7 +3939,11 @@ function ReservationCard({
                 disabled={loading}
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
               >
-                {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                {loading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
                 Borrar
               </button>
             </div>
@@ -3642,83 +3958,284 @@ function ReservationCard({
         >
           <div className="grid gap-5">
             <section>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">Cliente</p>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">
+                Cliente
+              </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Nombre</span>
-                  <input value={editDraft.customer_name} onChange={(event) => setEditDraft((prev) => ({ ...prev, customer_name: event.target.value }))} className="input-contact" placeholder="Nombre y apellido" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Nombre
+                  </span>
+                  <input
+                    value={editDraft.customer_name}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        customer_name: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="Nombre y apellido"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Teléfono</span>
-                  <input value={editDraft.phone} onChange={(event) => setEditDraft((prev) => ({ ...prev, phone: event.target.value }))} className="input-contact" placeholder="+598..." />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Teléfono
+                  </span>
+                  <input
+                    value={editDraft.phone}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        phone: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="+598..."
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Email</span>
-                  <input type="email" value={editDraft.email} onChange={(event) => setEditDraft((prev) => ({ ...prev, email: event.target.value }))} className="input-contact" placeholder="cliente@email.com" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Email
+                  </span>
+                  <input
+                    type="email"
+                    value={editDraft.email}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        email: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="cliente@email.com"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Cómo conoció Calypso</span>
-                  <select value={editDraft.discovery_source} onChange={(event) => setEditDraft((prev) => ({ ...prev, discovery_source: event.target.value }))} className="input-contact">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Cómo conoció Calypso
+                  </span>
+                  <select
+                    value={editDraft.discovery_source}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        discovery_source: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  >
                     <option value="">No indicado</option>
-                    {DISCOVERY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                    {DISCOVERY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
             </section>
 
             <section className="border-t border-[#ead9c0] pt-5">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">Evento</p>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">
+                Evento
+              </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Tipo de evento</span>
-                  <select value={editDraft.event_type} onChange={(event) => setEditDraft((prev) => ({ ...prev, event_type: event.target.value }))} className="input-contact">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Tipo de evento
+                  </span>
+                  <select
+                    value={editDraft.event_type}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        event_type: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  >
                     <option value="">Seleccioná una opción</option>
-                    {EVENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                    {EVENT_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Estado</span>
-                  <select value={editDraft.status} onChange={(event) => setEditDraft((prev) => ({ ...prev, status: event.target.value as ReservationStatus }))} className="input-contact">
-                    {(["pending", "approved", "rejected", "expired", "completed"] as ReservationStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Estado
+                  </span>
+                  <select
+                    value={editDraft.status}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        status: event.target.value as ReservationStatus,
+                      }))
+                    }
+                    className="input-contact"
+                  >
+                    {(
+                      [
+                        "pending",
+                        "approved",
+                        "rejected",
+                        "expired",
+                        "completed",
+                      ] as ReservationStatus[]
+                    ).map((status) => (
+                      <option key={status} value={status}>
+                        {statusLabels[status]}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Niños</span>
-                  <input type="number" min="0" inputMode="numeric" value={editDraft.children_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, children_count: event.target.value }))} className="input-contact" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Niños
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={editDraft.children_count}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        children_count: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Adultos</span>
-                  <input type="number" min="0" inputMode="numeric" value={editDraft.adults_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, adults_count: event.target.value }))} className="input-contact" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Adultos
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={editDraft.adults_count}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        adults_count: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Mozos</span>
-                  <input type="number" min="0" step="1" inputMode="numeric" value={editDraft.waiters_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, waiters_count: event.target.value }))} className="input-contact" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Mozos
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={editDraft.waiters_count}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        waiters_count: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Animadores</span>
-                  <input type="number" min="0" step="1" inputMode="numeric" value={editDraft.animators_count} onChange={(event) => setEditDraft((prev) => ({ ...prev, animators_count: event.target.value }))} className="input-contact" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Animadores
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={editDraft.animators_count}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        animators_count: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  />
                 </label>
               </div>
             </section>
 
             <section className="border-t border-[#ead9c0] pt-5">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">Fecha y horario</p>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">
+                Fecha y horario
+              </p>
               <div className="grid gap-4 md:grid-cols-3">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Fecha</span>
-                  <input type="date" value={editDraft.event_date} onChange={(event) => setEditDraft((prev) => ({ ...prev, event_date: event.target.value }))} className="input-contact" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Fecha
+                  </span>
+                  <input
+                    type="date"
+                    value={editDraft.event_date}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        event_date: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Inicio</span>
-                  <input type="text" inputMode="numeric" pattern="[0-2][0-9]:[0-5][0-9]" maxLength={5} value={editDraft.start_time} onChange={(event) => setEditDraft((prev) => ({ ...prev, start_time: event.target.value }))} className="input-contact" placeholder="17:00" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Inicio
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-2][0-9]:[0-5][0-9]"
+                    maxLength={5}
+                    value={editDraft.start_time}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        start_time: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="17:00"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Fin</span>
-                  <input type="text" inputMode="numeric" pattern="[0-2][0-9]:[0-5][0-9]" maxLength={5} value={editDraft.end_time} onChange={(event) => setEditDraft((prev) => ({ ...prev, end_time: event.target.value }))} className="input-contact" placeholder="20:00" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Fin
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-2][0-9]:[0-5][0-9]"
+                    maxLength={5}
+                    value={editDraft.end_time}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        end_time: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="20:00"
+                  />
                 </label>
               </div>
 
-              {isOvernightTimeRange(editDraft.start_time, editDraft.end_time) && (
+              {isOvernightTimeRange(
+                editDraft.start_time,
+                editDraft.end_time,
+              ) && (
                 <p className="mt-3 rounded-[0.9rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#087d75]">
                   Este horario termina al día siguiente.
                 </p>
@@ -3726,25 +4243,89 @@ function ReservationCard({
             </section>
 
             <section className="border-t border-[#ead9c0] pt-5">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">Cobro</p>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">
+                Cobro
+              </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Precio pautado</span>
-                  <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.agreed_price} onChange={(event) => setEditDraft((prev) => ({ ...prev, agreed_price: event.target.value }))} className="input-contact" placeholder="$" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Precio pautado
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="decimal"
+                    value={editDraft.agreed_price}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        agreed_price: event.target.value,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="$"
+                  />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Seña</span>
-                  <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.deposit_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_amount: event.target.value, deposit_paid: Number(event.target.value) > 0 ? true : prev.deposit_paid }))} className="input-contact" placeholder="$" />
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    Seña
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="decimal"
+                    value={editDraft.deposit_amount}
+                    onChange={(event) =>
+                      setEditDraft((prev) => ({
+                        ...prev,
+                        deposit_amount: event.target.value,
+                        deposit_paid:
+                          Number(event.target.value) > 0
+                            ? true
+                            : prev.deposit_paid,
+                      }))
+                    }
+                    className="input-contact"
+                    placeholder="$"
+                  />
                 </label>
                 {editDraft.status === "completed" && (
                   <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">Liquidación</span>
-                    <input type="number" min="0" step="1" inputMode="decimal" value={editDraft.settlement_amount} onChange={(event) => setEditDraft((prev) => ({ ...prev, settlement_amount: event.target.value }))} className="input-contact" placeholder="$" />
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                      Liquidación
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="decimal"
+                      value={editDraft.settlement_amount}
+                      onChange={(event) =>
+                        setEditDraft((prev) => ({
+                          ...prev,
+                          settlement_amount: event.target.value,
+                        }))
+                      }
+                      className="input-contact"
+                      placeholder="$"
+                    />
                   </label>
                 )}
                 <div className="flex items-end">
                   <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
-                    <input type="checkbox" checked={editDraft.deposit_paid} onChange={(event) => setEditDraft((prev) => ({ ...prev, deposit_paid: event.target.checked }))} className="h-3.5 w-3.5 accent-[#0BB3A6]" />
+                    <input
+                      type="checkbox"
+                      checked={editDraft.deposit_paid}
+                      onChange={(event) =>
+                        setEditDraft((prev) => ({
+                          ...prev,
+                          deposit_paid: event.target.checked,
+                        }))
+                      }
+                      className="h-3.5 w-3.5 accent-[#0BB3A6]"
+                    />
                     Seña paga
                   </label>
                 </div>
@@ -3759,11 +4340,24 @@ function ReservationCard({
           )}
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60">
-              {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Save size={15} />
+              )}
               Guardar cambios
             </button>
-            <button type="button" onClick={cancelEdit} disabled={loading} className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
+            >
               <X size={15} />
               Cancelar
             </button>
@@ -3790,7 +4384,11 @@ function ReservationCard({
             onClick={() => setNotesOpen((prev) => !prev)}
             className="shrink-0 rounded-full border border-[#dfc8ab] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#2f241e] transition hover:bg-white"
           >
-            {notesOpen ? "Cerrar" : reservation.notes?.trim() ? "Ver / editar" : "Agregar nota"}
+            {notesOpen
+              ? "Cerrar"
+              : reservation.notes?.trim()
+                ? "Ver / editar"
+                : "Agregar nota"}
           </button>
         </div>
 
@@ -3809,7 +4407,11 @@ function ReservationCard({
               disabled={loading}
               className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-white disabled:opacity-60"
             >
-              {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              {loading ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Save size={15} />
+              )}
               Guardar notas
             </button>
           </div>
@@ -3818,7 +4420,6 @@ function ReservationCard({
     </article>
   );
 }
-
 
 function ReservationCalendar({
   selectedDate,
@@ -3846,7 +4447,9 @@ function ReservationCalendar({
   const weekDays = ["D", "L", "M", "M", "J", "V", "S"];
 
   const getDateReservations = (dateValue: string) =>
-    monthReservations.filter((reservation) => reservation.event_date === dateValue);
+    monthReservations.filter(
+      (reservation) => reservation.event_date === dateValue,
+    );
 
   const getDateTooltip = (dateValue: string) => {
     if (dateValue < minDate) {
@@ -3958,9 +4561,11 @@ function ReservationCalendar({
           const hasReservation = dateReservations.length > 0;
           const isClosed = availability === "closed";
 
-          const selected = selectedDate === dateValue && availability !== "closed";
+          const selected =
+            selectedDate === dateValue && availability !== "closed";
           const outsideMonth = date.getMonth() !== month;
-          const disabled = availability === "disabled" || availability === "closed";
+          const disabled =
+            availability === "disabled" || availability === "closed";
 
           return (
             <button
@@ -3979,17 +4584,19 @@ function ReservationCalendar({
                     : availability === "full"
                       ? "border-red-300 bg-red-100 text-red-700 hover:bg-red-50"
                       : availability === "partial"
-                      ? "border-[#d89b38] bg-[#f4c76f]/45 text-[#6f4311] hover:bg-[#f4c76f]/60"
-                      : availability === "disabled"
-                        ? "cursor-not-allowed border-stone-300 bg-stone-200 text-stone-500"
-                        : "border-[#d1af7e] bg-[#fff0d2] text-[#2f241e] hover:-translate-y-0.5 hover:border-[#0BB3A6]/55 hover:bg-[#fff7eb]",
+                        ? "border-[#d89b38] bg-[#f4c76f]/45 text-[#6f4311] hover:bg-[#f4c76f]/60"
+                        : availability === "disabled"
+                          ? "cursor-not-allowed border-stone-300 bg-stone-200 text-stone-500"
+                          : "border-[#d1af7e] bg-[#fff0d2] text-[#2f241e] hover:-translate-y-0.5 hover:border-[#0BB3A6]/55 hover:bg-[#fff7eb]",
               ].join(" ")}
             >
               <span>{date.getDate()}</span>
 
               {(isClosed || hasReservation) && (
                 <span className="absolute bottom-1.5 left-1/2 flex -translate-x-1/2 gap-1">
-                  {isClosed && <span className="h-1.5 w-1.5 rounded-full bg-red-700" />}
+                  {isClosed && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-700" />
+                  )}
                   {hasReservation && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2f241e]" />
                   )}
@@ -4013,12 +4620,12 @@ function ReservationCalendar({
 
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-red-100 ring-1 ring-red-300" />
-Inhabilitada / completo
+          Inhabilitada / completo
         </div>
 
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-stone-200 ring-1 ring-stone-300" />
-No disponible / fuera de rango
+          No disponible / fuera de rango
         </div>
       </div>
     </div>
