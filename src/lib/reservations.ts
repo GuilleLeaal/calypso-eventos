@@ -199,7 +199,7 @@ function toMinuteRange(startTime: string, endTime: string): [number, number] {
   return [start, end];
 }
 
-function createLocalDate(dateValue: string) {
+export function createLocalDate(dateValue: string) {
   const [year, month, day] = dateValue.split("-").map(Number);
 
   return new Date(year, month - 1, day);
