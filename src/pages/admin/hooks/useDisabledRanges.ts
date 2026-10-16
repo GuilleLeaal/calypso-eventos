@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
+import { getTodayInputValue } from "../../../lib/reservations";
 import type { DisabledReservationDateRange } from "../types";
 import { getMinReservationDate } from "../utils/dateHelpers";
 
@@ -39,6 +40,7 @@ export function useDisabledRanges({
       const { data, error } = await supabase
         .from("disabled_reservation_dates")
         .select("id, start_date, end_date, reason, created_at")
+        .gte("end_date", getTodayInputValue())
         .order("start_date", { ascending: true });
 
       if (error) {
