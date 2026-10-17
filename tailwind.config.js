@@ -32,11 +32,32 @@ export default {
           gold: "#C9A46A",
           copper: "#B97850",
         },
+
+        // Paleta del rediseño público: el turquesa Calypso como color de marca,
+        // papel y tinta del logo, la noche del patio y la luz de las guirnaldas.
+        paper: {
+          DEFAULT: "#F3ECDF",
+          deep: "#E8DDC9",
+        },
+        ink: {
+          DEFAULT: "#1C1915",
+          soft: "#4B443B",
+          mute: "#6E6558",
+        },
+        night: {
+          DEFAULT: "#0D1D1E",
+          soft: "#152B2C",
+          line: "#29433F",
+        },
+        bulb: "#F2B544",
+        brick: "#A9572F",
       },
 
       fontFamily: {
         display: ["Playfair Display", "serif"],
         body: ["Inter", "system-ui", "sans-serif"],
+        titular: ["Gloock", "Georgia", "serif"],
+        texto: ["Hanken Grotesk", "system-ui", "sans-serif"],
       },
 
       boxShadow: {

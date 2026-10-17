@@ -22,13 +22,10 @@ function Home() {
       <Hero />
 
       <Services />
-
-      <section className="bg-rustic-ivory">
-        <VideoTour />
-        <Sectores />
-        <Location />
-        <ReviewsPreview />
-      </section>
+      <VideoTour />
+      <Sectores />
+      <Location />
+      <ReviewsPreview />
     </main>
   );
 }

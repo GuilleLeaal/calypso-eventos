@@ -1,28 +1,29 @@
-import { useState } from "react";
-import { motion, AnimatePresence, circOut } from "framer-motion";
-import {
-  PartyPopper,
-  Users,
-  Building2,
-  CalendarDays,
-  ArrowUpRight,
-  Sparkles,
-  Check,
-  X,
-} from "lucide-react";
+import { useId, useState } from "react";
+import { ArrowRight, Minus, Plus } from "lucide-react";
+import { CypressMark } from "./home/CypressMark";
+import cumpleImg from "../assets/home/servicio-cumpleanos.webp";
+import reunionesImg from "../assets/home/servicio-reuniones.webp";
+import corporativosImg from "../assets/home/servicio-corporativos.webp";
+import especialesImg from "../assets/home/servicio-especiales.webp";
 
-import cumpleImg from "../assets/servicios/cumpleanos.png";
-import reunionesImg from "../assets/servicios/reuniones.png";
-import corporativosImg from "../assets/servicios/corporativos.png";
-import especialesImg from "../assets/servicios/especiales.png";
+const EXTRAS = [
+  "Bebidas a consignación",
+  "Menú para adultos",
+  "Animador extra",
+  "Mozo extra",
+  "Uso del parrillero",
+  "Leña",
+  "Hielo",
+];
 
 const services = [
   {
-    icon: PartyPopper,
     title: "Cumpleaños",
+    summary: "Infantiles y familiares, con juegos, animadores y menú para los chicos.",
     desc: "Celebraciones infantiles y familiares con espacios cómodos, juegos y asistencia para que el evento fluya sin complicaciones.",
     image: cumpleImg,
-    tag: "Más pedido",
+    imageAlt: "Cumpleaños infantil alrededor de una mesa con torta y globos",
+    highlight: "El más pedido",
     included: [
       "Uso de las instalaciones",
       "Uso de juegos",
@@ -31,22 +32,13 @@ const services = [
       "1 mozo",
       "2 animadores",
     ],
-    extras: [
-      "Bebidas a consignación",
-      "Menú para adultos",
-      "Animador extra",
-      "Mozo extra",
-      "Uso del parrillero",
-      "Leña",
-      "Hielo",
-    ],
   },
   {
-    icon: Users,
     title: "Reuniones",
+    summary: "Encuentros familiares o entre amigos, con parrillero y lugar para todos.",
     desc: "Un entorno cálido para encuentros familiares o sociales, con buena distribución y opciones adaptables según la cantidad de invitados.",
     image: reunionesImg,
-    tag: "Social",
+    imageAlt: "Grupo de amigos jugando al pool en una reunión",
     included: [
       "Uso de las instalaciones",
       "Uso de juegos",
@@ -55,44 +47,26 @@ const services = [
       "1 mozo",
       "2 animadores si hay 25 niños o más",
     ],
-    extras: [
-      "Bebidas a consignación",
-      "Menú para adultos",
-      "Animador extra",
-      "Mozo extra",
-      "Uso del parrillero",
-      "Leña",
-      "Hielo",
-    ],
   },
   {
-    icon: Building2,
     title: "Eventos corporativos",
+    summary: "Reuniones de equipo, capacitaciones y jornadas fuera de la oficina.",
     desc: "Espacio funcional para encuentros empresariales, reuniones de equipo, capacitaciones o jornadas corporativas en un ambiente diferente.",
     image: corporativosImg,
-    tag: "Empresas",
+    imageAlt: "Equipo de trabajo reunido alrededor de una mesa larga con computadoras",
     included: [
       "Uso de las instalaciones",
       "Uso de juegos para adultos",
       "1 ayudante de cocina",
       "1 mozo",
     ],
-    extras: [
-      "Bebidas a consignación",
-      "Menú para adultos",
-      "Animador extra",
-      "Mozo extra",
-      "Uso del parrillero",
-      "Leña",
-      "Hielo",
-    ],
   },
   {
-    icon: CalendarDays,
     title: "Eventos especiales",
+    summary: "Bautismos, aniversarios y celebraciones privadas a medida.",
     desc: "Bautismos, aniversarios y celebraciones privadas con una propuesta flexible para adaptar el espacio al tipo de ocasión.",
     image: especialesImg,
-    tag: "Premium",
+    imageAlt: "Celebración familiar en el jardín de noche, bajo guirnaldas de luces",
     included: [
       "Uso de las instalaciones",
       "Uso de juegos para niños y adultos",
@@ -101,263 +75,180 @@ const services = [
       "1 mozo",
       "2 animadores si hay 25 niños o más",
     ],
-    extras: [
-      "Bebidas a consignación",
-      "Menú para adultos",
-      "Animador extra",
-      "Mozo extra",
-      "Uso del parrillero",
-      "Leña",
-      "Hielo",
-    ],
   },
 ];
 
-export default function Services() {
-  const [selected, setSelected] = useState<(typeof services)[number] | null>(
-    null
-  );
+function whatsappUrlFor(serviceTitle: string) {
+  return `https://wa.me/59899372068?text=${encodeURIComponent(
+    `¡Hola! Quería consultar por ${serviceTitle.toLowerCase()} en Calypso.`,
+  )}`;
+}
 
-  const whatsappVisitMessage = encodeURIComponent(
-    "¡Hola! Me gustaría coordinar fecha y hora para ir a conocer el salón."
-  );
+export default function Services() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const baseId = useId();
 
   return (
     <section
       id="services"
-      className="relative overflow-hidden bg-[#f6f0e7] pb-24 pt-20"
+      aria-labelledby={`${baseId}-titulo`}
+      className="bg-paper py-20 font-texto text-ink lg:py-28"
     >
-      {/* Background */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 opacity-[0.18] [background-image:radial-gradient(rgba(46,33,27,0.16)_1px,transparent_1px)] [background-size:24px_24px]" />
+      <div className="mx-auto grid max-w-[1440px] gap-12 px-5 sm:px-10 lg:grid-cols-[0.8fr_1.6fr] lg:gap-16 lg:px-14 xl:px-20">
+        <header className="lg:sticky lg:top-28 lg:self-start">
+          <CypressMark className="h-9 w-auto text-calypso-700" />
 
-        {/* Separación suave desde reseñas, sin mancha calypso superior */}
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#f6f0e7] via-[#f6f0e7]/86 to-transparent" />
-
-        {/* Calidez lateral, más coherente con Services */}
-        <div className="absolute left-[-140px] top-[18%] h-[300px] w-[300px] rounded-full bg-[#c9a46a]/9 blur-3xl" />
-        <div className="absolute right-[-100px] top-[24%] h-[280px] w-[280px] rounded-full bg-[#c9a46a]/10 blur-3xl" />
-
-        {/* Toque calypso más bajo y controlado */}
-        <div className="absolute left-1/2 top-[46%] h-[260px] w-[620px] -translate-x-1/2 rounded-full bg-calypso/[0.055] blur-3xl" />
-      </div>
-
-      <div className="relative mx-auto max-w-6xl px-6 md:px-10">
-        {/* Header */}
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#cdb79e]/70 bg-white/65 px-4 py-2 text-xs uppercase tracking-[0.22em] text-[#2e211b]/70 backdrop-blur">
-            <Sparkles size={14} className="text-calypso" />
-            Servicios
-          </div>
-
-          <h2 className="mt-4 font-display text-4xl tracking-tight text-[#2e211b] md:text-5xl">
-            Celebraciones pensadas para cada ocasión
-            <span className="text-calypso">.</span>
+          <h2
+            id={`${baseId}-titulo`}
+            className="mt-6 font-titular text-[clamp(2.4rem,4.4vw,3.6rem)] font-normal leading-[1] tracking-[-0.01em]"
+          >
+            Cuatro maneras de usar la casa
           </h2>
 
-          <p className="mt-4 text-[#2e211b]/72">
-            Cada evento tiene necesidades distintas. Adaptamos el espacio, la
-            atención y los detalles para brindar una experiencia clara, cómoda y
-            memorable.
+          <p className="mt-6 max-w-sm text-lg leading-relaxed text-ink-soft">
+            Todas incluyen la casa, los juegos y el equipo de atención. Lo demás
+            se suma según la fiesta que tengas en mente.
           </p>
+        </header>
 
-          <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-[#c9a46a]/70 to-transparent" />
-        </div>
-
-        {/* Cards */}
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {services.map((item, i) => {
-            const Icon = item.icon;
+        <ol className="border-t border-ink/15">
+          {services.map((service, index) => {
+            const open = openIndex === index;
+            const buttonId = `${baseId}-boton-${index}`;
+            const panelId = `${baseId}-panel-${index}`;
 
             return (
-              <motion.article
-                key={item.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.55, delay: i * 0.06, ease: circOut }}
-                className="group relative overflow-hidden rounded-3xl border border-[#cdb79e]/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,240,231,0.98))] shadow-[0_16px_40px_rgba(90,64,50,0.10)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(90,64,50,0.16)]"
-              >
-                {/* subtle texture */}
-                <div className="pointer-events-none absolute inset-0 opacity-[0.03] [background-image:radial-gradient(#2e211b_1px,transparent_1px)] [background-size:18px_18px]" />
-
-                {/* Image */}
-                <div className="relative h-44 overflow-hidden">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2e211b]/62 via-[#2e211b]/10 to-transparent" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(201,164,106,0.08),transparent_35%)]" />
-
-                  <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-[#2e211b]/55 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[#f6f0e7] backdrop-blur">
-                    {item.tag}
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className="relative p-6">
-                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(11,179,166,0.14),rgba(11,179,166,0.08))] text-calypso ring-1 ring-[#cdb79e]/45">
-                    <Icon size={20} />
-                  </div>
-
-                  <h3 className="mt-5 font-display text-xl tracking-tight text-[#2e211b]">
-                    {item.title}
-                  </h3>
-
-                  <p className="mt-3 text-sm leading-relaxed text-[#2e211b]/72">
-                    {item.desc}
-                  </p>
-
-                  <div className="mt-5 h-px w-14 bg-gradient-to-r from-[#c9a46a] via-calypso/55 to-transparent transition-all duration-300 group-hover:w-24" />
-
+              <li key={service.title} className="border-b border-ink/15">
+                <h3>
                   <button
+                    id={buttonId}
                     type="button"
-                    onClick={() => setSelected(item)}
-                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#2e211b]/88 transition hover:text-calypso"
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    onClick={() => setOpenIndex(open ? null : index)}
+                    className="group grid w-full grid-cols-[2.5rem_1fr_auto] items-baseline gap-x-4 py-7 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso-700 sm:grid-cols-[3.5rem_1fr_auto] lg:py-8"
                   >
-                    Consultar detalles
-                    <ArrowUpRight size={16} className="text-calypso" />
-                  </button>
-                </div>
-              </motion.article>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* MODAL */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            className="fixed inset-0 z-[90] grid place-items-center bg-black/70 px-4 py-8 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelected(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.98 }}
-              transition={{ duration: 0.25, ease: circOut }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-[#cdb79e]/45 bg-[#f8f3eb] shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
-            >
-              {/* texture */}
-              <div className="pointer-events-none absolute inset-0 opacity-[0.025] [background-image:radial-gradient(#2e211b_1px,transparent_1px)] [background-size:18px_18px]" />
-
-              {/* close */}
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/90 text-black shadow-md transition hover:bg-white"
-                aria-label="Cerrar"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="grid md:grid-cols-[0.95fr_1.05fr]">
-                {/* image side */}
-                <div className="relative min-h-[320px] overflow-hidden md:min-h-full">
-                  <img
-                    src={selected.image}
-                    alt={selected.title}
-                    className="h-full w-full object-cover"
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2e211b]/75 via-[#2e211b]/20 to-transparent" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(201,164,106,0.10),transparent_35%)]" />
-
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <span className="rounded-full bg-calypso px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-black">
-                      {selected.tag}
+                    <span aria-hidden="true" className="font-titular text-xl text-ink-mute sm:text-2xl">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
 
-                    <h3 className="mt-3 font-display text-3xl text-white">
-                      {selected.title}
-                    </h3>
+                    <span>
+                      <span className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                        <span className="font-titular text-[clamp(1.75rem,3.2vw,2.75rem)] leading-[1.05] transition-colors group-hover:text-calypso-700">
+                          {service.title}
+                        </span>{" "}
+                        {service.highlight && (
+                          <span className="rounded-sm border border-brick/40 px-2 py-0.5 text-[13px] font-semibold text-brick">
+                            {service.highlight}
+                          </span>
+                        )}
+                      </span>{" "}
+                      <span className="mt-2 block max-w-xl text-base leading-relaxed text-ink-soft">
+                        {service.summary}
+                      </span>
+                    </span>
 
-                    <div className="mt-3 h-px w-20 bg-gradient-to-r from-[#c9a46a] to-transparent" />
-                  </div>
-                </div>
+                    <span
+                      aria-hidden="true"
+                      className={[
+                        "grid h-10 w-10 place-items-center self-center rounded-full border transition-colors",
+                        open
+                          ? "border-calypso bg-calypso text-ink"
+                          : "border-ink/20 group-hover:border-calypso-700 group-hover:text-calypso-700",
+                      ].join(" ")}
+                    >
+                      {open ? <Minus size={18} /> : <Plus size={18} />}
+                    </span>
+                  </button>
+                </h3>
 
-                {/* content side */}
-                <div className="relative p-6 md:p-8">
-                  <p className="text-sm leading-relaxed text-[#2e211b]/75">
-                    {selected.desc}
-                  </p>
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={buttonId}
+                  inert={!open}
+                  className={[
+                    "grid transition-[grid-template-rows] duration-500 ease-out motion-reduce:transition-none",
+                    open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                  ].join(" ")}
+                >
+                  <div className="overflow-hidden">
+                    <div className="grid gap-8 pb-10 sm:grid-cols-[minmax(0,15rem)_1fr] sm:pl-[4.5rem] lg:gap-12">
+                      <img
+                        src={service.image}
+                        alt={service.imageAlt}
+                        loading="lazy"
+                        decoding="async"
+                        className="aspect-[3/4] w-full max-w-[15rem] rounded-sm object-cover"
+                      />
 
-                  <div className="mt-8 grid gap-7 md:grid-cols-2">
-                    <div>
-                      <h4 className="font-display text-xl text-[#2e211b]">
-                        Incluye
-                      </h4>
+                      <div>
+                        <p className="max-w-xl text-base leading-relaxed text-ink-soft">
+                          {service.desc}
+                        </p>
 
-                      <div className="mt-4 grid gap-2.5">
-                        {selected.included.map((item) => (
-                          <div
-                            key={item}
-                            className="flex gap-2 text-sm text-[#2e211b]/76"
-                          >
-                            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-calypso/12 text-calypso">
-                              <Check size={14} />
-                            </span>
-                            <span>{item}</span>
+                        <div className="mt-8 grid gap-8 sm:grid-cols-2">
+                          <div>
+                            <h4 className="text-sm font-semibold text-ink-mute">
+                              Incluye
+                            </h4>
+                            <ul className="mt-3 space-y-2">
+                              {service.included.map((item) => (
+                                <li key={item} className="flex gap-3 text-[15px] leading-snug">
+                                  <span aria-hidden="true" className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-calypso" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                        ))}
+
+                          <div>
+                            <h4 className="text-sm font-semibold text-ink-mute">
+                              Se puede sumar
+                            </h4>
+                            <ul className="mt-3 space-y-2">
+                              {EXTRAS.map((item) => (
+                                <li key={item} className="flex gap-3 text-[15px] leading-snug text-ink-soft">
+                                  <span aria-hidden="true" className="w-1.5 shrink-0 text-center font-semibold text-ink-mute">
+                                    +
+                                  </span>
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-7">
+                          <a
+                            href="/reservar"
+                            className="group inline-flex items-center justify-center gap-3 rounded-md bg-calypso px-6 py-3.5 font-semibold text-ink transition-colors hover:bg-[#25c3b6]"
+                          >
+                            Reservar fecha
+                            <ArrowRight
+                              size={18}
+                              aria-hidden="true"
+                              className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
+                            />
+                          </a>
+                          <a
+                            href={whatsappUrlFor(service.title)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="self-start font-semibold underline decoration-ink/30 decoration-1 underline-offset-[6px] transition-colors hover:decoration-calypso sm:self-auto"
+                          >
+                            Consultar por WhatsApp
+                          </a>
+                        </div>
                       </div>
                     </div>
-
-                    <div>
-                      <h4 className="font-display text-xl text-[#2e211b]">
-                        Extras disponibles
-                      </h4>
-
-                      <div className="mt-4 grid gap-2.5">
-                        {selected.extras.map((item) => (
-                          <div
-                            key={item}
-                            className="flex gap-2 text-sm text-[#2e211b]/76"
-                          >
-                            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#2e211b]/5 text-calypso">
-                              <Check size={14} />
-                            </span>
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CTA */}
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a
-                      href="#contact"
-                      onClick={() => setSelected(null)}
-                      className="inline-flex items-center justify-center rounded-2xl bg-[#2e211b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1713]"
-                    >
-                      Reservar fecha
-                      <span className="ml-2 text-calypso">●</span>
-                    </a>
-
-                    <a
-                      href={`https://wa.me/59899372068?text=${whatsappVisitMessage}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center rounded-2xl border border-[#cdb79e] bg-white px-5 py-3 text-sm font-semibold text-[#2e211b] transition hover:bg-[#f4ede3]"
-                    >
-                      Reservar visita
-                    </a>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </section>
   );
 }

@@ -1,201 +1,143 @@
-// src/components/Footer.tsx
-import { motion, circOut } from "framer-motion";
-import {
-  Instagram,
-  Phone,
-  MapPin,
-  ArrowUpRight,
-  ChevronUp,
-  MessageCircle,
-} from "lucide-react";
+import { ArrowRight, ArrowUp } from "lucide-react";
 import logo from "../assets/Logo2.png";
+import { Garland } from "./home/Garland";
 
 const year = new Date().getFullYear();
 
-const whatsappMessage = encodeURIComponent(
-  "¡Hola! Me gustaría consultar disponibilidad para un evento en Calypso."
-);
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: circOut },
-  },
-};
+const WHATSAPP_URL = `https://wa.me/59899372068?text=${encodeURIComponent(
+  "¡Hola! Me gustaría consultar disponibilidad para un evento en Calypso.",
+)}`;
 
 const navLinks = [
   { label: "Servicios", href: "/#services" },
-  { label: "Sectores", href: "/#sectors" },
+  { label: "Espacios", href: "/#sectors" },
   { label: "Nuestra historia", href: "/nuestra-historia" },
   { label: "Contacto", href: "/contacto" },
   { label: "Ubicación", href: "/#location" },
 ];
 
+const contactLinks = [
+  { label: "+598 99 372 068", href: "tel:+59899372068", external: false },
+  { label: "@calypso.eventos.uy", href: "https://www.instagram.com/calypso.eventos.uy/", external: true },
+  { label: "El Pinar, Ciudad de la Costa, Canelones, Uruguay", href: "/#location", external: false },
+];
+
 export default function Footer() {
   const scrollTop = () => {
-    const topElement = document.getElementById("top");
-
-    if (topElement) {
-      topElement.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <footer className="relative overflow-hidden bg-[#17110d] text-[#f8efe2]">
-      {/* Línea superior */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-calypso/70 to-transparent" />
+    <footer className="relative bg-night pt-24 font-texto text-paper lg:pt-32">
+      <Garland lit spans={3} className="pointer-events-none absolute inset-x-0 top-0 sm:hidden" />
+      <Garland lit spans={8} className="pointer-events-none absolute inset-x-0 top-0 hidden sm:block" />
 
-      {/* Decoración sutil */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-140px] top-[-120px] h-72 w-72 rounded-full bg-calypso/12 blur-3xl" />
-        <div className="absolute right-[-120px] bottom-[-140px] h-72 w-72 rounded-full bg-[#e8c17f]/10 blur-3xl" />
-      </div>
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-14 xl:px-20">
+        <div className="grid gap-8 border-b border-night-line pb-16 lg:grid-cols-[1fr_auto] lg:items-end">
+          <p className="font-titular text-[clamp(2.6rem,6vw,5rem)] leading-[0.98] tracking-[-0.015em]">
+            ¿Festejamos en{" "}
+            <span className="whitespace-nowrap text-calypso">El Pinar</span>?
+          </p>
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.25 }}
-          variants={fadeUp}
-          className="grid gap-10 md:grid-cols-[1.2fr_0.8fr_0.8fr]"
-        >
-          {/* Marca */}
-          <div>
-            <a href="/" aria-label="Ir al inicio" className="inline-flex">
-              <img
-                src={logo}
-                alt="Calypso Eventos"
-                className="h-10 w-auto max-w-[210px] object-contain brightness-0 invert"
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
+            <a
+              href="/reservar"
+              className="group inline-flex items-center justify-center gap-3 rounded-md bg-calypso px-7 py-4 font-semibold text-ink transition-colors hover:bg-[#25c3b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso"
+            >
+              Reservar fecha
+              <ArrowRight
+                size={18}
+                aria-hidden="true"
+                className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
               />
             </a>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="self-start font-semibold underline decoration-paper/40 decoration-1 underline-offset-[6px] transition-colors hover:decoration-calypso sm:self-auto"
+            >
+              Escribir por WhatsApp
+            </a>
+          </div>
+        </div>
 
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#f8efe2]/72">
-              Calypso Eventos es un salón de eventos ubicado en El Pinar,
-              Ciudad de la Costa, Canelones, Uruguay. Brindamos un espacio para
+        <div className="grid gap-12 py-14 md:grid-cols-[1.3fr_0.7fr_1fr]">
+          <div>
+            <a href="/" aria-label="Calypso Eventos, ir al inicio" className="inline-flex">
+              <img src={logo} alt="Calypso Eventos" className="h-16 w-auto invert" />
+            </a>
+            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-paper/65">
+              Calypso Eventos es un salón de eventos ubicado en El Pinar, Ciudad
+              de la Costa, Canelones, Uruguay. Brindamos un espacio para
               cumpleaños, reuniones, celebraciones familiares y eventos sociales
               en un entorno cálido y natural.
             </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a
-                href={`https://wa.me/59899372068?text=${whatsappMessage}`}
-                target="_blank"
-                rel="noreferrer"
-                className="group inline-flex items-center gap-2 rounded-full bg-calypso px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-white shadow-[0_14px_32px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94]"
-              >
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-                <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </a>
-
-              <button
-                type="button"
-                onClick={scrollTop}
-                className="inline-flex items-center gap-2 rounded-full border border-[#f8efe2]/18 px-5 py-3 text-sm font-semibold text-[#f8efe2]/82 transition hover:border-[#e8c17f]/55 hover:text-white"
-              >
-                <ChevronUp className="h-4 w-4 text-[#e8c17f]" />
-                Arriba
-              </button>
-            </div>
           </div>
 
-          {/* Navegación */}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#e8c17f]">
-              Navegación
-            </p>
-
+          <nav aria-label="Pie de página">
+            <h2 className="text-sm font-semibold text-paper/50">Navegación</h2>
             <ul className="mt-5 space-y-3">
               {navLinks.map((item) => (
                 <li key={item.href}>
                   <a
                     href={item.href}
-                    className="group inline-flex items-center gap-2 text-sm text-[#f8efe2]/66 transition hover:text-white"
+                    className="text-[15px] text-paper/80 underline-offset-[6px] transition-colors hover:text-paper hover:underline hover:decoration-calypso"
                   >
-                    <span className="h-px w-4 bg-calypso/80 transition group-hover:w-6" />
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div>
+            <h2 className="text-sm font-semibold text-paper/50">Contacto</h2>
+            <ul className="mt-5 space-y-3">
+              {contactLinks.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    {...(item.external ? { target: "_blank", rel: "noreferrer" } : {})}
+                    className="text-[15px] text-paper/80 underline-offset-[6px] transition-colors hover:text-paper hover:underline hover:decoration-calypso"
+                  >
                     {item.label}
                   </a>
                 </li>
               ))}
             </ul>
           </div>
+        </div>
 
-          {/* Contacto */}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#e8c17f]">
-              Contacto
-            </p>
+        <div className="flex flex-col gap-4 border-t border-night-line py-7 text-sm text-paper/50 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {year} Calypso Eventos. Todos los derechos reservados.</p>
 
-            <div className="mt-5 space-y-4 text-sm">
-              <a
-                href="tel:+59899372068"
-                className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
-              >
-                <Phone className="h-4 w-4 shrink-0 text-[#7ff3e9]" />
-                <span>+598 99 372 068</span>
-              </a>
-
-              <a
-                href="https://www.instagram.com/calypso.eventos.uy/"
-                target="_blank"
-                rel="noreferrer"
-                className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
-              >
-                <Instagram className="h-4 w-4 shrink-0 text-[#7ff3e9]" />
-                <span>@calypso.eventos.uy</span>
-                <ArrowUpRight className="h-4 w-4 opacity-60 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-              </a>
-
-              <a
-                href="/#location"
-                className="group flex items-center gap-3 text-[#f8efe2]/70 transition hover:text-white"
-              >
-                <MapPin className="h-4 w-4 shrink-0 text-[#e8c17f]" />
-                <span>El Pinar, Ciudad de la Costa, Canelones, Uruguay</span>
-              </a>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Bottom */}
-        <div className="mt-10 flex flex-col gap-4 border-t border-[#f8efe2]/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-[#f8efe2]/45">
-            © {year} Calypso Eventos. Todos los derechos reservados.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-            <a
-              href="/terminos"
-              className="text-[#f8efe2]/45 transition hover:text-white"
-            >
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <a href="/terminos" className="transition-colors hover:text-paper">
               Términos y condiciones
             </a>
-
-            <a
-              href="/privacidad"
-              className="text-[#f8efe2]/45 transition hover:text-white"
-            >
+            <a href="/privacidad" className="transition-colors hover:text-paper">
               Política de privacidad
             </a>
-
-            <span className="hidden text-[#f8efe2]/20 sm:inline">•</span>
-
-            <p className="text-[#f8efe2]/45">
+            <p>
               Sitio por{" "}
               <a
                 href="https://gweb.pages.dev/"
                 target="_blank"
                 rel="noreferrer"
-                className="font-medium text-[#f8efe2]/70 transition hover:text-[#7ff3e9]"
+                className="font-semibold text-paper/75 transition-colors hover:text-paper"
               >
                 GWeb
               </a>
             </p>
+            <button
+              type="button"
+              onClick={scrollTop}
+              className="inline-flex items-center gap-2 font-semibold text-paper/75 transition-colors hover:text-paper"
+            >
+              <ArrowUp size={15} aria-hidden="true" />
+              Volver arriba
+            </button>
           </div>
         </div>
       </div>

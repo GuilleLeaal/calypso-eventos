@@ -28,6 +28,26 @@ body {
   color: #2e211b;
 }
 
+@keyframes bulb-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.55;
+  }
+}
+
+.bulb-glow {
+  animation: bulb-glow 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulb-glow {
+    animation: none;
+  }
+}
+
 .input-calypso {
   width: 100%;
   border-radius: 0.9rem;

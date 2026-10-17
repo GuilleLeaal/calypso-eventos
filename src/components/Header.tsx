@@ -1,56 +1,40 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence, circOut } from "framer-motion";
-import { ArrowUpRight, CalendarCheck, Menu, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { ArrowRight, Menu, X } from "lucide-react";
 import logo from "../assets/logo.png";
+import { useHeroMode } from "./home/heroMode";
 
 const nav = [
   { label: "Servicios", href: "/#services", id: "services" },
-  { label: "Video Tour", href: "/#recorrido", id: "recorrido" },
-  { label: "Sectores", href: "/#sectors", id: "sectors" },
+  { label: "Recorrido", href: "/#recorrido", id: "recorrido" },
+  { label: "Espacios", href: "/#sectors", id: "sectors" },
   { label: "Ubicación", href: "/#location", id: "location" },
-  { label: "Nuestra historia", href: "/nuestra-historia", id: "history" },
+  { label: "Historia", href: "/nuestra-historia", id: "history" },
   { label: "Contacto", href: "/contacto", id: "contact" },
 ];
 
+const SECTION_IDS = ["services", "recorrido", "sectors", "location"];
+
 export default function Header() {
-  const [scrolled, setScrolled] = useState(false);
+  const { pathname } = useLocation();
+  const heroMode = useHeroMode();
+  const [overHero, setOverHero] = useState(pathname === "/");
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState("");
-  const [pathname, setPathname] = useState("/");
-
-  useEffect(() => {
-    const updatePathname = () => {
-      setPathname(window.location.pathname);
-    };
-
-    updatePathname();
-
-    window.addEventListener("popstate", updatePathname);
-
-    return () => {
-      window.removeEventListener("popstate", updatePathname);
-    };
-  }, []);
 
   useEffect(() => {
     const onScroll = () => {
-      setScrolled(window.scrollY > 12);
+      const hero = pathname === "/" ? document.getElementById("inicio") : null;
+      setOverHero(Boolean(hero && hero.getBoundingClientRect().bottom > 72));
 
-      if (window.location.pathname !== "/") {
+      if (pathname !== "/") {
         setActiveId("");
         return;
       }
 
-      const sectionIds = [
-        "services",
-        "sectors",
-        "recorrido",
-        "location",
-      ];
-
       let current = "";
 
-      for (const id of sectionIds) {
+      for (const id of SECTION_IDS) {
         const section = document.getElementById(id);
         if (!section) continue;
 
@@ -74,7 +58,7 @@ export default function Header() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -82,10 +66,7 @@ export default function Header() {
     };
 
     window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -96,182 +77,128 @@ export default function Header() {
     };
   }, [open]);
 
+  const dark = (overHero || open) && heroMode === "night" && pathname === "/";
+
   const isActive = (item: (typeof nav)[number]) => {
-    if (item.id === "history") {
-      return pathname.includes("nuestra-historia");
-    }
-
-    if (item.id === "contact") {
-      return pathname === "/contacto" || activeId === "contact";
-    }
-
+    if (item.id === "history") return pathname.includes("nuestra-historia");
+    if (item.id === "contact") return pathname === "/contacto";
     return activeId === item.id;
   };
 
-  const handleNavClick = () => {
-    setOpen(false);
-
-    window.setTimeout(() => {
-      setPathname(window.location.pathname);
-    }, 80);
-  };
-
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 overflow-x-clip">
-      <motion.div
-        initial={{ y: -26, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.65, ease: circOut }}
-        className={[
-          "mx-auto w-full max-w-6xl px-4 transition-all duration-300 md:px-6",
-          scrolled ? "pt-3" : "pt-5",
-        ].join(" ")}
-      >
-        <div
-          className={[
-            "group relative isolate flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-full border px-4 transition-all duration-300 sm:px-5 lg:gap-4",
-            scrolled
-              ? "border-[#d8bd90]/80 bg-[#fff9f0]/94 py-2.5 shadow-[0_16px_45px_rgba(63,42,28,0.14)] backdrop-blur-xl"
-              : "border-[#e0c79d]/70 bg-[#fff9f0]/84 py-3 shadow-[0_10px_30px_rgba(63,42,28,0.08)] backdrop-blur-xl",
-          ].join(" ")}
-        >
-          <div className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.58),rgba(255,244,230,0.68))]" />
-            <div className="absolute left-0 top-0 h-full w-40 opacity-[0.09] [background-image:radial-gradient(#b98a4f_1.2px,transparent_1.2px)] [background-size:13px_13px]" />
-            <div className="absolute right-0 top-0 h-full w-72 bg-[radial-gradient(ellipse_at_top_right,rgba(11,179,166,0.12),transparent_68%)]" />
-            <div className="absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-[#c49a5b]/65 to-transparent" />
-            <div className="absolute inset-x-20 bottom-0 h-px bg-gradient-to-r from-transparent via-[#0f5550]/20 to-transparent" />
-          </div>
+    <header
+      className={[
+        "fixed inset-x-0 top-0 z-50 font-texto transition-colors duration-700",
+        dark ? "bg-night text-paper" : "bg-paper text-ink",
+        overHero && !open ? "" : dark ? "border-b border-night-line" : "border-b border-ink/10",
+      ].join(" ")}
+    >
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 sm:px-10 lg:h-[72px] lg:px-14 xl:px-20">
+        <a href="/" aria-label="Calypso Eventos, ir al inicio" className="shrink-0">
+          <img
+            src={logo}
+            alt="Calypso Eventos"
+            className={[
+              "h-7 w-auto transition-[filter] duration-700 lg:h-8",
+              dark ? "invert" : "",
+            ].join(" ")}
+          />
+        </a>
 
+        <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex xl:gap-9">
+          {nav.map((item) => {
+            const active = isActive(item);
+
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={[
+                  "text-[15px] font-medium underline-offset-[7px] transition-colors duration-300",
+                  active
+                    ? "underline decoration-2"
+                    : "no-underline hover:underline hover:decoration-1",
+                  dark
+                    ? "decoration-calypso hover:text-paper"
+                    : "decoration-calypso hover:text-calypso-700",
+                  !active && dark ? "text-paper/80" : "",
+                  !active && !dark ? "text-ink-soft" : "",
+                ].join(" ")}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </nav>
+
+        <div className="flex items-center gap-3">
           <a
-            href="/"
-            aria-label="Ir al inicio"
-            className="group/logo flex min-w-0 shrink-0 items-center"
-            onClick={handleNavClick}
+            href="/reservar"
+            className={[
+              "hidden items-center gap-2 rounded-md px-5 py-2.5 text-[15px] font-semibold transition-colors duration-300 sm:inline-flex",
+              dark
+                ? "bg-calypso text-ink hover:bg-[#25c3b6]"
+                : "bg-calypso text-ink hover:bg-[#25c3b6]",
+            ].join(" ")}
           >
-            <img
-              src={logo}
-              alt="Calypso Eventos"
-              className="h-8 w-auto max-w-[145px] object-contain transition duration-300 group-hover/logo:scale-[1.02] sm:h-9 sm:max-w-[180px] lg:max-w-[190px]"
-            />
+            Reservar fecha
           </a>
 
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex xl:gap-4">
-            {nav.map((item) => {
-              const active = isActive(item);
-
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={handleNavClick}
-                  className={[
-                    "group/nav relative whitespace-nowrap px-1 py-2 text-[11px] font-bold uppercase tracking-[0.095em] transition-all duration-300 xl:text-[12px] xl:tracking-[0.11em]",
-                    active
-                      ? "text-[#0f5550]"
-                      : "text-[#4a382e] hover:text-[#0f5550]",
-                  ].join(" ")}
-                >
-                  <span className="relative z-10">{item.label}</span>
-
-                  <span
-                    className={[
-                      "absolute -bottom-0.5 left-1 right-1 h-[2px] rounded-full bg-gradient-to-r from-[#c49a5b] via-[#e8c17f] to-[#0bb3a6] transition-all duration-300",
-                      active
-                        ? "opacity-100"
-                        : "opacity-0 group-hover/nav:opacity-100",
-                    ].join(" ")}
-                  />
-                </a>
-              );
-            })}
-          </nav>
-
-          <div className="hidden shrink-0 md:block">
-            <a
-              href="/reservar"
-              onClick={handleNavClick}
-              className="group/cta inline-flex items-center justify-center gap-2 rounded-full bg-[#4a2b17] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-white shadow-[0_14px_32px_rgba(74,43,23,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#351f12] xl:px-5 xl:text-xs"
-            >
-              <CalendarCheck size={16} className="text-[#e8c17f]" />
-              Reservar
-              <ArrowUpRight
-                size={15}
-                className="transition group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5"
-              />
-            </a>
-          </div>
-
           <button
+            type="button"
             onClick={() => setOpen((value) => !value)}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d8bd90]/80 bg-[#fff4df]/70 text-[#3f3028] shadow-[0_8px_22px_rgba(63,42,28,0.10)] transition hover:bg-[#f2e3cd] lg:hidden"
-            aria-label={open ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={open}
+            aria-controls="menu-movil"
+            className={[
+              "inline-flex h-11 items-center gap-2 rounded-md border px-3 text-[15px] font-semibold transition-colors lg:hidden",
+              dark ? "border-night-line" : "border-ink/15",
+            ].join(" ")}
           >
-            {open ? <X size={22} /> : <Menu size={22} />}
+            {open ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+            {open ? "Cerrar" : "Menú"}
           </button>
         </div>
-      </motion.div>
+      </div>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 -z-10 bg-[#2f241e]/35 backdrop-blur-[2px] lg:hidden"
-              aria-label="Cerrar menú"
-            />
+      {open && (
+        <div
+          id="menu-movil"
+          className={[
+            "fixed inset-x-0 bottom-0 top-16 overflow-y-auto px-5 pb-10 pt-6 sm:px-10 lg:hidden",
+            dark ? "bg-night text-paper" : "bg-paper text-ink",
+          ].join(" ")}
+        >
+          <nav aria-label="Menú móvil">
+            <ul className={["divide-y border-y", dark ? "divide-night-line border-night-line" : "divide-ink/10 border-ink/10"].join(" ")}>
+              {nav.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-between py-4 font-titular text-[2rem] leading-none"
+                  >
+                    {item.label}
+                    <ArrowRight size={20} aria-hidden="true" className={dark ? "text-calypso" : "text-calypso-700"} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-            <motion.div
-              initial={{ opacity: 0, y: -12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.98 }}
-              transition={{ duration: 0.24, ease: circOut }}
-              className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-6xl overflow-hidden rounded-[1.7rem] border border-[#d8bd90]/80 bg-[#fff9f0]/96 p-4 shadow-[0_22px_60px_rgba(63,42,28,0.20)] backdrop-blur-xl lg:hidden"
-            >
-              <div className="grid gap-2">
-                {nav.map((item) => {
-                  const active = isActive(item);
-
-                  return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={handleNavClick}
-                      className={[
-                        "flex items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-bold uppercase tracking-[0.11em] transition",
-                        active
-                          ? "border-[#0BB3A6]/35 bg-[#0BB3A6]/10 text-[#087d75]"
-                          : "border-[#dfc8ab]/70 bg-white/55 text-[#3f3028] hover:bg-white",
-                      ].join(" ")}
-                    >
-                      {item.label}
-                      <ArrowUpRight
-                        size={16}
-                        className={active ? "text-[#0BB3A6]" : "text-[#c49a5b]"}
-                      />
-                    </a>
-                  );
-                })}
-
-                <a
-                  href="/reservar"
-                  onClick={handleNavClick}
-                  className="mt-2 inline-flex items-center justify-center gap-3 rounded-2xl bg-[#0BB3A6] px-5 py-4 text-sm font-bold uppercase tracking-[0.11em] text-white shadow-[0_16px_38px_rgba(11,179,166,0.24)] transition hover:bg-[#099f94]"
-                >
-                  <CalendarCheck size={18} />
-                  Reservar fecha
-                  <ArrowUpRight size={16} />
-                </a>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          <a
+            href="/reservar"
+            onClick={() => setOpen(false)}
+            className={[
+              "mt-8 flex items-center justify-center gap-3 rounded-md px-6 py-4 text-base font-semibold",
+              "bg-calypso text-ink",
+            ].join(" ")}
+          >
+            Reservar fecha
+            <ArrowRight size={18} aria-hidden="true" />
+          </a>
+        </div>
+      )}
     </header>
   );
 }
