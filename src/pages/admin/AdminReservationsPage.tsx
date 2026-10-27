@@ -5,6 +5,7 @@ import { RESERVATIONS_PER_PAGE, statusLabels } from "./constants";
 import { AdminLoginScreen } from "./components/AdminLoginScreen";
 import { AdminHeader } from "./components/AdminHeader";
 import { AdminSectionTabs } from "./components/AdminSectionTabs";
+import { AvailabilityCalendarSection } from "./components/AvailabilityCalendarSection";
 import { ReservationSearchFilters } from "./components/ReservationSearchFilters";
 import { ReservationListResults } from "./components/ReservationListResults";
 import { DisabledDatesAdminSection } from "./components/DisabledDatesAdminSection";
@@ -32,6 +33,7 @@ export default function AdminReservationsPage() {
   } = useAdminSession(clearSessionData);
 
   const [globalError, setGlobalError] = useState("");
+  const [calendarRefresh, setCalendarRefresh] = useState(0);
   const [activeSection, setActiveSection] =
     useState<AdminSection>("reservations");
 
@@ -140,6 +142,10 @@ export default function AdminReservationsPage() {
   });
 
   async function refreshAll() {
+    if (activeSection === "calendar") {
+      setCalendarRefresh((value) => value + 1);
+      return;
+    }
     if (activeSection === "reservations") {
       await Promise.all([
         fetchReservations(),
@@ -294,6 +300,10 @@ export default function AdminReservationsPage() {
           <p className="mt-7 rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {globalError}
           </p>
+        )}
+
+        {activeSection === "calendar" && (
+          <AvailabilityCalendarSection refreshKey={calendarRefresh} />
         )}
 
         {activeSection === "reservations" && (

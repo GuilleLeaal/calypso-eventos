@@ -51,6 +51,19 @@ export function AdminSectionTabs({
 
         <button
           type="button"
+          onClick={() => onSelect("calendar")}
+          className={[
+            "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
+            activeSection === "calendar"
+              ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
+              : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
+          ].join(" ")}
+        >
+          Calendario
+        </button>
+
+        <button
+          type="button"
           onClick={() => onSelect("reviews")}
           className={[
             "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
