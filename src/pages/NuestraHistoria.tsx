@@ -101,6 +101,18 @@ const memorialImages = [
   },
 ];
 
+// Las originales se reservan para la galería ampliada.
+function getPreviewSources(src: string) {
+  const widths = src.includes("/timeline/") ? [480, 960] : [640, 1280];
+  const variant = (width: number) =>
+    src.replace(/([^/]+)\.webp$/, `optimized/$1-${width}.webp`);
+
+  return {
+    src: variant(widths[0]),
+    srcSet: widths.map((width) => `${variant(width)} ${width}w`).join(", "),
+  };
+}
+
 export default function NuestraHistoria() {
   const [selectedTimelineIndex, setSelectedTimelineIndex] = useState<
     number | null
@@ -146,16 +158,11 @@ export default function NuestraHistoria() {
   }, [selectedTimelineIndex]);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f6efe6] pt-32">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-0 top-0 h-72 w-72 opacity-[0.14] [background-image:radial-gradient(#b98a4f_1.4px,transparent_1.4px)] [background-size:14px_14px]" />
-        <div className="absolute right-0 top-0 h-[420px] w-[360px] bg-[radial-gradient(ellipse_at_top_right,rgba(11,179,166,0.12),transparent_65%)]" />
-      </div>
-
-      <section className="relative mx-auto max-w-6xl px-6 pb-24 md:px-10">
+    <main className="relative min-h-screen overflow-hidden bg-paper pt-28 font-texto text-ink lg:pt-32">
+      <section className="relative mx-auto max-w-[1440px] px-5 pb-20 sm:px-10 lg:px-14 lg:pb-28 xl:px-20">
         <a
           href="/"
-          className="inline-flex items-center gap-2 rounded-full border border-[#c49a5b]/70 bg-[#fff9f0]/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6b2f] transition hover:bg-white"
+          className="inline-flex items-center gap-2 py-2 text-sm font-semibold text-ink-soft underline decoration-ink/30 underline-offset-4 transition hover:text-calypso-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso-700"
         >
           <ArrowLeft size={14} />
           Volver al inicio
@@ -163,17 +170,17 @@ export default function NuestraHistoria() {
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#c49a5b]/70 bg-[#fff9f0]/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9a6b2f]">
+            <div className="inline-flex items-center gap-2 text-sm font-semibold text-calypso-700">
               <Sparkles size={14} />
               Nuestra historia
             </div>
 
-            <h1 className="mt-5 font-display text-5xl leading-[0.96] tracking-tight text-[#2f241e] md:text-7xl">
+            <h1 className="mt-5 font-titular font-normal text-5xl leading-[0.96] tracking-tight text-ink md:text-7xl">
               Una historia construida con tiempo
               <span className="text-calypso">.</span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#46362d]">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">
               Hay lugares que se construyen con materiales. Y hay otros que se
               construyen con tiempo, paciencia y sueños.{" "}
               <b>Calypso pertenece a estos últimos.</b>
@@ -182,6 +189,7 @@ export default function NuestraHistoria() {
 
           <PhotoCard
             src={historia1}
+            priority
             alt="Primeros años del terreno en El Pinar"
             label="El comienzo"
             title="El Pinar Norte"
@@ -193,23 +201,23 @@ export default function NuestraHistoria() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: circOut }}
-          className="mt-14 grid gap-7 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch"
+          className="mt-20 grid gap-8 lg:mt-28 lg:gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch"
         >
-          <div className="rounded-[2rem] border border-[#dfc8ab] bg-[#fff9f0]/84 p-7 shadow-[0_24px_70px_rgba(90,64,50,0.12)] sm:p-10">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#f4eadc] text-calypso">
+          <div className="rounded-md border border-ink/15 bg-paper p-7  sm:p-10">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-deep text-calypso-700">
               <Trees size={25} />
             </div>
 
-            <div className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-[#9a6b2f]">
+            <div className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-calypso-700">
               1982
             </div>
 
-            <h2 className="mt-3 font-display text-4xl text-[#2f241e]">
+            <h2 className="mt-3 font-titular font-normal text-4xl text-ink">
               El primer paso
               <span className="text-calypso">.</span>
             </h2>
 
-            <div className="mt-6 space-y-5 leading-relaxed text-[#46362d]">
+            <div className="mt-6 space-y-5 leading-relaxed text-ink-soft">
               <p>
                 Todo empezó en 1982, cuando Julio, con apenas 18 años, compró un
                 terreno en una zona donde prácticamente no había nada. El Pinar
@@ -253,7 +261,7 @@ export default function NuestraHistoria() {
           </div>
         </motion.section>
 
-        <section className="mt-12 grid gap-7 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <section className="mt-20 grid gap-8 lg:mt-28 lg:gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <PhotoCard
             src={historia4}
             alt="Recuerdos familiares en El Pinar"
@@ -262,17 +270,17 @@ export default function NuestraHistoria() {
             className="min-h-[480px]"
           />
 
-          <div className="rounded-[2rem] border border-[#dfc8ab] bg-[#fff9f0]/84 p-7 shadow-[0_22px_60px_rgba(90,64,50,0.11)] sm:p-10">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#f4eadc] text-calypso">
+          <div className="rounded-md border border-ink/15 bg-paper p-7  sm:p-10">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-deep text-calypso-700">
               <HeartHandshake size={25} />
             </div>
 
-            <h2 className="mt-6 font-display text-4xl text-[#2f241e]">
+            <h2 className="mt-6 font-titular font-normal text-4xl text-ink">
               Un lugar de encuentro
               <span className="text-calypso">.</span>
             </h2>
 
-            <div className="mt-6 space-y-5 leading-relaxed text-[#46362d]">
+            <div className="mt-6 space-y-5 leading-relaxed text-ink-soft">
               <p>
                 A los 34 años, después de mucho camino recorrido, la barbacoa
                 finalmente tomó forma. En ese momento, Julio ya había formado
@@ -295,18 +303,18 @@ export default function NuestraHistoria() {
           </div>
         </section>
 
-        <section className="mt-12 grid gap-7 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="rounded-[2rem] border border-[#5c493d] bg-[#2f241e] p-7 text-[#f6efe7] shadow-[0_24px_70px_rgba(47,36,30,0.18)] sm:p-10">
+        <section className="mt-20 grid gap-8 lg:mt-28 lg:gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="rounded-md border border-night-line bg-night p-7 text-paper  sm:p-10">
             <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-calypso/15 text-calypso">
               <Hammer size={25} />
             </div>
 
-            <h2 className="mt-6 font-display text-4xl text-white">
+            <h2 className="mt-6 font-titular font-normal text-4xl text-white">
               Una idea esperando su momento
               <span className="text-calypso">.</span>
             </h2>
 
-            <div className="mt-6 space-y-5 leading-relaxed text-[#f6efe7]/90">
+            <div className="mt-6 space-y-5 leading-relaxed text-paper/80">
               <p>
                 Pero había una idea que siempre volvía. Algo que estaba ahí,
                 esperando su momento.
@@ -335,18 +343,18 @@ export default function NuestraHistoria() {
           />
         </section>
 
-        <section className="mt-14 overflow-hidden rounded-[2rem] border border-[#dfc8ab] bg-[#fff9f0]/84 shadow-[0_22px_60px_rgba(90,64,50,0.12)]">
-          <div className="border-b border-[#dfc8ab] px-7 py-7 sm:px-10">
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#9a6b2f]">
+        <section className="mt-20 overflow-hidden lg:mt-28 rounded-md border border-ink/15 bg-paper ">
+          <div className="border-b border-ink/15 px-7 py-7 sm:px-10">
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-calypso-700">
               El nacimiento de Calypso
             </div>
 
-            <h2 className="mt-3 font-display text-4xl text-[#2f241e]">
+            <h2 className="mt-3 font-titular font-normal text-4xl text-ink">
               Desde 2018, el sueño tomó forma real
               <span className="text-calypso">.</span>
             </h2>
 
-            <p className="mt-3 max-w-2xl text-[#46362d]">
+            <p className="mt-3 max-w-2xl text-ink-soft">
               Año a año, el espacio empezó a transformarse hasta convertirse en
               el salón de eventos que hoy abre sus puertas.
             </p>
@@ -364,16 +372,19 @@ export default function NuestraHistoria() {
                   delay: index * 0.04,
                   ease: circOut,
                 }}
-                className="group overflow-hidden rounded-3xl border border-[#5c493d] bg-[#2f241e] shadow-[0_14px_36px_rgba(90,64,50,0.12)] transition hover:-translate-y-1 hover:shadow-[0_22px_52px_rgba(90,64,50,0.2)]"
+                className="group overflow-hidden rounded-md border border-night-line bg-night transition-colors hover:border-calypso-700"
               >
                 <button
                   type="button"
                   onClick={() => setSelectedTimelineIndex(index)}
-                  className="relative block h-56 w-full overflow-hidden bg-[#1f1713] text-left"
+                  className="relative block h-56 w-full overflow-hidden bg-night text-left"
                   aria-label={`Ver imagen ampliada de ${item.year}`}
                 >
                   <img
-                    src={item.image}
+                    {...getPreviewSources(item.image)}
+                    sizes="(min-width: 1440px) 380px, (min-width: 1024px) 30vw, 100vw"
+                    loading="lazy"
+                    decoding="async"
                     alt={`${item.year} - ${item.title}`}
                     className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-105"
                   />
@@ -390,14 +401,14 @@ export default function NuestraHistoria() {
                   </div>
 
                   <div className="absolute inset-x-0 bottom-0 z-10 p-5">
-                    <h3 className="font-display text-2xl text-white drop-shadow-[0_5px_18px_rgba(0,0,0,0.95)]">
+                    <h3 className="font-titular font-normal text-2xl text-white drop-shadow-[0_5px_18px_rgba(0,0,0,0.95)]">
                       {item.title}
                     </h3>
                   </div>
                 </button>
 
                 <div className="p-5">
-                  <p className="text-sm leading-relaxed text-[#f6efe7]/90">
+                  <p className="text-sm leading-relaxed text-paper/80">
                     {item.text}
                   </p>
                 </div>
@@ -406,9 +417,9 @@ export default function NuestraHistoria() {
           </div>
         </section>
 
-        <section className="mt-12 overflow-hidden rounded-[2rem] border border-[#dfc8ab] bg-[#fff9f0]/88 shadow-[0_24px_70px_rgba(90,64,50,0.13)]">
+        <section className="mt-20 overflow-hidden lg:mt-28 rounded-md border border-ink/15 bg-paper-deep/40 ">
           <div className="grid gap-0 lg:grid-cols-[0.92fr_1.08fr]">
-            <div className="relative min-h-[520px] overflow-hidden bg-[#2f241e]">
+            <div className="relative min-h-[520px] overflow-hidden bg-night">
               <div className="grid h-full min-h-[520px] grid-rows-2">
                 {memorialImages.map((item) => (
                   <div
@@ -416,7 +427,10 @@ export default function NuestraHistoria() {
                     className="group relative overflow-hidden"
                   >
                     <img
-                      src={item.image}
+                      {...getPreviewSources(item.image)}
+                      sizes="(min-width: 1440px) 600px, (min-width: 1024px) 45vw, 100vw"
+                      loading="lazy"
+                      decoding="async"
                       alt={item.alt}
                       className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
                     />
@@ -432,20 +446,19 @@ export default function NuestraHistoria() {
             </div>
 
             <div className="relative p-7 sm:p-10 lg:p-12">
-              <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 bg-[radial-gradient(ellipse_at_top_right,rgba(11,179,166,0.14),transparent_65%)]" />
 
               <div className="relative">
-                <div className="inline-flex items-center gap-2 rounded-full border border-calypso/45 bg-calypso/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-calypso shadow-[0_10px_30px_rgba(11,179,166,0.12)]">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-calypso-700">
                   <Trees size={14} />
                   Memorial
                 </div>
 
-                <h2 className="mt-5 font-display text-4xl leading-tight text-[#2f241e] md:text-5xl">
+                <h2 className="mt-5 font-titular font-normal text-4xl leading-tight text-ink md:text-5xl">
                   Y también están ellos
                   <span className="text-calypso">.</span>
                 </h2>
 
-                <div className="mt-7 space-y-5 leading-relaxed text-[#46362d]">
+                <div className="mt-7 space-y-5 leading-relaxed text-ink-soft">
                   <p>
                     Durante muchos años, cuatro cipreses piramidales acompañaron
                     silenciosamente la historia de este lugar. Fueron plantados
@@ -461,7 +474,7 @@ export default function NuestraHistoria() {
                     despedirnos de ellos.
                   </p>
 
-                  <p className="font-medium text-[#2f241e]">
+                  <p className="font-medium text-ink">
                     Pero hay cosas que no desaparecen cuando forman parte de una
                     historia.
                   </p>
@@ -480,19 +493,19 @@ export default function NuestraHistoria() {
           </div>
         </section>
 
-        <section className="mt-12 overflow-hidden rounded-[2rem] border border-[#5c493d] bg-[#2f241e] text-[#f6efe7] shadow-[0_24px_70px_rgba(47,36,30,0.18)]">
+        <section className="mt-20 overflow-hidden lg:mt-28 rounded-md border border-night-line bg-night text-paper ">
           <div className="p-7 sm:p-10">
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-calypso">
               Hoy
             </div>
 
-            <h2 className="mt-3 font-display text-4xl text-white">
+            <h2 className="mt-3 font-titular font-normal text-4xl text-white">
               Calypso no es solo un salón de eventos
               <span className="text-calypso">.</span>
             </h2>
 
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4 leading-relaxed text-[#f6efe7]/90">
+              <div className="space-y-4 leading-relaxed text-paper/80">
                 <p>Es el resultado de más de 40 años de historia.</p>
                 <p>De decisiones postergadas que encontraron su momento.</p>
                 <p>
@@ -504,7 +517,7 @@ export default function NuestraHistoria() {
                 </p>
               </div>
 
-              <div className="space-y-4 leading-relaxed text-[#f6efe7]/90">
+              <div className="space-y-4 leading-relaxed text-paper/80">
                 <p>
                   Es un lugar pensado para celebrar, pero también para sentirse
                   cómodo, acompañado y tranquilo.
@@ -570,17 +583,18 @@ export default function NuestraHistoria() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.28, ease: circOut }}
             onClick={(event) => event.stopPropagation()}
-            className="relative inline-flex max-h-[88vh] max-w-[94vw] flex-col overflow-hidden rounded-[1.6rem] border border-white/14 bg-[#211815] shadow-[0_28px_90px_rgba(0,0,0,0.55)]"
+            className="relative inline-flex max-h-[88vh] max-w-[94vw] flex-col overflow-hidden rounded-md border border-white/14 bg-night shadow-[0_28px_90px_rgba(0,0,0,0.55)]"
           >
             <div className="relative flex max-h-[72vh] max-w-[94vw] items-center justify-center overflow-hidden bg-black/20">
               <img
                 src={selectedTimelineItem.image}
+                decoding="async"
                 alt={`${selectedTimelineItem.year} - ${selectedTimelineItem.title}`}
                 className="block max-h-[72vh] max-w-[94vw] object-contain"
               />
             </div>
 
-            <div className="border-t border-white/10 bg-[#211815] px-5 py-5 text-white sm:px-7">
+            <div className="border-t border-white/10 bg-night px-5 py-5 text-white sm:px-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-flex rounded-full border border-calypso/35 bg-calypso/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-calypso">
                   {selectedTimelineItem.year}
@@ -591,11 +605,11 @@ export default function NuestraHistoria() {
                 </div>
               </div>
 
-              <h3 className="mt-3 font-display text-3xl leading-tight text-white sm:text-4xl">
+              <h3 className="mt-3 font-titular font-normal text-3xl leading-tight text-white sm:text-4xl">
                 {selectedTimelineItem.title}
               </h3>
 
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#f6efe7]/90 sm:text-base">
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-paper/80 sm:text-base">
                 {selectedTimelineItem.text}
               </p>
 
@@ -636,36 +650,42 @@ function PhotoCard({
   label,
   title,
   className = "",
+  priority = false,
 }: {
   src: string;
   alt: string;
   label: string;
   title: string;
   className?: string;
+  priority?: boolean;
 }) {
   return (
     <div
       className={[
-        "group relative overflow-hidden rounded-[2rem] border border-[#dfc8ab] bg-[#2f241e] shadow-[0_24px_70px_rgba(90,64,50,0.14)]",
+        "group relative overflow-hidden rounded-md border border-ink/15 bg-night ",
         className,
       ].join(" ")}
     >
       <img
-        src={src}
+        {...getPreviewSources(src)}
+        sizes="(min-width: 1440px) 640px, (min-width: 1024px) 50vw, 100vw"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
+        decoding="async"
         alt={alt}
         className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/38 to-black/10" />
-      <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/88 via-black/48 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-night/80 via-transparent to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-night/70 to-transparent" />
 
       <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-        <div className="inline-block max-w-[92%] rounded-2xl border border-white/15 bg-black/50 px-4 py-3 shadow-[0_14px_36px_rgba(0,0,0,0.45)] backdrop-blur-md">
+        <div className="inline-block max-w-[92%] border-l-2 border-calypso pl-4">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-calypso">
             {label}
           </div>
 
-          <div className="mt-2 font-display text-1xl leading-tight text-white drop-shadow-[0_5px_18px_rgba(0,0,0,0.9)]">
+          <div className="mt-2 font-titular font-normal text-2xl leading-tight text-white drop-shadow-[0_5px_18px_rgba(0,0,0,0.9)]">
             {title}
           </div>
         </div>
