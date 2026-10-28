@@ -8,10 +8,10 @@ import { getCalendarDays, getDisabledRangeForDate, getMonthLabel, getMonthStart,
 import { formatReservationTimeRange } from "../utils/timeHelpers";
 
 const availabilityStyles = {
-  Libre: "border-emerald-950 bg-emerald-700 text-white",
-  Parcial: "border-amber-800 bg-amber-300 text-slate-950",
-  Ocupada: "border-red-950 bg-red-700 text-white",
-  Inhabilitada: "border-purple-950 bg-purple-800 text-white",
+  Libre: "border-emerald-600 bg-emerald-200 text-emerald-950",
+  Parcial: "border-amber-600 bg-amber-200 text-amber-950",
+  Ocupada: "border-red-600 bg-red-200 text-red-950",
+  Inhabilitada: "border-purple-600 bg-purple-200 text-purple-950",
   Pasada: "border-slate-500 bg-slate-200 text-slate-900",
 };
 
