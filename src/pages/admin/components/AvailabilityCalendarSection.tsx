@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { Ban, CheckCircle2, ChevronLeft, ChevronRight, CircleX, Clock3, History, Loader2, X } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import { formatDateForDisplay, getAvailableSlots, getSlotsForDate, getTodayInputValue, type ReservationBlock } from "../../../lib/reservations";
 import { RESERVATION_EXPORT_COLUMNS, statusClasses, statusLabels } from "../constants";
@@ -8,11 +8,19 @@ import { getCalendarDays, getDisabledRangeForDate, getMonthLabel, getMonthStart,
 import { formatReservationTimeRange } from "../utils/timeHelpers";
 
 const availabilityStyles = {
-  Libre: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  Parcial: "border-amber-300 bg-amber-50 text-amber-900",
-  Ocupada: "border-red-200 bg-red-50 text-red-800",
-  Inhabilitada: "border-stone-300 bg-stone-100 text-stone-600",
-  Pasada: "border-slate-200 bg-slate-100 text-slate-500",
+  Libre: "border-emerald-950 bg-emerald-700 text-white",
+  Parcial: "border-amber-800 bg-amber-300 text-slate-950",
+  Ocupada: "border-red-950 bg-red-700 text-white",
+  Inhabilitada: "border-purple-950 bg-purple-800 text-white",
+  Pasada: "border-slate-500 bg-slate-200 text-slate-900",
+};
+
+const availabilityIcons = {
+  Libre: CheckCircle2,
+  Parcial: Clock3,
+  Ocupada: CircleX,
+  Inhabilitada: Ban,
+  Pasada: History,
 };
 
 export function AvailabilityCalendarSection({ refreshKey }: { refreshKey: number }) {
@@ -110,7 +118,10 @@ export function AvailabilityCalendarSection({ refreshKey }: { refreshKey: number
             <button type="button" onClick={() => changeMonth(1)} aria-label="Mes siguiente" className="rounded-full border border-[#dfc8ab] p-3 hover:bg-white"><ChevronRight size={20} /></button>
           </div>
           <div className="mb-5 flex flex-wrap gap-3 text-xs sm:text-sm">
-            {Object.entries(availabilityStyles).map(([label, style]) => <span key={label} className={`rounded-full border px-3 py-1 ${style}`}>{label}</span>)}
+            {Object.entries(availabilityStyles).map(([label, style]) => {
+              const Icon = availabilityIcons[label as keyof typeof availabilityIcons];
+              return <span key={label} className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 font-bold ${style}`}><Icon size={16} aria-hidden="true" />{label}</span>;
+            })}
           </div>
           {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {loading && <p role="status" className="mb-4 flex items-center gap-2 text-sm text-[#087d75]"><Loader2 size={16} className="animate-spin" />Cargando calendario…</p>}
@@ -120,6 +131,7 @@ export function AvailabilityCalendarSection({ refreshKey }: { refreshKey: number
               const value = toInputDate(date);
               const outside = date.getMonth() !== month.getMonth();
               const status = availability(value);
+              const StatusIcon = availabilityIcons[status];
               const count = reservations.filter((reservation) => reservation.event_date === value && reservation.status !== "rejected" && reservation.status !== "expired").length;
               return (
                 <button key={value} type="button" disabled={!ready || outside} aria-pressed={selected === value} aria-current={value === getTodayInputValue() ? "date" : undefined}
@@ -127,7 +139,8 @@ export function AvailabilityCalendarSection({ refreshKey }: { refreshKey: number
                   onClick={(event) => { triggerRef.current = event.currentTarget; setSelected(value); }}
                   className={`flex min-h-20 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-0.5 py-2 transition sm:min-h-28 sm:items-start sm:p-3 ${outside ? "invisible" : ready ? availabilityStyles[status] : "border-stone-200 bg-stone-50 text-stone-400"} ${selected === value ? "ring-2 ring-[#087d75] ring-offset-2" : "enabled:hover:brightness-95"} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#087d75]`}>
                   <span className={`text-lg font-bold sm:text-2xl ${value === getTodayInputValue() ? "underline decoration-2 underline-offset-4" : ""}`}>{date.getDate()}</span>
-                  <span className="text-[9px] font-semibold sm:text-xs">{ready ? status : "—"}</span>
+                  {ready && <StatusIcon size={18} className="shrink-0" aria-hidden="true" />}
+                  <span className="text-[10px] font-bold sm:text-xs">{ready ? status : "—"}</span>
                   {ready && count > 0 && <span className="text-[9px] sm:text-xs">{count} <span className="hidden sm:inline">reserva{count === 1 ? "" : "s"}</span><span className="sm:hidden">res.</span></span>}
                 </button>
               );
