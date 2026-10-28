@@ -315,7 +315,7 @@ export function ManualReservationForm({
         <div className="mb-4 border-b border-[#ead9c0] pb-3">
           <p className={sectionTitleClass}>Fecha y horario</p>
           <p className="mt-1 text-xs text-[#8a7667]">
-            Disponibilidad del salón y horario acordado.
+            Disponibilidad del salón y horario acordado. Reservas con al menos 10 días de anticipación.
           </p>
         </div>
 

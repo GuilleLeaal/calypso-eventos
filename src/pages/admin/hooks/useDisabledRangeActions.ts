@@ -3,7 +3,7 @@ import { supabase } from "../../../lib/supabase";
 import { formatDateForDisplay } from "../../../lib/reservations";
 import { statusLabels } from "../constants";
 import type { ManualReservationFormValues, Reservation } from "../types";
-import { getMinReservationDate } from "../utils/dateHelpers";
+import { getMinDisabledDate, getMinReservationDate } from "../utils/dateHelpers";
 import { formatReservationTimeRange } from "../utils/timeHelpers";
 
 type DisabledFormValues = {
@@ -41,7 +41,7 @@ export function useDisabledRangeActions({
       return;
     }
 
-    if (disabledForm.start_date < getMinReservationDate()) {
+    if (disabledForm.start_date < getMinDisabledDate()) {
       setGlobalError(
         "No se pueden inhabilitar fechas anteriores a la fecha mínima.",
       );
@@ -128,8 +128,8 @@ export function useDisabledRangeActions({
     }
 
     setDisabledForm({
-      start_date: getMinReservationDate(),
-      end_date: getMinReservationDate(),
+      start_date: getMinDisabledDate(),
+      end_date: getMinDisabledDate(),
       reason: "",
     });
 

@@ -1,5 +1,6 @@
+import { BudgetButton } from "./BudgetInquiry";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+
 import { ArrowRight, Play } from "lucide-react";
 import { Garland } from "./home/Garland";
 
@@ -103,17 +104,16 @@ export default function VideoTour() {
           </div>
 
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
-            <Link
-              to="/reservar"
+            <BudgetButton
               className="group inline-flex items-center justify-center gap-3 rounded-md bg-calypso px-7 py-4 text-base font-semibold text-ink transition-colors hover:bg-[#25c3b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso"
             >
-              Reservar fecha
+              Consultar presupuesto
               <ArrowRight
                 size={18}
                 aria-hidden="true"
                 className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
               />
-            </Link>
+            </BudgetButton>
             <a
               href={WHATSAPP_URL}
               target="_blank"

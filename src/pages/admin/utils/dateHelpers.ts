@@ -1,6 +1,7 @@
 import {
   createLocalDate,
   formatDateForDisplay,
+  getEarliestReservationDate,
   getTodayInputValue,
 } from "../../../lib/reservations";
 import { FIRST_RESERVATION_DATE } from "../constants";
@@ -8,9 +9,14 @@ import type { DisabledReservationDateRange } from "../types";
 
 export { createLocalDate };
 
-export function getMinReservationDate() {
+export function getMinDisabledDate() {
   const today = getTodayInputValue();
   return today > FIRST_RESERVATION_DATE ? today : FIRST_RESERVATION_DATE;
+}
+
+export function getMinReservationDate() {
+  const earliest = getEarliestReservationDate();
+  return earliest > FIRST_RESERVATION_DATE ? earliest : FIRST_RESERVATION_DATE;
 }
 
 export function toInputDate(date: Date) {

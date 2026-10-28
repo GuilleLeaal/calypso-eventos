@@ -1,5 +1,6 @@
+import { BudgetButton } from "./BudgetInquiry";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
 import { ArrowRight, Moon, Sun } from "lucide-react";
 import { Garland } from "./home/Garland";
 import { setHeroMode, useHeroMode, type HeroMode } from "./home/heroMode";
@@ -38,7 +39,7 @@ const SHIFT_TEXT: Record<HeroMode, string> = {
 const FACTS = [
   { label: "Capacidad", value: "Hasta 50 adultos y 30 niños" },
   { label: "Dónde", value: "El Pinar, Canelones" },
-  { label: "Reservas", value: "Con 48 h de anticipación" },
+  { label: "Reservas", value: "Con 10 días de anticipación" },
 ];
 
 export default function Hero() {
@@ -61,12 +62,12 @@ export default function Hero() {
     <section
       id="inicio"
       className={[
-        "relative pt-16 transition-colors duration-700 lg:pt-[72px]",
+        "relative min-h-[100svh] pt-16 transition-colors duration-700 lg:pt-[72px]",
         isNight ? "bg-night text-paper" : "bg-paper text-ink",
       ].join(" ")}
     >
       <div className="mx-auto grid max-w-[1440px] lg:min-h-[calc(100svh-72px)] lg:grid-cols-[1.08fr_0.92fr]">
-        <div className="relative aspect-[4/5] max-h-[72svh] w-full overflow-hidden sm:aspect-[4/3] lg:order-last lg:aspect-auto lg:max-h-none">
+        <div className="relative order-last aspect-[16/9] max-h-[38svh] w-full overflow-hidden sm:aspect-[2/1] lg:aspect-auto lg:max-h-none">
           {(Object.keys(PHOTOS) as HeroMode[]).map((photoMode) => {
             const photo = PHOTOS[photoMode];
             const active = photoMode === mode;
@@ -98,7 +99,7 @@ export default function Hero() {
           </p>
         </div>
 
-        <div className="flex flex-col justify-between gap-12 px-5 pb-12 pt-10 sm:px-10 lg:px-14 lg:pb-12 lg:pt-20 xl:px-20">
+        <div className="flex flex-col gap-8 px-5 pb-8 pt-10 sm:px-10 lg:justify-center lg:gap-9 lg:px-10 lg:py-12 xl:px-14">
           <div>
             <h1>
               <span
@@ -109,7 +110,7 @@ export default function Hero() {
               >
                 Salón de eventos en El Pinar
               </span>{" "}
-              <span className="mt-5 block font-titular text-[clamp(3.1rem,7.2vw,6.6rem)] font-normal leading-[0.94] tracking-[-0.015em]">
+              <span className="mt-4 block font-titular text-[clamp(3.1rem,6.3vw,5.7rem)] font-normal leading-[0.94] tracking-[-0.015em]">
                 Festejá de{" "}
                 <span
                   className={[
@@ -136,20 +137,20 @@ export default function Hero() {
 
             <p
               className={[
-                "mt-7 max-w-[34rem] font-texto text-lg leading-relaxed transition-colors duration-700",
+                "mt-5 max-w-[34rem] font-texto text-base leading-relaxed transition-colors duration-700 sm:text-lg",
                 isNight ? "text-paper/80" : "text-ink-soft",
               ].join(" ")}
             >
-              Una casa con jardín, salón vidriado, parrillero y juegos en El
+              Una barbacoa con jardín, salón vidriado, parrillero y juegos en El
               Pinar, Canelones. La construyó una familia, de a poco, desde 2018.
             </p>
 
-            <div className="mt-9">
+            <div className="mt-6">
               <div
                 role="group"
-                aria-label="Ver la casa de día o de noche"
+                aria-label="Ver la barbacoa de día o de noche"
                 className={[
-                  "inline-flex rounded-md border p-1 transition-colors duration-700",
+                  "flex w-full rounded-md border p-1 transition-colors duration-700 sm:w-fit",
                   isNight ? "border-night-line" : "border-ink/15",
                 ].join(" ")}
               >
@@ -168,7 +169,7 @@ export default function Hero() {
                       aria-pressed={active}
                       onClick={() => selectMode(value)}
                       className={[
-                        "inline-flex items-center gap-2 rounded-[5px] px-4 py-2 font-texto text-sm font-semibold transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+                        "inline-flex flex-1 items-center justify-center gap-2 rounded-[5px] px-6 py-3 font-texto text-base font-semibold transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-none sm:py-2.5",
                         active
                           ? isNight
                             ? "bg-paper text-night focus-visible:outline-calypso"
@@ -196,9 +197,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="mt-9 flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
-              <Link
-                to="/reservar"
+            <div className="mt-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:gap-6">
+              <BudgetButton
                 className={[
                   "group inline-flex items-center justify-center gap-3 rounded-md px-7 py-4 font-texto text-base font-semibold transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4",
                   isNight
@@ -206,13 +206,13 @@ export default function Hero() {
                     : "bg-calypso text-ink hover:bg-[#25c3b6] focus-visible:outline-calypso-700",
                 ].join(" ")}
               >
-                Reservar fecha
+                Consultar presupuesto
                 <ArrowRight
                   size={18}
                   aria-hidden="true"
                   className="transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none"
                 />
-              </Link>
+              </BudgetButton>
 
               <a
                 href={WHATSAPP_VISIT_URL}

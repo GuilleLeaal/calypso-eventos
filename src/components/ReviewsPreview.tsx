@@ -89,8 +89,8 @@ export default function ReviewsPreview() {
             ].join(" ")}
           >
             {reviews.map((review) => (
-              <figure key={review.id}>
-                <blockquote className="font-titular text-[1.6rem] leading-[1.25]">
+              <figure key={review.id} className="text-center">
+                <blockquote className="font-texto text-lg font-normal leading-relaxed text-ink-soft">
                   <span aria-hidden="true" className="text-calypso">“</span>
                   {review.message}
                   <span aria-hidden="true" className="text-calypso">”</span>

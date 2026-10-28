@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 export type HeroMode = "day" | "night";
 
-// Turno día: 11 a 17 h. Antes de las 7 y desde las 17 se muestra la casa de noche.
+// Turno día: 11 a 17 h. Antes de las 7 y desde las 17 se muestra la barbacoa de noche.
 function getModeForCurrentHour(): HeroMode {
   const hour = Number(
     new Intl.DateTimeFormat("es-UY", {

@@ -1,3 +1,4 @@
+import { BudgetButton } from "./BudgetInquiry";
 import { useId, useState } from "react";
 import { ArrowRight, Minus, Plus } from "lucide-react";
 import { CypressMark } from "./home/CypressMark";
@@ -102,11 +103,11 @@ export default function Services() {
             id={`${baseId}-titulo`}
             className="mt-6 font-titular text-[clamp(2.4rem,4.4vw,3.6rem)] font-normal leading-[1] tracking-[-0.01em]"
           >
-            Cuatro maneras de usar la casa
+            Cuatro maneras de usar la barbacoa
           </h2>
 
           <p className="mt-6 max-w-sm text-lg leading-relaxed text-ink-soft">
-            Todas incluyen la casa, los juegos y el equipo de atención. Lo demás
+            Todas incluyen la barbacoa, los juegos y el equipo de atención. Lo demás
             se suma según la fiesta que tengas en mente.
           </p>
         </header>
@@ -220,17 +221,16 @@ export default function Services() {
                         </div>
 
                         <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-7">
-                          <a
-                            href="/reservar"
+                          <BudgetButton
                             className="group inline-flex items-center justify-center gap-3 rounded-md bg-calypso px-6 py-3.5 font-semibold text-ink transition-colors hover:bg-[#25c3b6]"
                           >
-                            Reservar fecha
+                            Consultar presupuesto
                             <ArrowRight
                               size={18}
                               aria-hidden="true"
                               className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                             />
-                          </a>
+                          </BudgetButton>
                           <a
                             href={whatsappUrlFor(service.title)}
                             target="_blank"

@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { getEarliestReservationDate } from "../lib/reservations";
 
 const PHONE = "59899372068";
 const FIRST_RESERVATION_DATE = "2026-07-01";
@@ -52,17 +53,8 @@ type DisabledReservationDate = {
   reason: string | null;
 };
 
-function getTodayInputValue() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
 function getMinContactDate() {
-  const today = getTodayInputValue();
+  const today = getEarliestReservationDate();
   return today > FIRST_RESERVATION_DATE ? today : FIRST_RESERVATION_DATE;
 }
 
@@ -228,7 +220,7 @@ export default function Contact() {
     }
 
     if (form.date < getMinContactDate()) {
-      setFormError("Seleccioná una fecha tentativa válida.");
+      setFormError("Seleccioná una fecha con al menos 10 días de anticipación.");
       return;
     }
 

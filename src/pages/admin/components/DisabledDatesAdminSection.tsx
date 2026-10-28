@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { CalendarOff, Check, Loader2 } from "lucide-react";
 import type { DisabledReservationDateRange } from "../types";
-import { getDisabledRangeLabel, getMinReservationDate } from "../utils/dateHelpers";
+import { getDisabledRangeLabel, getMinDisabledDate } from "../utils/dateHelpers";
 
 export function DisabledDatesAdminSection({
   disabledRanges,
@@ -61,7 +61,7 @@ export function DisabledDatesAdminSection({
               </span>
               <input
                 type="date"
-                min={getMinReservationDate()}
+                min={getMinDisabledDate()}
                 value={disabledForm.start_date}
                 onChange={(event) =>
                   setDisabledForm((prev) => ({
@@ -83,7 +83,7 @@ export function DisabledDatesAdminSection({
               </span>
               <input
                 type="date"
-                min={disabledForm.start_date || getMinReservationDate()}
+                min={disabledForm.start_date || getMinDisabledDate()}
                 value={disabledForm.end_date}
                 onChange={(event) =>
                   setDisabledForm((prev) => ({

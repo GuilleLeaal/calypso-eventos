@@ -218,7 +218,7 @@ export default function NuestraHistoria() {
 
               <p>
                 Y él, sin saberlo, estaba dando el primer paso de algo mucho más
-                grande que una casa.
+                grande que una barbacoa.
               </p>
 
               <p>
@@ -237,7 +237,7 @@ export default function NuestraHistoria() {
           <div className="grid gap-7">
             <PhotoCard
               src={historia2}
-              alt="Construcción inicial de la casa en El Pinar"
+              alt="Construcción inicial de la barbacoa en El Pinar"
               label="Primeras etapas"
               title="Un lugar propio"
               className="min-h-[260px]"
@@ -274,7 +274,7 @@ export default function NuestraHistoria() {
 
             <div className="mt-6 space-y-5 leading-relaxed text-[#46362d]">
               <p>
-                A los 34 años, después de mucho camino recorrido, la casa
+                A los 34 años, después de mucho camino recorrido, la barbacoa
                 finalmente tomó forma. En ese momento, Julio ya había formado
                 pareja con Mónica, y juntos comenzaron una nueva etapa en
                 Montevideo, donde construyeron su vida, su familia y su día a

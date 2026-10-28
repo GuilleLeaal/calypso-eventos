@@ -46,6 +46,10 @@ export function useReservationActions({
     id: string,
     values: ReservationUpdateValues,
   ) {
+    if (values.event_date && values.event_date < getMinReservationDate()) {
+      setGlobalError("Las reservas deben coordinarse con al menos 10 días de anticipación.");
+      return false;
+    }
     setActionLoadingId(id);
     setGlobalError("");
 
@@ -188,6 +192,11 @@ export function useReservationActions({
     event.preventDefault();
 
     setGlobalError("");
+
+    if (!manualForm.event_date || manualForm.event_date < getMinReservationDate()) {
+      setGlobalError("Las reservas deben coordinarse con al menos 10 días de anticipación.");
+      return;
+    }
 
     const guests = validateContactAndGuests(manualForm);
 

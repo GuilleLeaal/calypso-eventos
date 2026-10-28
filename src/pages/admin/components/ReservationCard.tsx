@@ -27,7 +27,7 @@ import type {
   ReservationDetailsUpdateValues,
   ReservationStatus,
 } from "../types";
-import { isDateInDisabledRange } from "../utils/dateHelpers";
+import { getMinReservationDate, isDateInDisabledRange } from "../utils/dateHelpers";
 import {
   formatReservationTimeRange,
   isOvernightTimeRange,
@@ -151,6 +151,11 @@ export function ReservationCard({
 
     if (!editDraft.event_date.trim()) {
       setEditError("Seleccioná la fecha del evento.");
+      return;
+    }
+
+    if (editDraft.event_date !== reservation.event_date && editDraft.event_date < getMinReservationDate()) {
+      setEditError("La nueva fecha debe tener al menos 10 días de anticipación.");
       return;
     }
 

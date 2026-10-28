@@ -1,3 +1,4 @@
+import { BudgetButton } from "./BudgetInquiry";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
@@ -133,8 +134,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
-            href="/reservar"
+          <BudgetButton
             className={[
               "hidden items-center gap-2 rounded-md px-5 py-2.5 text-[15px] font-semibold transition-colors duration-300 sm:inline-flex",
               dark
@@ -142,8 +142,8 @@ export default function Header() {
                 : "bg-calypso text-ink hover:bg-[#25c3b6]",
             ].join(" ")}
           >
-            Reservar fecha
-          </a>
+            Consultar presupuesto
+          </BudgetButton>
 
           <button
             type="button"
@@ -186,17 +186,16 @@ export default function Header() {
             </ul>
           </nav>
 
-          <a
-            href="/reservar"
+          <BudgetButton
             onClick={() => setOpen(false)}
             className={[
               "mt-8 flex items-center justify-center gap-3 rounded-md px-6 py-4 text-base font-semibold",
               "bg-calypso text-ink",
             ].join(" ")}
           >
-            Reservar fecha
+            Consultar presupuesto
             <ArrowRight size={18} aria-hidden="true" />
-          </a>
+          </BudgetButton>
         </div>
       )}
     </header>

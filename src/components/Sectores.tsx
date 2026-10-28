@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { setHeroMode, useHeroMode } from "./home/heroMode";
+import { BudgetButton } from "./BudgetInquiry";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -128,6 +130,7 @@ function whatsappUrlFor(sectorTitle: string) {
 }
 
 export default function Sectores() {
+  const mode = useHeroMode();
   const [previewIndex, setPreviewIndex] = useState(0);
   const [open, setOpen] = useState<OpenGallery | null>(null);
   const [loadedSrc, setLoadedSrc] = useState("");
@@ -142,7 +145,7 @@ export default function Sectores() {
 
   function openGallery(index: number, trigger: HTMLElement) {
     triggerRef.current = trigger;
-    setOpen({ sector: index, moment: "day", photo: 0 });
+    setOpen({ sector: index, moment: mode === "night" && items[index].galleries.night?.length ? "night" : "day", photo: 0 });
   }
 
   function closeGallery() {
@@ -151,6 +154,7 @@ export default function Sectores() {
   }
 
   function setMoment(moment: GalleryMoment) {
+    setHeroMode(moment);
     setOpen((current) => (current ? { ...current, moment, photo: 0 } : current));
   }
 
@@ -167,7 +171,7 @@ export default function Sectores() {
       current
         ? {
             sector: (current.sector + delta + items.length) % items.length,
-            moment: "day",
+            moment: current.moment === "night" && items[(current.sector + delta + items.length) % items.length].galleries.night?.length ? "night" : "day",
             photo: 0,
           }
         : current,
@@ -194,7 +198,7 @@ export default function Sectores() {
           current
             ? {
                 sector: (current.sector + delta + items.length) % items.length,
-                moment: "day",
+                moment: current.moment === "night" && items[(current.sector + delta + items.length) % items.length].galleries.night?.length ? "night" : "day",
                 photo: 0,
               }
             : current,
@@ -243,7 +247,7 @@ export default function Sectores() {
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>
             <p className="text-[15px] font-semibold text-ink-mute">
-              Espacios de la casa
+              Espacios de la barbacoa
             </p>
             <h2
               id="espacios-titulo"
@@ -258,12 +262,11 @@ export default function Sectores() {
               Fotos reales de cada sector, de día y de noche. El acceso
               inclusivo tiene solo fotos de día.
             </p>
-            <a
-              href="/reservar"
+            <BudgetButton
               className="mt-5 inline-flex font-semibold underline decoration-ink/30 decoration-1 underline-offset-[6px] transition-colors hover:decoration-calypso"
             >
-              Consultar disponibilidad
-            </a>
+              Consultar presupuesto
+            </BudgetButton>
           </div>
         </div>
 
@@ -347,14 +350,23 @@ export default function Sectores() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="galeria-titulo"
-          className="fixed inset-0 z-[90] flex flex-col bg-night text-paper"
+          className="sector-gallery fixed inset-0 z-[90] flex flex-col bg-[var(--gallery-bg)] text-[var(--gallery-text)] transition-colors duration-500"
+          style={{
+            "--gallery-bg": open.moment === "night" ? "#191e1b" : "#faf7ef",
+            "--gallery-text": open.moment === "night" ? "#faf7ef" : "#29251f",
+            "--gallery-soft": open.moment === "night" ? "#d2d0c8" : "#5e584f",
+            "--gallery-muted": open.moment === "night" ? "#aaa99f" : "#716b60",
+            "--gallery-line": open.moment === "night" ? "#41463f" : "#d9d4c7",
+            "--gallery-image": open.moment === "night" ? "#0b0d0b" : "#e9e5db",
+            "--gallery-overlay": open.moment === "night" ? "#191e1bcc" : "#faf7efdd",
+          } as CSSProperties}
         >
-          <div className="flex items-center justify-between gap-4 border-b border-night-line px-5 py-4 sm:px-8">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--gallery-line)] px-5 py-4 sm:px-8">
             <div className="min-w-0">
               <h3 id="galeria-titulo" className="truncate font-titular text-2xl sm:text-3xl">
                 {openSector.title}
               </h3>
-              <p className="mt-1 text-sm text-paper/60">
+              <p className="mt-1 text-sm text-[var(--gallery-muted)]">
                 Foto {open.photo + 1} de {gallery.length}
               </p>
             </div>
@@ -363,7 +375,7 @@ export default function Sectores() {
               ref={closeButtonRef}
               type="button"
               onClick={closeGallery}
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md border border-night-line px-4 text-[15px] font-semibold transition-colors hover:border-paper/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md border border-[var(--gallery-line)] px-4 text-[15px] font-semibold transition-colors hover:border-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
             >
               <X size={18} aria-hidden="true" />
               Cerrar
@@ -371,14 +383,14 @@ export default function Sectores() {
           </div>
 
           <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[1fr_24rem] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
-            <div className="relative h-[58svh] shrink-0 bg-black lg:h-auto">
+            <div className="relative h-[58svh] shrink-0 bg-[var(--gallery-image)] lg:h-auto">
               <div
                 className={[
                   "pointer-events-none absolute inset-0 z-10 grid place-items-center transition-opacity duration-300",
                   loadedSrc === activeSrc ? "opacity-0" : "opacity-100",
                 ].join(" ")}
               >
-                <span className="flex items-center gap-3 text-sm font-semibold text-paper/80">
+                <span className="flex items-center gap-3 text-sm font-semibold text-[var(--gallery-soft)]">
                   <Loader2 className="h-5 w-5 animate-spin text-calypso" aria-hidden="true" />
                   Cargando foto
                 </span>
@@ -403,7 +415,7 @@ export default function Sectores() {
                     type="button"
                     onClick={() => stepPhoto(-1)}
                     aria-label="Foto anterior"
-                    className="absolute left-3 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-night/80 text-paper transition-colors hover:bg-night focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+                    className="absolute left-3 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-[var(--gallery-overlay)] text-[var(--gallery-text)] transition-colors hover:bg-[var(--gallery-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
                   >
                     <ChevronLeft size={22} aria-hidden="true" />
                   </button>
@@ -411,7 +423,7 @@ export default function Sectores() {
                     type="button"
                     onClick={() => stepPhoto(1)}
                     aria-label="Foto siguiente"
-                    className="absolute right-3 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-night/80 text-paper transition-colors hover:bg-night focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+                    className="absolute right-3 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-[var(--gallery-overlay)] text-[var(--gallery-text)] transition-colors hover:bg-[var(--gallery-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
                   >
                     <ChevronRight size={22} aria-hidden="true" />
                   </button>
@@ -425,7 +437,7 @@ export default function Sectores() {
                   <div
                     role="group"
                     aria-label="Ver el sector de día o de noche"
-                    className="inline-flex rounded-md border border-night-line p-1"
+                    className="flex w-full rounded-md border border-[var(--gallery-line)] p-1"
                   >
                     {(
                       [
@@ -439,8 +451,8 @@ export default function Sectores() {
                         aria-pressed={open.moment === value}
                         onClick={() => setMoment(value)}
                         className={[
-                          "inline-flex items-center gap-2 rounded-[5px] px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso",
-                          open.moment === value ? "bg-paper text-night" : "text-paper/70 hover:text-paper",
+                          "inline-flex flex-1 items-center justify-center gap-2 rounded-[5px] px-4 py-3 text-base font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso",
+                          open.moment === value ? (open.moment === "night" ? "bg-paper text-night" : "bg-ink text-paper") : "text-[var(--gallery-soft)] hover:text-[var(--gallery-text)]",
                         ].join(" ")}
                       >
                         <Icon size={16} aria-hidden="true" />
@@ -449,10 +461,10 @@ export default function Sectores() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-paper/60">Este sector tiene solo fotos de día.</p>
+                  <p className="text-sm text-[var(--gallery-muted)]">Este sector tiene solo fotos de día.</p>
                 )}
 
-                <p className="mt-6 text-base leading-relaxed text-paper/80">{openSector.desc}</p>
+                <p className="mt-6 text-base leading-relaxed text-[var(--gallery-soft)]">{openSector.desc}</p>
 
                 <ul className="mt-5 space-y-2">
                   {openSector.features.map((feature) => (
@@ -473,11 +485,11 @@ export default function Sectores() {
                 Consultar por este sector
               </a>
 
-              <div className="mt-auto flex items-center justify-between gap-4 border-t border-night-line pt-6 text-sm font-semibold">
+              <div className="mt-auto flex items-center justify-between gap-4 border-t border-[var(--gallery-line)] pt-6 text-sm font-semibold">
                 <button
                   type="button"
                   onClick={() => stepSector(-1)}
-                  className="inline-flex items-center gap-2 text-paper/75 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+                  className="inline-flex items-center gap-2 text-[var(--gallery-soft)] transition-colors hover:text-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
                 >
                   <ArrowLeft size={16} aria-hidden="true" />
                   {items[(open.sector - 1 + items.length) % items.length].title}
@@ -485,14 +497,14 @@ export default function Sectores() {
                 <button
                   type="button"
                   onClick={() => stepSector(1)}
-                  className="inline-flex items-center gap-2 text-right text-paper/75 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+                  className="inline-flex items-center gap-2 text-right text-[var(--gallery-soft)] transition-colors hover:text-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
                 >
                   {items[(open.sector + 1) % items.length].title}
                   <ArrowRight size={16} aria-hidden="true" />
                 </button>
               </div>
 
-              <p className="hidden text-xs text-paper/45 lg:block">
+              <p className="hidden text-xs text-[var(--gallery-muted)] lg:block">
                 Esc para cerrar · ← → fotos · Shift + ← → sectores
               </p>
             </div>

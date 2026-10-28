@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Sectores from "./components/Sectores";
@@ -10,7 +10,7 @@ import Footer from "./components/Footer";
 import NuestraHistoria from "./pages/NuestraHistoria";
 import ReviewPage from "./pages/ReviewPage";
 import ReviewsPreview from "./components/ReviewsPreview";
-import ReservationPage from "./pages/ReservationPage";
+import { BudgetInquiryProvider } from "./components/BudgetInquiry";
 import AdminReservationsPage from "./pages/AdminReservationsPage";
 import VideoTour from "./components/VideoTour";
 import PrivacidadPage from "./pages/PrivacidadPage";
@@ -32,7 +32,7 @@ function Home() {
 
 export default function App() {
   return (
-    <div id="top" className="min-h-screen bg-rustic-ivory text-rustic-espresso">
+    <BudgetInquiryProvider><div id="top" className="min-h-screen bg-rustic-ivory text-rustic-espresso">
       <Header />
 
       <Routes>
@@ -40,13 +40,13 @@ export default function App() {
         <Route path="/nuestra-historia" element={<NuestraHistoria />} />
         <Route path="/contacto" element={<Contact />} />
         <Route path="/dejar-resena" element={<ReviewPage />} />
-        <Route path="/reservar" element={<ReservationPage />} />
+        <Route path="/reservar" element={<Navigate to="/" replace />} />
         <Route path="/admin-calypso" element={<AdminReservationsPage />} />
         <Route path="/privacidad" element={<PrivacidadPage />} />
         <Route path="/terminos" element={<TerminosPage />} />
       </Routes>
 
       <Footer />
-    </div>
+    </div></BudgetInquiryProvider>
   );
 }
