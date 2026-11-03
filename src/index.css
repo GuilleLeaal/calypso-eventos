@@ -117,3 +117,12 @@ body {
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 0 0 4px rgba(5, 109, 102, 0.16);
 }
+
+/* Leave room for the fixed public navigation when following section links. */
+:where(#services, #recorrido, #sectors, #location) {
+  scroll-margin-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

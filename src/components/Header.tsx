@@ -1,5 +1,5 @@
 import { BudgetButton } from "./BudgetInquiry";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
 import logo from "../assets/logo.png";
@@ -22,6 +22,8 @@ export default function Header() {
   const [overHero, setOverHero] = useState(pathname === "/");
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState("");
+  const headerRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -71,10 +73,38 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const closeOnDesktop = () => { if (desktop.matches) setOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const menuButton = menuButtonRef.current;
+    function trapMenuFocus(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+      const controls = Array.from(headerRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? [])
+        .filter((element) => element.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+    document.addEventListener("keydown", trapMenuFocus);
+    return () => {
+      document.removeEventListener("keydown", trapMenuFocus);
+      menuButton?.focus();
     };
   }, [open]);
 
@@ -106,7 +136,7 @@ export default function Header() {
           />
         </a>
 
-        <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex xl:gap-9">
+        <nav aria-label="Principal" className="hidden items-center gap-7 xl:flex xl:gap-7">
           {nav.map((item) => {
             const active = isActive(item);
 
@@ -151,7 +181,7 @@ export default function Header() {
             aria-expanded={open}
             aria-controls="menu-movil"
             className={[
-              "inline-flex h-11 items-center gap-2 rounded-md border px-3 text-[15px] font-semibold transition-colors lg:hidden",
+              "inline-flex h-11 items-center gap-2 rounded-md border px-3 text-[15px] font-semibold transition-colors xl:hidden",
               dark ? "border-night-line" : "border-ink/15",
             ].join(" ")}
           >
@@ -165,7 +195,7 @@ export default function Header() {
         <div
           id="menu-movil"
           className={[
-            "fixed inset-x-0 bottom-0 top-16 overflow-y-auto px-5 pb-10 pt-6 sm:px-10 lg:hidden",
+            "fixed inset-x-0 bottom-0 top-16 overflow-y-auto overscroll-contain px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-6 sm:px-10 lg:top-[72px] xl:hidden",
             dark ? "bg-night text-paper" : "bg-paper text-ink",
           ].join(" ")}
         >

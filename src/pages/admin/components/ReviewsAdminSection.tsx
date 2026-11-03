@@ -28,14 +28,14 @@ export function ReviewsAdminSection({
   });
 
   return (
-    <section className="mt-10 rounded-[1.8rem] border border-[#dfc8ab] bg-[#fff9f0]/86 p-6 shadow-[0_22px_60px_rgba(90,64,50,0.10)] backdrop-blur">
-      <div className="flex flex-col gap-4 border-b border-[#e4cfad] pb-5 lg:flex-row lg:items-center lg:justify-between">
+    <section className="mt-10 rounded-xl border border-[#D8D2C5] bg-white/70 p-6 shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-[#D8D2C5] pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="font-display text-3xl text-[#2f241e]">
+          <h2 className="font-titular font-normal text-3xl text-[#1C1915]">
             Gestión de reseñas
           </h2>
 
-          <p className="mt-2 text-sm leading-relaxed text-[#5c473b]">
+          <p className="mt-2 text-sm leading-relaxed text-[#4B443B]">
             Aprobá, ocultá o eliminá las reseñas recibidas desde el QR del
             salón.
           </p>
@@ -47,10 +47,10 @@ export function ReviewsAdminSection({
               key={item}
               onClick={() => setReviewFilter(item)}
               className={[
-                "rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition",
+                "rounded-md border px-4 py-2 text-xs font-semibold transition",
                 reviewFilter === item
-                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                  : "border-[#dfc8ab] bg-white/50 text-[#5c473b] hover:bg-white",
+                  ? "border-calypso-700 bg-calypso-700 text-white"
+                  : "border-[#D8D2C5] bg-white/50 text-[#4B443B] hover:bg-white",
               ].join(" ")}
             >
               {item === "all"
@@ -65,10 +65,10 @@ export function ReviewsAdminSection({
 
       {loadingReviews ? (
         <div className="grid min-h-64 place-items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0BB3A6]" />
+          <Loader2 className="h-8 w-8 animate-spin text-calypso-700" />
         </div>
       ) : filteredReviews.length === 0 ? (
-        <div className="mt-6 rounded-[1.2rem] border border-[#dfc8ab] bg-white/45 p-6 text-sm text-[#5c473b]">
+        <div className="mt-6 rounded-lg border border-[#D8D2C5] bg-white/45 p-6 text-sm text-[#4B443B]">
           No hay reseñas para este filtro.
         </div>
       ) : (

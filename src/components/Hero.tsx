@@ -67,7 +67,93 @@ export default function Hero() {
       ].join(" ")}
     >
       <div className="mx-auto grid max-w-[1440px] lg:min-h-[calc(100svh-72px)] lg:grid-cols-[1.08fr_0.92fr]">
-        <div className="relative order-last aspect-[16/9] max-h-[38svh] w-full overflow-hidden sm:aspect-[2/1] lg:aspect-auto lg:max-h-none">
+        <div className="min-w-0 px-5 pb-6 pt-9 sm:px-10 lg:self-end lg:px-10 lg:pb-0 lg:pt-12 xl:px-14">
+          <h1>
+            <span
+              className={[
+                "block font-texto text-[15px] font-semibold transition-colors duration-700",
+                isNight ? "text-paper/75" : "text-ink-soft",
+              ].join(" ")}
+            >
+              Salón de eventos en El Pinar
+            </span>{" "}
+            <span className="mt-4 block font-titular text-[clamp(2.7rem,8vw,3.75rem)] lg:text-[clamp(3.1rem,6.3vw,5.7rem)] font-normal leading-[0.94] tracking-[-0.015em]">
+              Festejá de{" "}
+              <span
+                className={[
+                  "transition-colors duration-700",
+                  isNight ? "text-paper/65" : "text-calypso-600 underline decoration-calypso decoration-2 underline-offset-[0.14em]",
+                ].join(" ")}
+              >
+                día
+              </span>{" "}
+              <br />o de{" "}
+              <span
+                className={[
+                  "transition-colors duration-700",
+                  isNight
+                    ? "text-bulb underline decoration-2 underline-offset-[0.14em]"
+                    : "text-ink/65",
+                ].join(" ")}
+              >
+                noche
+              </span>
+              .
+            </span>
+          </h1>
+          <div className="mt-6">
+            <div
+              role="group"
+              aria-label="Ver la barbacoa de día o de noche"
+              className={[
+                "flex w-full rounded-md border p-1 transition-colors duration-700 sm:w-fit",
+                isNight ? "border-night-line" : "border-ink/15",
+              ].join(" ")}
+            >
+              {(
+                [
+                  { value: "day", label: "Día", Icon: Sun },
+                  { value: "night", label: "Noche", Icon: Moon },
+                ] as const
+              ).map(({ value, label, Icon }) => {
+                const active = mode === value;
+
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => selectMode(value)}
+                    className={[
+                      "inline-flex flex-1 items-center justify-center gap-2 rounded-[5px] px-6 py-3 font-texto text-base font-semibold transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-none sm:py-2.5",
+                      active
+                        ? isNight
+                          ? "bg-paper text-night focus-visible:outline-calypso"
+                          : "bg-ink text-paper focus-visible:outline-calypso-700"
+                        : isNight
+                          ? "text-paper/70 hover:text-paper focus-visible:outline-calypso"
+                          : "text-ink-soft hover:text-ink focus-visible:outline-calypso-700",
+                    ].join(" ")}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p
+              aria-live="polite"
+              className={[
+                "mt-3 font-texto text-[15px] transition-colors duration-700",
+                isNight ? "text-paper/70" : "text-ink-mute",
+              ].join(" ")}
+            >
+              {SHIFT_TEXT[mode]}
+            </p>
+          </div>
+        </div>
+        <div className="relative aspect-[16/9] max-h-[38svh] w-full overflow-hidden sm:aspect-[2/1] lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:aspect-auto lg:h-full lg:max-h-none">
           {(Object.keys(PHOTOS) as HeroMode[]).map((photoMode) => {
             const photo = PHOTOS[photoMode];
             const active = photoMode === mode;
@@ -99,45 +185,11 @@ export default function Hero() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-8 px-5 pb-8 pt-10 sm:px-10 lg:justify-center lg:gap-9 lg:px-10 lg:py-12 xl:px-14">
+        <div className="flex min-w-0 flex-col gap-6 px-5 py-6 sm:px-10 lg:self-start lg:gap-8 lg:px-10 lg:pb-12 lg:pt-6 xl:px-14">
           <div>
-            <h1>
-              <span
-                className={[
-                  "block font-texto text-[15px] font-semibold transition-colors duration-700",
-                  isNight ? "text-paper/75" : "text-ink-soft",
-                ].join(" ")}
-              >
-                Salón de eventos en El Pinar
-              </span>{" "}
-              <span className="mt-4 block font-titular text-[clamp(3.1rem,6.3vw,5.7rem)] font-normal leading-[0.94] tracking-[-0.015em]">
-                Festejá de{" "}
-                <span
-                  className={[
-                    "transition-colors duration-700",
-                    isNight ? "text-paper/30" : "text-calypso-600 underline decoration-calypso decoration-2 underline-offset-[0.14em]",
-                  ].join(" ")}
-                >
-                  día
-                </span>{" "}
-                <br />o de{" "}
-                <span
-                  className={[
-                    "transition-colors duration-700",
-                    isNight
-                      ? "text-bulb underline decoration-2 underline-offset-[0.14em]"
-                      : "text-ink/30",
-                  ].join(" ")}
-                >
-                  noche
-                </span>
-                .
-              </span>
-            </h1>
-
             <p
               className={[
-                "mt-5 max-w-[34rem] font-texto text-base leading-relaxed transition-colors duration-700 sm:text-lg",
+                "max-w-[34rem] font-texto text-base leading-relaxed transition-colors duration-700 sm:text-lg",
                 isNight ? "text-paper/80" : "text-ink-soft",
               ].join(" ")}
             >
@@ -145,59 +197,7 @@ export default function Hero() {
               Pinar, Canelones. La construyó una familia, de a poco, desde 2018.
             </p>
 
-            <div className="mt-6">
-              <div
-                role="group"
-                aria-label="Ver la barbacoa de día o de noche"
-                className={[
-                  "flex w-full rounded-md border p-1 transition-colors duration-700 sm:w-fit",
-                  isNight ? "border-night-line" : "border-ink/15",
-                ].join(" ")}
-              >
-                {(
-                  [
-                    { value: "day", label: "Día", Icon: Sun },
-                    { value: "night", label: "Noche", Icon: Moon },
-                  ] as const
-                ).map(({ value, label, Icon }) => {
-                  const active = mode === value;
-
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => selectMode(value)}
-                      className={[
-                        "inline-flex flex-1 items-center justify-center gap-2 rounded-[5px] px-6 py-3 font-texto text-base font-semibold transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-none sm:py-2.5",
-                        active
-                          ? isNight
-                            ? "bg-paper text-night focus-visible:outline-calypso"
-                            : "bg-ink text-paper focus-visible:outline-calypso-700"
-                          : isNight
-                            ? "text-paper/70 hover:text-paper focus-visible:outline-calypso"
-                            : "text-ink-soft hover:text-ink focus-visible:outline-calypso-700",
-                      ].join(" ")}
-                    >
-                      <Icon size={16} aria-hidden="true" />
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <p
-                aria-live="polite"
-                className={[
-                  "mt-3 font-texto text-[15px] transition-colors duration-700",
-                  isNight ? "text-paper/70" : "text-ink-mute",
-                ].join(" ")}
-              >
-                {SHIFT_TEXT[mode]}
-              </p>
-            </div>
-
-            <div className="mt-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:gap-6">
+            <div className="mt-6 flex flex-col gap-4 2xl:flex-row 2xl:flex-wrap 2xl:items-center 2xl:gap-6">
               <BudgetButton
                 className={[
                   "group inline-flex items-center justify-center gap-3 rounded-md px-7 py-4 font-texto text-base font-semibold transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4",
@@ -232,7 +232,7 @@ export default function Hero() {
 
           <dl
             className={[
-              "grid gap-5 border-t pt-6 font-texto sm:grid-cols-3 sm:gap-8 transition-colors duration-700",
+              "grid gap-4 border-t pt-5 font-texto sm:grid-cols-3 sm:gap-8 transition-colors duration-700",
               isNight ? "border-night-line" : "border-ink/15",
             ].join(" ")}
           >
@@ -246,7 +246,7 @@ export default function Hero() {
                 >
                   {fact.label}
                 </dt>
-                <dd className="mt-1 text-base font-semibold">{fact.value}</dd>
+                <dd className="mt-1 text-sm font-semibold sm:text-base">{fact.value}</dd>
               </div>
             ))}
           </dl>

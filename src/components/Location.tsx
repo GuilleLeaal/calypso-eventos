@@ -39,7 +39,7 @@ export default function Location() {
               href={MAPS_LINK}
               target="_blank"
               rel="noreferrer"
-              className="group inline-flex items-center justify-center gap-3 whitespace-nowrap rounded-md bg-calypso px-7 py-4 font-semibold text-ink transition-colors hover:bg-[#25c3b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso-700"
+              className="group inline-flex items-center justify-center gap-3 rounded-md bg-calypso px-7 py-4 font-semibold text-ink transition-colors hover:bg-[#25c3b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso-700"
             >
               Abrir en Google Maps
               <ArrowUpRight
@@ -52,7 +52,7 @@ export default function Location() {
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noreferrer"
-              className="self-start whitespace-nowrap font-semibold underline decoration-ink/30 decoration-1 underline-offset-[6px] transition-colors hover:decoration-calypso sm:self-auto"
+              className="inline-flex min-h-11 items-center self-start font-semibold underline decoration-ink/30 decoration-1 underline-offset-[6px] transition-colors hover:decoration-calypso sm:self-auto"
             >
               Pedir indicaciones por WhatsApp
             </a>
