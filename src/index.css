@@ -92,3 +92,28 @@ body {
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 0 0 4px rgba(11, 179, 166, 0.12);
 }
+
+/* Public contact page */
+#contact .input-contact {
+  width: 100%;
+  border-radius: 0.125rem;
+  border: 1px solid rgba(28, 25, 21, 0.25);
+  background: rgba(255, 255, 255, 0.4);
+  padding: 0.95rem 1rem;
+  color: #1c1915;
+  outline: none;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+#contact .input-contact::placeholder {
+  color: #6e6558;
+}
+
+#contact .input-contact:focus {
+  border-color: #056d66;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 0 0 4px rgba(5, 109, 102, 0.16);
+}
