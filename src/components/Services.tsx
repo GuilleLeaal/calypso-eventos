@@ -7,14 +7,21 @@ import reunionesImg from "../assets/home/servicio-reuniones.webp";
 import corporativosImg from "../assets/home/servicio-corporativos.webp";
 import especialesImg from "../assets/home/servicio-especiales.webp";
 
+const INCLUDED = [
+  "Uso de las instalaciones",
+  "Pool, futbolito y cama elástica",
+  "Menú infantil",
+  "Mozos y Animadores",
+  "Uso del Proyector",
+  "Cobertura médica de emergencia",
+];
+
 const EXTRAS = [
-  "Bebidas a consignación",
   "Menú para adultos",
-  "Animador extra",
-  "Mozo extra",
+  "Horas extras",
+  "Animador o Mozo extra",
   "Uso del parrillero",
-  "Leña",
-  "Hielo",
+  "Leña y Hielo",
 ];
 
 const services = [
@@ -25,14 +32,8 @@ const services = [
     image: cumpleImg,
     imageAlt: "Cumpleaños infantil alrededor de una mesa con torta y globos",
     highlight: "El más pedido",
-    included: [
-      "Uso de las instalaciones",
-      "Uso de juegos",
-      "Menú infantil",
-      "1 ayudante de cocina",
-      "1 mozo",
-      "2 animadores",
-    ],
+    included: INCLUDED,
+    extras: EXTRAS,
   },
   {
     title: "Reuniones",
@@ -40,14 +41,8 @@ const services = [
     desc: "Un entorno cálido para encuentros familiares o sociales, con buena distribución y opciones adaptables según la cantidad de invitados.",
     image: reunionesImg,
     imageAlt: "Grupo de amigos jugando al pool en una reunión",
-    included: [
-      "Uso de las instalaciones",
-      "Uso de juegos",
-      "Menú infantil",
-      "1 ayudante de cocina",
-      "1 mozo",
-      "2 animadores si hay 25 niños o más",
-    ],
+    included: INCLUDED,
+    extras: EXTRAS,
   },
   {
     title: "Eventos corporativos",
@@ -56,10 +51,19 @@ const services = [
     image: corporativosImg,
     imageAlt: "Equipo de trabajo reunido alrededor de una mesa larga con computadoras",
     included: [
-      "Uso de las instalaciones",
-      "Uso de juegos para adultos",
-      "1 ayudante de cocina",
-      "1 mozo",
+      "Uso de las instalaciones.",
+      "Juegos recreativos para adultos.",
+      "Cama elástica olímpica y pool.",
+      "Servicio de mozos.",
+      "Estacionamiento cómodo.",
+      "Cobertura médica de emergencia.",
+    ],
+    extras: [
+      "Menú para adultos",
+      "Horas extras",
+      "Mozo extra",
+      "Uso del parrillero",
+      "Leña y Hielo",
     ],
   },
   {
@@ -68,14 +72,8 @@ const services = [
     desc: "Bautismos, aniversarios y celebraciones privadas con una propuesta flexible para adaptar el espacio al tipo de ocasión.",
     image: especialesImg,
     imageAlt: "Celebración familiar en el jardín de noche, bajo guirnaldas de luces",
-    included: [
-      "Uso de las instalaciones",
-      "Uso de juegos para niños y adultos",
-      "Menú infantil",
-      "1 ayudante de cocina",
-      "1 mozo",
-      "2 animadores si hay 25 niños o más",
-    ],
+    included: INCLUDED,
+    extras: EXTRAS,
   },
 ];
 
@@ -208,7 +206,7 @@ export default function Services() {
                               Se puede sumar
                             </h4>
                             <ul className="mt-3 space-y-2">
-                              {EXTRAS.map((item) => (
+                              {service.extras.map((item) => (
                                 <li key={item} className="flex gap-3 text-[15px] leading-snug text-ink-soft">
                                   <span aria-hidden="true" className="w-1.5 shrink-0 text-center font-semibold text-ink-mute">
                                     +

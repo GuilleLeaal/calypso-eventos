@@ -59,6 +59,8 @@ export default function AdminReservationsPage() {
     fetchReviews,
     updateReviewStatus,
     deleteReview,
+    creatingReview,
+    createApprovedReview,
   } = useReviews({ isLoggedIn, activeSection, setGlobalError });
 
   const {
@@ -125,17 +127,23 @@ export default function AdminReservationsPage() {
     fetchManualMonthBlocks,
   });
 
-  const { handleCreateDisabledRange, deleteDisabledRange } =
-    useDisabledRangeActions({
-      disabledForm,
-      setDisabledForm,
-      setDisabledActionLoadingId,
-      setGlobalError,
-      setManualForm,
-      fetchDisabledRanges,
-      fetchManualBlocks,
-      fetchManualMonthBlocks,
-    });
+  const {
+    handleSaveDisabledRange,
+    deleteDisabledRange,
+    editingRange,
+    saveError,
+    startEditingRange,
+    cancelEditingRange,
+  } = useDisabledRangeActions({
+    disabledForm,
+    setDisabledForm,
+    setDisabledActionLoadingId,
+    setGlobalError,
+    setManualForm,
+    fetchDisabledRanges,
+    fetchManualBlocks,
+    fetchManualMonthBlocks,
+  });
 
   const { downloadClientsExcel, downloadEventsExcel } = useAdminExports({
     setGlobalError,
@@ -433,13 +441,19 @@ export default function AdminReservationsPage() {
             actionLoadingId={disabledActionLoadingId}
             disabledForm={disabledForm}
             setDisabledForm={setDisabledForm}
-            onCreate={handleCreateDisabledRange}
+            editingRange={editingRange}
+            saveError={saveError}
+            onEdit={startEditingRange}
+            onCancelEdit={cancelEditingRange}
+            onSave={handleSaveDisabledRange}
             onDelete={deleteDisabledRange}
           />
         )}
 
         {activeSection === "reviews" && (
           <ReviewsAdminSection
+            creatingReview={creatingReview}
+            onCreate={createApprovedReview}
             reviews={reviews}
             loadingReviews={loadingReviews}
             reviewFilter={reviewFilter}
