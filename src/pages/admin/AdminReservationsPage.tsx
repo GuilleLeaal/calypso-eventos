@@ -333,7 +333,7 @@ export default function AdminReservationsPage() {
               </div>
             </details>
 
-            <section className="rounded-xl border border-[#D8D2C5] bg-white/70 p-6 shadow-sm">
+            <section className="rounded-xl border border-[#DDD5C8] bg-[#FAF7F1] p-6 shadow-sm">
               <div className="flex flex-col gap-4 border-b border-[#D8D2C5] pb-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="font-titular font-normal text-3xl text-[#1C1915]">
@@ -396,7 +396,7 @@ export default function AdminReservationsPage() {
         )}
 
         {activeSection === "completed_events" && (
-          <section className="mt-6 rounded-xl border border-[#D8D2C5] bg-white/70 p-6 shadow-sm">
+          <section className="mt-6 rounded-xl border border-[#DDD5C8] bg-[#FAF7F1] p-6 shadow-sm">
             <div className="flex flex-col gap-4 border-b border-[#D8D2C5] pb-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex items-center gap-2 text-[#1C1915]">

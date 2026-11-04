@@ -250,14 +250,14 @@ export function ReservationCard({
   return (
     <article
       className={[
-        "rounded-lg border p-5 shadow-sm",
+        "rounded-lg border p-5 shadow-[0_2px_6px_rgba(13,29,30,0.05)]",
         isCompletedView
-          ? "border-[#d8c9b9] bg-[#f7f2eb]/88"
-          : "border-[#D8D2C5] bg-white/55",
+          ? "border-[#D7CFC1] bg-white"
+          : "border-[#D7CFC1] bg-white",
       ].join(" ")}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-4">
+        <div className="min-w-0 w-full flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={[
@@ -311,7 +311,7 @@ export function ReservationCard({
             <details
               open={clientInfoOpen}
               onToggle={(event) => setClientInfoOpen(event.currentTarget.open)}
-              className="group rounded-md border border-[#D8D2C5] bg-[#FAF7F1]/72 p-4"
+              className="group rounded-md border border-[#E2DBCF] bg-[#F8F5EF] p-4"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#056D66] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-2">
@@ -346,7 +346,7 @@ export function ReservationCard({
               onToggle={(event) =>
                 setReservationInfoOpen(event.currentTarget.open)
               }
-              className="group rounded-md border border-[#D8D2C5] bg-[#FAF7F1]/72 p-4"
+              className="group rounded-md border border-[#E2DBCF] bg-[#F8F5EF] p-4"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-2">
@@ -397,7 +397,7 @@ export function ReservationCard({
               </div>
             </details>
 
-            <div className="rounded-lg border border-calypso-700/25 bg-calypso-700/10 p-4">
+            <div className="rounded-lg border border-[#DDD5C6] bg-[#F3F0E8] p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#056D66]">
                   <WalletCards size={16} />
@@ -456,7 +456,7 @@ export function ReservationCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-start gap-2 lg:max-w-[230px] lg:justify-end">
+        <div className="order-first flex flex-wrap items-center justify-end gap-2">
           {reservation.status !== "approved" &&
             reservation.status !== "completed" && (
               <button
@@ -521,7 +521,7 @@ export function ReservationCard({
       {isEditing && (
         <form
           onSubmit={handleSaveDetails}
-          className="mt-5 rounded-lg border border-[#D8D2C5] bg-[#FAF7F1]/72 p-4"
+          className="mt-5 rounded-lg border border-[#E2DBCF] bg-[#F8F5EF] p-4"
         >
           <div className="grid gap-5">
             <section>
@@ -932,7 +932,7 @@ export function ReservationCard({
         </form>
       )}
 
-      <div className="mt-5 rounded-lg border border-[#D8D2C5] bg-[#FAF7F1]/72 p-4">
+      <div className="mt-5 rounded-lg border border-[#E2DBCF] bg-[#F8F5EF] p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6E6558]">

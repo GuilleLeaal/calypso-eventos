@@ -39,14 +39,14 @@ export function ReservationListResults({
   }
 
   return (
-    <div ref={resultsRef} className="mt-6 scroll-mt-24 overflow-hidden rounded-lg border border-ink/15 bg-white/45">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 px-4 py-3 text-xs font-semibold text-ink-mute" role="status" aria-live="polite" aria-atomic="true">
+    <div ref={resultsRef} className="mt-6 scroll-mt-24 overflow-hidden rounded-lg border border-[#D7CFC1] bg-[#EEEAE2]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D7CFC1] bg-[#F5F1E9] px-4 py-3 text-xs font-semibold text-ink-soft" role="status" aria-live="polite" aria-atomic="true">
         <span>{loading ? "Cargando reservas…" : totalCount > 0 ? `Mostrando ${firstItem}–${lastItem} de ${totalCount}` : "Sin resultados"}</span>
         <span>Página {page} de {totalPages}</span>
       </div>
 
       <div ref={scrollRef} tabIndex={0} role="region" aria-label={isCompletedView ? "Resultados de eventos finalizados" : "Resultados de reservas"} aria-busy={loading}
-        className="h-[calc(100dvh-10rem)] min-h-[36rem] overflow-y-auto overscroll-contain p-3 sm:p-4 [scrollbar-gutter:stable]">
+        className="h-[calc(100dvh-10rem)] min-h-[36rem] overflow-y-auto overscroll-contain bg-[#EEEAE2] p-3 shadow-inner sm:p-4 [scrollbar-gutter:stable] [scrollbar-color:#A99F8F_#EEEAE2]">
         {loading ? (
           <div className="grid h-full place-items-center">
             <div className="flex items-center gap-3 text-sm text-calypso-700">
@@ -80,8 +80,8 @@ export function ReservationListResults({
       </div>
 
       <nav aria-label={isCompletedView ? "Paginación de eventos finalizados" : "Paginación de reservas"}
-        className="flex flex-wrap items-center justify-between gap-3 border-t border-ink/15 bg-paper px-4 py-3">
-        <p className="text-xs text-ink-mute">Página <span className="font-semibold text-ink">{page}</span> de {totalPages}</p>
+        className="flex flex-wrap items-center justify-between gap-3 border-t border-[#D7CFC1] bg-[#F5F1E9] px-4 py-3">
+        <p className="text-xs text-ink-soft">Página <span className="font-semibold text-ink">{page}</span> de {totalPages}</p>
         <div className="flex gap-2">
           <button type="button" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}
             className="inline-flex min-h-11 items-center gap-2 rounded-md border border-ink/20 bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:bg-paper-deep disabled:cursor-not-allowed disabled:opacity-45 sm:px-4">
