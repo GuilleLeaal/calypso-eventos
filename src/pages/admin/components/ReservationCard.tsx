@@ -27,7 +27,7 @@ import type {
   ReservationDetailsUpdateValues,
   ReservationStatus,
 } from "../types";
-import { isDateInDisabledRange } from "../utils/dateHelpers";
+import { getMinReservationDate, isDateInDisabledRange } from "../utils/dateHelpers";
 import {
   formatReservationTimeRange,
   isOvernightTimeRange,
@@ -154,6 +154,11 @@ export function ReservationCard({
       return;
     }
 
+    if (editDraft.event_date !== reservation.event_date && editDraft.event_date < getMinReservationDate()) {
+      setEditError("La nueva fecha debe tener al menos 10 días de anticipación.");
+      return;
+    }
+
     if (
       editDraft.event_date !== reservation.event_date &&
       isDateInDisabledRange(editDraft.event_date, disabledRanges)
@@ -245,14 +250,14 @@ export function ReservationCard({
   return (
     <article
       className={[
-        "rounded-[1.45rem] border p-5 shadow-[0_12px_32px_rgba(90,64,50,0.06)]",
+        "rounded-lg border p-5 shadow-[0_2px_6px_rgba(13,29,30,0.05)]",
         isCompletedView
-          ? "border-[#d8c9b9] bg-[#f7f2eb]/88"
-          : "border-[#dfc8ab] bg-white/55",
+          ? "border-[#D7CFC1] bg-white"
+          : "border-[#D7CFC1] bg-white",
       ].join(" ")}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-4">
+        <div className="min-w-0 w-full flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={[
@@ -263,12 +268,12 @@ export function ReservationCard({
               {statusLabels[reservation.status]}
             </span>
 
-            <span className="rounded-full border border-[#dfc8ab] bg-[#fff9f0] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6d5748]">
+            <span className="rounded-full border border-[#D8D2C5] bg-[#FAF7F1] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6E6558]">
               {reservation.source === "website" ? "Web" : "Admin"}
             </span>
 
             {reservation.deposit_paid && (
-              <span className="rounded-full border border-[#0BB3A6]/35 bg-[#0BB3A6]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#087d75]">
+              <span className="rounded-full border border-calypso-700/35 bg-calypso-700/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#056D66]">
                 Seña paga
               </span>
             )}
@@ -276,11 +281,11 @@ export function ReservationCard({
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 className="font-display text-2xl text-[#2f241e]">
+              <h3 className="font-titular font-normal text-2xl text-[#1C1915]">
                 {reservation.customer_name}
               </h3>
               {isCompletedView && (
-                <p className="mt-1 text-sm font-semibold text-[#6d5748]">
+                <p className="mt-1 text-sm font-semibold text-[#6E6558]">
                   {formatDateForDisplay(reservation.event_date)} ·{" "}
                   {formatReservationTimeRange(
                     reservation.start_time,
@@ -291,11 +296,11 @@ export function ReservationCard({
             </div>
 
             {isCompletedView && (
-              <div className="w-fit rounded-[1rem] border border-[#2f241e]/10 bg-white/65 px-4 py-2 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a7667]">
+              <div className="w-fit rounded-md border border-[#1C1915]/10 bg-white/65 px-4 py-2 text-right">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#6E6558]">
                   Ingreso total
                 </p>
-                <p className="mt-0.5 text-base font-bold text-[#2f241e]">
+                <p className="mt-0.5 text-base font-bold text-[#1C1915]">
                   {formatMoney(hasIncomeData ? totalIncome : null)}
                 </p>
               </div>
@@ -306,9 +311,9 @@ export function ReservationCard({
             <details
               open={clientInfoOpen}
               onToggle={(event) => setClientInfoOpen(event.currentTarget.open)}
-              className="group rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
+              className="group rounded-md border border-[#E2DBCF] bg-[#F8F5EF] p-4"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75] [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#056D66] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-2">
                   <User size={15} />
                   Información del cliente
@@ -319,7 +324,7 @@ export function ReservationCard({
                 />
               </summary>
 
-              <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
+              <div className="mt-3 grid gap-1.5 text-sm text-[#4B443B] sm:grid-cols-2">
                 <p>
                   <b>Nombre:</b> {reservation.customer_name}
                 </p>
@@ -341,7 +346,7 @@ export function ReservationCard({
               onToggle={(event) =>
                 setReservationInfoOpen(event.currentTarget.open)
               }
-              className="group rounded-[1rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
+              className="group rounded-md border border-[#E2DBCF] bg-[#F8F5EF] p-4"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-2">
@@ -354,7 +359,7 @@ export function ReservationCard({
                 />
               </summary>
 
-              <div className="mt-3 grid gap-1.5 text-sm text-[#5c473b] sm:grid-cols-2">
+              <div className="mt-3 grid gap-1.5 text-sm text-[#4B443B] sm:grid-cols-2">
                 <p>
                   <b>Evento:</b> {reservation.event_type}
                 </p>
@@ -392,19 +397,19 @@ export function ReservationCard({
               </div>
             </details>
 
-            <div className="rounded-[1.05rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 p-4">
+            <div className="rounded-lg border border-[#DDD5C6] bg-[#F3F0E8] p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">
+                <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#056D66]">
                   <WalletCards size={16} />
                   Resumen económico
                 </div>
 
-                <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#0BB3A6]/25 bg-white/75 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.09em] text-[#2f241e]">
+                <label className="inline-flex w-fit items-center gap-2 rounded-full border border-calypso-700/25 bg-white/75 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.09em] text-[#1C1915]">
                   <input
                     type="checkbox"
                     checked={reservation.deposit_paid}
                     onChange={(event) => onDepositChange(event.target.checked)}
-                    className="h-3.5 w-3.5 accent-[#0BB3A6]"
+                    className="h-3.5 w-3.5 accent-calypso-700"
                   />
                   Seña paga
                 </label>
@@ -412,37 +417,37 @@ export function ReservationCard({
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#6E6558]">
                     Precio pautado
                   </p>
-                  <p className="mt-1 font-semibold text-[#2f241e]">
+                  <p className="mt-1 font-semibold text-[#1C1915]">
                     {formatMoney(reservation.agreed_price)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#6E6558]">
                     Seña
                   </p>
-                  <p className="mt-1 font-semibold text-[#2f241e]">
+                  <p className="mt-1 font-semibold text-[#1C1915]">
                     {formatMoney(reservation.deposit_amount)}
                   </p>
                 </div>
                 {(reservation.status === "completed" ||
                   reservation.settlement_amount !== null) && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a7667]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#6E6558]">
                       Liquidación
                     </p>
-                    <p className="mt-1 font-semibold text-[#2f241e]">
+                    <p className="mt-1 font-semibold text-[#1C1915]">
                       {formatMoney(reservation.settlement_amount)}
                     </p>
                   </div>
                 )}
-                <div className="rounded-[0.9rem] bg-white/70 px-3 py-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#087d75]">
+                <div className="rounded-md bg-white/70 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#056D66]">
                     Ingreso total
                   </p>
-                  <p className="mt-1 text-lg font-bold text-[#087d75]">
+                  <p className="mt-1 text-lg font-bold text-[#056D66]">
                     {formatMoney(hasIncomeData ? totalIncome : null)}
                   </p>
                 </div>
@@ -451,13 +456,13 @@ export function ReservationCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-start gap-2 lg:max-w-[230px] lg:justify-end">
+        <div className="order-first flex flex-wrap items-center justify-end gap-2">
           {reservation.status !== "approved" &&
             reservation.status !== "completed" && (
               <button
                 onClick={onApprove}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-md bg-calypso-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-calypso-800 disabled:opacity-60"
               >
                 <Check size={15} />
                 Aprobar
@@ -467,7 +472,7 @@ export function ReservationCard({
           <button
             onClick={() => setIsEditing((prev) => !prev)}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#1C1915] transition hover:bg-[#FAF7F1] disabled:opacity-60"
           >
             <Pencil size={15} />
             {isEditing ? "Cerrar" : "Editar"}
@@ -475,13 +480,13 @@ export function ReservationCard({
 
           <details className="group relative">
             <summary
-              className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#dfc8ab] bg-white text-[#2f241e] transition hover:bg-[#fff9f0] [&::-webkit-details-marker]:hidden"
+              className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#D8D2C5] bg-white text-[#1C1915] transition hover:bg-[#FAF7F1] [&::-webkit-details-marker]:hidden"
               aria-label="Más acciones"
             >
               <MoreHorizontal size={17} />
             </summary>
 
-            <div className="absolute right-0 z-30 mt-2 min-w-40 rounded-[1rem] border border-[#dfc8ab] bg-[#fffdf9] p-2 shadow-[0_18px_42px_rgba(90,64,50,0.16)]">
+            <div className="absolute right-0 z-30 mt-2 min-w-40 rounded-md border border-[#D8D2C5] bg-[#FAF7F1] p-2 shadow-[0_18px_42px_rgba(90,64,50,0.16)]">
               {reservation.status !== "rejected" &&
                 reservation.status !== "completed" && (
                   <button
@@ -516,16 +521,16 @@ export function ReservationCard({
       {isEditing && (
         <form
           onSubmit={handleSaveDetails}
-          className="mt-5 rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4"
+          className="mt-5 rounded-lg border border-[#E2DBCF] bg-[#F8F5EF] p-4"
         >
           <div className="grid gap-5">
             <section>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#056D66]">
                 Cliente
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Nombre
                   </span>
                   <input
@@ -541,7 +546,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Teléfono
                   </span>
                   <input
@@ -557,7 +562,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Email
                   </span>
                   <input
@@ -574,7 +579,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Cómo conoció Calypso
                   </span>
                   <select
@@ -598,13 +603,13 @@ export function ReservationCard({
               </div>
             </section>
 
-            <section className="border-t border-[#ead9c0] pt-5">
+            <section className="border-t border-[#E8DDC9] pt-5">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">
                 Evento
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Tipo de evento
                   </span>
                   <select
@@ -626,7 +631,7 @@ export function ReservationCard({
                   </select>
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Estado
                   </span>
                   <select
@@ -655,7 +660,7 @@ export function ReservationCard({
                   </select>
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Niños
                   </span>
                   <input
@@ -673,7 +678,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Adultos
                   </span>
                   <input
@@ -691,7 +696,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Mozos
                   </span>
                   <input
@@ -710,7 +715,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Animadores
                   </span>
                   <input
@@ -731,13 +736,13 @@ export function ReservationCard({
               </div>
             </section>
 
-            <section className="border-t border-[#ead9c0] pt-5">
+            <section className="border-t border-[#E8DDC9] pt-5">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8a5b1f]">
                 Fecha y horario
               </p>
               <div className="grid gap-4 md:grid-cols-3">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Fecha
                   </span>
                   <input
@@ -753,7 +758,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Inicio
                   </span>
                   <input
@@ -773,7 +778,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Fin
                   </span>
                   <input
@@ -798,19 +803,19 @@ export function ReservationCard({
                 editDraft.start_time,
                 editDraft.end_time,
               ) && (
-                <p className="mt-3 rounded-[0.9rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#087d75]">
+                <p className="mt-3 rounded-md border border-calypso-700/25 bg-calypso-700/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#056D66]">
                   Este horario termina al día siguiente.
                 </p>
               )}
             </section>
 
-            <section className="border-t border-[#ead9c0] pt-5">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#087d75]">
+            <section className="border-t border-[#E8DDC9] pt-5">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#056D66]">
                 Cobro
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Precio pautado
                   </span>
                   <input
@@ -830,7 +835,7 @@ export function ReservationCard({
                   />
                 </label>
                 <label>
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                     Seña
                   </span>
                   <input
@@ -855,7 +860,7 @@ export function ReservationCard({
                 </label>
                 {editDraft.status === "completed" && (
                   <label>
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]">
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]">
                       Liquidación
                     </span>
                     <input
@@ -876,7 +881,7 @@ export function ReservationCard({
                   </label>
                 )}
                 <div className="flex items-end">
-                  <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
+                  <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D8D2C5] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#1C1915]">
                     <input
                       type="checkbox"
                       checked={editDraft.deposit_paid}
@@ -886,7 +891,7 @@ export function ReservationCard({
                           deposit_paid: event.target.checked,
                         }))
                       }
-                      className="h-3.5 w-3.5 accent-[#0BB3A6]"
+                      className="h-3.5 w-3.5 accent-calypso-700"
                     />
                     Seña paga
                   </label>
@@ -896,7 +901,7 @@ export function ReservationCard({
           </div>
 
           {editError && (
-            <p className="mt-4 rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {editError}
             </p>
           )}
@@ -905,7 +910,7 @@ export function ReservationCard({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-[#0BB3A6] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-[#099f94] disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-md bg-calypso-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-white transition hover:bg-calypso-800 disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 size={15} className="animate-spin" />
@@ -918,7 +923,7 @@ export function ReservationCard({
               type="button"
               onClick={cancelEdit}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-[#fff9f0] disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#1C1915] transition hover:bg-[#FAF7F1] disabled:opacity-60"
             >
               <X size={15} />
               Cancelar
@@ -927,15 +932,15 @@ export function ReservationCard({
         </form>
       )}
 
-      <div className="mt-5 rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0]/72 p-4">
+      <div className="mt-5 rounded-lg border border-[#E2DBCF] bg-[#F8F5EF] p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6d5748]">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6E6558]">
               <StickyNote size={15} />
               Notas internas
             </p>
             {!notesOpen && (
-              <p className="mt-2 max-h-[4.5rem] overflow-hidden whitespace-pre-wrap text-sm leading-6 text-[#5c473b]">
+              <p className="mt-2 max-h-[4.5rem] overflow-hidden whitespace-pre-wrap text-sm leading-6 text-[#4B443B]">
                 {reservation.notes?.trim() || "Sin notas internas todavía."}
               </p>
             )}
@@ -944,7 +949,7 @@ export function ReservationCard({
           <button
             type="button"
             onClick={() => setNotesOpen((prev) => !prev)}
-            className="shrink-0 rounded-full border border-[#dfc8ab] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#2f241e] transition hover:bg-white"
+            className="shrink-0 rounded-full border border-[#D8D2C5] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#1C1915] transition hover:bg-white"
           >
             {notesOpen
               ? "Cerrar"
@@ -955,7 +960,7 @@ export function ReservationCard({
         </div>
 
         {notesOpen && (
-          <div className="mt-4 border-t border-[#ead9c0] pt-4">
+          <div className="mt-4 border-t border-[#E8DDC9] pt-4">
             <textarea
               value={notesDraft}
               onChange={(event) => setNotesDraft(event.target.value)}
@@ -967,7 +972,7 @@ export function ReservationCard({
               type="button"
               onClick={() => onSaveNotes(notesDraft)}
               disabled={loading}
-              className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#2f241e] transition hover:bg-white disabled:opacity-60"
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#1C1915] transition hover:bg-white disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 size={15} className="animate-spin" />

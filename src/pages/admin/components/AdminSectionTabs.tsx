@@ -1,80 +1,33 @@
+import { CalendarCheck, CalendarDays, CalendarRange, CalendarOff, MessageSquare } from "lucide-react";
 import type { AdminSection } from "../types";
 
-export function AdminSectionTabs({
-  activeSection,
-  onSelect,
-}: {
+const sections = [
+  { id: "reservations", label: "Reservas", description: "Agenda y solicitudes", icon: CalendarDays },
+  { id: "completed_events", label: "Eventos finalizados", description: "Historial y cobros", icon: CalendarCheck },
+  { id: "disabled_dates", label: "Fechas inhabilitadas", description: "Bloqueos de agenda", icon: CalendarOff },
+  { id: "calendar", label: "Calendario", description: "Disponibilidad del salón", icon: CalendarRange },
+  { id: "reviews", label: "Reseñas", description: "Opiniones del salón", icon: MessageSquare },
+] as const;
+
+export function AdminSectionTabs({ activeSection, onSelect }: {
   activeSection: AdminSection;
   onSelect: (section: AdminSection) => void;
 }) {
   return (
-    <div className="-mx-1 mt-8 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="flex min-w-max gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={() => onSelect("reservations")}
-          className={[
-            "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-            activeSection === "reservations"
-              ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-              : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-          ].join(" ")}
-        >
-          Reservas
+    <nav aria-label="Secciones de administración" className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-5 lg:gap-3 [&>button:last-child]:col-span-2 lg:[&>button:last-child]:col-span-1">
+      {sections.map(({ id, label, description, icon: Icon }) => (
+        <button key={id} type="button" aria-current={activeSection === id ? "page" : undefined}
+          onClick={() => onSelect(id)}
+          className={`flex min-w-0 items-center gap-3 rounded-lg border p-3 text-left transition sm:p-4 ${activeSection === id
+            ? "border-calypso-700 bg-calypso-700 text-white shadow-sm"
+            : "border-ink/15 bg-white/50 text-ink-soft hover:border-calypso-700/50 hover:bg-white"}`}>
+          <Icon size={20} className="hidden shrink-0 sm:block" aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">{label}</span>
+            <span className={`mt-1 hidden text-xs sm:block ${activeSection === id ? "text-white/80" : "text-ink-mute"}`}>{description}</span>
+          </span>
         </button>
-
-        <button
-          type="button"
-          onClick={() => onSelect("completed_events")}
-          className={[
-            "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-            activeSection === "completed_events"
-              ? "border-[#2f241e] bg-[#2f241e] text-white"
-              : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-          ].join(" ")}
-        >
-          Eventos finalizados
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelect("disabled_dates")}
-          className={[
-            "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-            activeSection === "disabled_dates"
-              ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-              : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-          ].join(" ")}
-        >
-          Fechas inhabilitadas
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelect("calendar")}
-          className={[
-            "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-            activeSection === "calendar"
-              ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-              : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-          ].join(" ")}
-        >
-          Calendario
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelect("reviews")}
-          className={[
-            "shrink-0 rounded-full border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.09em] transition sm:px-5 sm:py-3 sm:text-sm",
-            activeSection === "reviews"
-              ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-              : "border-[#dfc8ab] bg-white/55 text-[#2f241e] hover:bg-white",
-          ].join(" ")}
-        >
-          Reseñas
-        </button>
-      </div>
-    </div>
+      ))}
+    </nav>
   );
 }

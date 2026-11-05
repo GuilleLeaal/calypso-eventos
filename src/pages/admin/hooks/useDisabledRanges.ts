@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import { getTodayInputValue } from "../../../lib/reservations";
 import type { DisabledReservationDateRange } from "../types";
-import { getMinReservationDate } from "../utils/dateHelpers";
+import { getMinDisabledDate } from "../utils/dateHelpers";
 
 export function useDisabledRanges({
   isLoggedIn,
@@ -20,8 +20,8 @@ export function useDisabledRanges({
   >(null);
 
   const [disabledForm, setDisabledForm] = useState({
-    start_date: getMinReservationDate(),
-    end_date: getMinReservationDate(),
+    start_date: getMinDisabledDate(),
+    end_date: getMinDisabledDate(),
     reason: "",
   });
 

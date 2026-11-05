@@ -21,7 +21,7 @@ export default function PrivacidadContent() {
         </h3>
 
         <p className="mt-2">
-          A través del formulario de contacto, formulario de reservas, WhatsApp u
+          A través del formulario de contacto, consulta de presupuesto, WhatsApp u
           otros medios digitales, podemos recopilar los siguientes datos:
         </p>
 

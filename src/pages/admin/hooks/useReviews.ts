@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabase";
+import { validateReview } from "../../../lib/reviewValidation";
 import type { AdminSection, Review } from "../types";
 
 export function useReviews({
@@ -13,6 +14,8 @@ export function useReviews({
 }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [creatingReview, setCreatingReview] = useState(false);
+  const creatingReviewRef = useRef(false);
   const [reviewActionLoadingId, setReviewActionLoadingId] = useState<
     string | null
   >(null);
@@ -50,6 +53,34 @@ export function useReviews({
       setReviews([]);
     } finally {
       setLoadingReviews(false);
+    }
+  }
+
+  async function createApprovedReview(values: { name: string; message: string }) {
+    if (creatingReviewRef.current) return "La reseña se está guardando.";
+    const validationError = validateReview(values.name, values.message, true);
+    if (validationError) return validationError;
+
+    setGlobalError("");
+    creatingReviewRef.current = true;
+    setCreatingReview(true);
+    try {
+      const { data, error } = await supabase.from("reviews").insert({
+        name: values.name.trim(),
+        message: values.message.trim(),
+        rating: 5,
+        approved: true,
+      }).select("id, name, message, rating, approved, created_at").single();
+      if (error || !data) throw error ?? new Error("Missing created review");
+      setReviews((current) => [data as Review, ...current]);
+      setReviewFilter("approved");
+      return null;
+    } catch (error) {
+      console.error("Error creating approved review:", error);
+      return "No pudimos crear la reseña aprobada. Revisá los permisos o intentá nuevamente.";
+    } finally {
+      creatingReviewRef.current = false;
+      setCreatingReview(false);
     }
   }
 
@@ -98,6 +129,8 @@ export function useReviews({
     reviews,
     setReviews,
     loadingReviews,
+    creatingReview,
+    createApprovedReview,
     reviewActionLoadingId,
     reviewFilter,
     setReviewFilter,

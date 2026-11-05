@@ -1,16 +1,15 @@
-import type { Dispatch, FormEvent, SetStateAction } from "react";
+import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase";
 import { formatDateForDisplay } from "../../../lib/reservations";
 import { statusLabels } from "../constants";
-import type { ManualReservationFormValues, Reservation } from "../types";
-import { getMinReservationDate } from "../utils/dateHelpers";
+import type { DisabledReservationDateRange, ManualReservationFormValues, Reservation } from "../types";
+import { getMinDisabledDate, getMinReservationDate } from "../utils/dateHelpers";
 import { formatReservationTimeRange } from "../utils/timeHelpers";
 
-type DisabledFormValues = {
-  start_date: string;
-  end_date: string;
-  reason: string;
-};
+import {
+  validateDisabledRange,
+  type DisabledRangeValues,
+} from "../utils/disabledRangeValidation";
 
 export function useDisabledRangeActions({
   disabledForm,
@@ -22,8 +21,8 @@ export function useDisabledRangeActions({
   fetchManualBlocks,
   fetchManualMonthBlocks,
 }: {
-  disabledForm: DisabledFormValues;
-  setDisabledForm: Dispatch<SetStateAction<DisabledFormValues>>;
+  disabledForm: DisabledRangeValues;
+  setDisabledForm: Dispatch<SetStateAction<DisabledRangeValues>>;
   setDisabledActionLoadingId: Dispatch<SetStateAction<string | null>>;
   setGlobalError: (message: string) => void;
   setManualForm: Dispatch<SetStateAction<ManualReservationFormValues>>;
@@ -31,126 +30,146 @@ export function useDisabledRangeActions({
   fetchManualBlocks: () => Promise<void>;
   fetchManualMonthBlocks: () => Promise<void>;
 }) {
-  async function handleCreateDisabledRange(event: FormEvent) {
-    event.preventDefault();
+  const [editingRange, setEditingRange] =
+    useState<DisabledReservationDateRange | null>(null);
+  const [saveError, setSaveError] = useState("");
+  const savingRef = useRef(false);
 
-    setGlobalError("");
-
-    if (!disabledForm.start_date || !disabledForm.end_date) {
-      setGlobalError("Seleccioná fecha de inicio y fecha de fin.");
-      return;
-    }
-
-    if (disabledForm.start_date < getMinReservationDate()) {
-      setGlobalError(
-        "No se pueden inhabilitar fechas anteriores a la fecha mínima.",
-      );
-      return;
-    }
-
-    if (disabledForm.end_date < disabledForm.start_date) {
-      setGlobalError(
-        "La fecha de fin no puede ser anterior a la fecha de inicio.",
-      );
-      return;
-    }
-
-    const { data: rangeReservations, error: rangeReservationsError } =
-      await supabase
-        .from("reservations")
-        .select("id, customer_name, event_date, start_time, end_time, status")
-        .gte("event_date", disabledForm.start_date)
-        .lte("event_date", disabledForm.end_date)
-        .neq("status", "rejected")
-        .order("event_date", { ascending: true })
-        .order("start_time", { ascending: true });
-
-    if (rangeReservationsError) {
-      console.error(
-        "Error checking reservations in disabled range:",
-        rangeReservationsError,
-      );
-      setGlobalError(
-        "No pudimos verificar las reservas existentes para ese rango. Intentá nuevamente.",
-      );
-      return;
-    }
-
-    const reservationsInRange = (rangeReservations || []) as Pick<
-      Reservation,
-      | "id"
-      | "customer_name"
-      | "event_date"
-      | "start_time"
-      | "end_time"
-      | "status"
-    >[];
-
-    if (reservationsInRange.length > 0) {
-      const reservationSummary = reservationsInRange
-        .slice(0, 8)
-        .map(
-          (reservation) =>
-            `• ${formatDateForDisplay(reservation.event_date)} - ${formatReservationTimeRange(
-              reservation.start_time,
-              reservation.end_time,
-            )} - ${reservation.customer_name} (${statusLabels[reservation.status]})`,
-        )
-        .join("\n");
-
-      const extraCount =
-        reservationsInRange.length > 8
-          ? `\n...y ${reservationsInRange.length - 8} reserva(s) más.`
-          : "";
-
-      const confirmed = window.confirm(
-        `Atención: ya existen ${reservationsInRange.length} reserva(s) en el rango que querés inhabilitar.\n\n${reservationSummary}${extraCount}\n\nLa fecha se inhabilitará para nuevas reservas, pero estas reservas existentes NO se borran ni se modifican automáticamente. Revisalas manualmente si corresponde.\n\n¿Querés continuar?`,
-      );
-
-      if (!confirmed) return;
-    }
-
-    setDisabledActionLoadingId("new");
-
-    const { error } = await supabase.from("disabled_reservation_dates").insert({
-      start_date: disabledForm.start_date,
-      end_date: disabledForm.end_date,
-      reason: disabledForm.reason.trim() || null,
-    });
-
-    if (error) {
-      console.error("Error creating disabled reservation date:", error);
-      setGlobalError(
-        error.message || "No pudimos inhabilitar la fecha seleccionada.",
-      );
-      setDisabledActionLoadingId(null);
-      return;
-    }
-
+  function resetForm() {
+    setEditingRange(null);
+    setSaveError("");
     setDisabledForm({
-      start_date: getMinReservationDate(),
-      end_date: getMinReservationDate(),
+      start_date: getMinDisabledDate(),
+      end_date: getMinDisabledDate(),
       reason: "",
     });
+  }
 
-    setManualForm((prev) => {
-      const nextDate =
-        prev.event_date >= disabledForm.start_date &&
-        prev.event_date <= disabledForm.end_date
-          ? getMinReservationDate()
-          : prev.event_date;
-
-      return {
-        ...prev,
-        event_date: nextDate,
-      };
+  function startEditingRange(range: DisabledReservationDateRange) {
+    if (savingRef.current) return;
+    setGlobalError("");
+    setSaveError("");
+    setEditingRange(range);
+    setDisabledForm({
+      start_date: range.start_date,
+      end_date: range.end_date,
+      reason: range.reason ?? "",
     });
+  }
 
-    await fetchDisabledRanges();
-    await fetchManualBlocks();
-    await fetchManualMonthBlocks();
+  async function handleSaveDisabledRange(event: FormEvent) {
+    event.preventDefault();
+    if (savingRef.current) return;
+    setGlobalError("");
+    setSaveError("");
+    const values = { ...disabledForm, reason: disabledForm.reason.trim() };
+    const reportError = (message: string) => {
+      setGlobalError(message);
+      setSaveError(message);
+    };
+    const validationError = validateDisabledRange(
+      values,
+      getMinDisabledDate(),
+      editingRange?.start_date,
+    );
+    if (validationError) {
+      reportError(validationError);
+      return;
+    }
 
-    setDisabledActionLoadingId(null);
+    savingRef.current = true;
+    setDisabledActionLoadingId(editingRange?.id ?? "new");
+    try {
+      const datesChanged = !editingRange ||
+        editingRange.start_date !== values.start_date ||
+        editingRange.end_date !== values.end_date;
+      if (datesChanged) {
+        const { data: rangeReservations, error: rangeReservationsError } =
+          await supabase
+            .from("reservations")
+            .select("id, customer_name, event_date, start_time, end_time, status")
+            .gte("event_date", values.start_date)
+            .lte("event_date", values.end_date)
+            .neq("status", "rejected")
+            .order("event_date", { ascending: true })
+            .order("start_time", { ascending: true });
+
+        if (rangeReservationsError) {
+          console.error(
+            "Error checking reservations in disabled range:",
+            rangeReservationsError,
+          );
+          reportError(
+            "No pudimos verificar las reservas existentes para ese rango. Intentá nuevamente.",
+          );
+          return;
+        }
+
+        const reservationsInRange = (rangeReservations || []) as Pick<
+          Reservation,
+          | "id"
+          | "customer_name"
+          | "event_date"
+          | "start_time"
+          | "end_time"
+          | "status"
+        >[];
+
+        if (reservationsInRange.length > 0) {
+          const reservationSummary = reservationsInRange
+            .slice(0, 8)
+            .map(
+              (reservation) =>
+                `• ${formatDateForDisplay(reservation.event_date)} - ${formatReservationTimeRange(
+                  reservation.start_time,
+                  reservation.end_time,
+                )} - ${reservation.customer_name} (${statusLabels[reservation.status]})`,
+            )
+            .join("\n");
+
+          const extraCount =
+            reservationsInRange.length > 8
+              ? `\n...y ${reservationsInRange.length - 8} reserva(s) más.`
+              : "";
+
+          const confirmed = window.confirm(
+            `Atención: ya existen ${reservationsInRange.length} reserva(s) en el rango que querés inhabilitar.\n\n${reservationSummary}${extraCount}\n\nLa fecha se inhabilitará para nuevas reservas, pero estas reservas existentes NO se borran ni se modifican automáticamente. Revisalas manualmente si corresponde.\n\n¿Querés continuar?`,
+          );
+
+          if (!confirmed) return;
+        }
+
+      }
+      const payload = {
+        start_date: values.start_date,
+        end_date: values.end_date,
+        reason: values.reason || null,
+      };
+      const mutation = editingRange
+        ? supabase.from("disabled_reservation_dates").update(payload).eq("id", editingRange.id)
+        : supabase.from("disabled_reservation_dates").insert(payload);
+      const { data, error } = await mutation.select("id").single();
+      if (error || !data) throw error ?? new Error("Missing saved disabled range");
+
+      resetForm();
+      setManualForm((prev) => ({
+        ...prev,
+        event_date: prev.event_date >= values.start_date && prev.event_date <= values.end_date
+          ? getMinReservationDate()
+          : prev.event_date,
+      }));
+      try {
+        await Promise.all([fetchDisabledRanges(), fetchManualBlocks(), fetchManualMonthBlocks()]);
+      } catch {
+        setGlobalError("Las fechas se guardaron, pero no pudimos refrescar el calendario. Tocá Actualizar.");
+      }
+    } catch (error) {
+      console.error("Error saving disabled reservation range:", error);
+      reportError("No pudimos guardar las fechas inhabilitadas. Revisá los permisos o intentá nuevamente.");
+    } finally {
+      savingRef.current = false;
+      setDisabledActionLoadingId(null);
+    }
   }
 
   async function deleteDisabledRange(id: string) {
@@ -172,6 +191,7 @@ export function useDisabledRangeActions({
       console.error("Error deleting disabled reservation date:", error);
       setGlobalError("No pudimos habilitar nuevamente la fecha.");
     } else {
+      if (editingRange?.id === id) resetForm();
       await fetchDisabledRanges();
       await fetchManualBlocks();
       await fetchManualMonthBlocks();
@@ -180,5 +200,5 @@ export function useDisabledRangeActions({
     setDisabledActionLoadingId(null);
   }
 
-  return { handleCreateDisabledRange, deleteDisabledRange };
+  return { handleSaveDisabledRange, deleteDisabledRange, editingRange, saveError, startEditingRange, cancelEditingRange: resetForm };
 }

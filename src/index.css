@@ -28,6 +28,26 @@ body {
   color: #2e211b;
 }
 
+@keyframes bulb-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.55;
+  }
+}
+
+.bulb-glow {
+  animation: bulb-glow 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulb-glow {
+    animation: none;
+  }
+}
+
 .input-calypso {
   width: 100%;
   border-radius: 0.9rem;
@@ -71,4 +91,39 @@ body {
   border-color: rgba(11, 179, 166, 0.75);
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 0 0 4px rgba(11, 179, 166, 0.12);
+}
+
+/* Public contact and review forms */
+:is(#contact, #review-page) .input-contact {
+  font-size: 1rem;
+  width: 100%;
+  border-radius: 0.125rem;
+  border: 1px solid rgba(28, 25, 21, 0.25);
+  background: rgba(255, 255, 255, 0.4);
+  padding: 0.95rem 1rem;
+  color: #1c1915;
+  outline: none;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+:is(#contact, #review-page) .input-contact::placeholder {
+  color: #6e6558;
+}
+
+:is(#contact, #review-page) .input-contact:focus {
+  border-color: #056d66;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 0 0 4px rgba(5, 109, 102, 0.16);
+}
+
+/* Leave room for the fixed public navigation when following section links. */
+:where(#services, #recorrido, #sectors, #location) {
+  scroll-margin-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }

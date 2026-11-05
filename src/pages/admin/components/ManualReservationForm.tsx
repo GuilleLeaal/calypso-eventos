@@ -49,18 +49,18 @@ export function ManualReservationForm({
   );
 
   const sectionClass =
-    "rounded-[1.2rem] border border-[#dfc8ab] bg-white/35 p-4 sm:p-5";
+    "rounded-lg border border-[#D8D2C5] bg-white/35 p-4 sm:p-5";
   const sectionTitleClass =
-    "text-xs font-bold uppercase tracking-[0.16em] text-[#087d75]";
+    "text-xs font-bold uppercase tracking-[0.16em] text-[#056D66]";
   const fieldLabelClass =
-    "mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6d5748]";
+    "mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-[#6E6558]";
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 grid gap-5">
+    <form onSubmit={onSubmit} className="mt-6 grid items-start gap-5 xl:grid-cols-2">
       <section className={sectionClass}>
-        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+        <div className="mb-4 border-b border-[#E8DDC9] pb-3">
           <p className={sectionTitleClass}>Cliente</p>
-          <p className="mt-1 text-xs text-[#8a7667]">
+          <p className="mt-1 text-xs text-[#6E6558]">
             Datos de contacto y origen de la consulta.
           </p>
         </div>
@@ -132,9 +132,9 @@ export function ManualReservationForm({
       </section>
 
       <section className={sectionClass}>
-        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+        <div className="mb-4 border-b border-[#E8DDC9] pb-3">
           <p className={sectionTitleClass}>Evento</p>
-          <p className="mt-1 text-xs text-[#8a7667]">
+          <p className="mt-1 text-xs text-[#6E6558]">
             Tipo de evento, invitados y personal.
           </p>
         </div>
@@ -239,14 +239,14 @@ export function ManualReservationForm({
       </section>
 
       <section className={sectionClass}>
-        <div className="mb-4 flex flex-col gap-3 border-b border-[#ead9c0] pb-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 border-b border-[#E8DDC9] pb-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className={sectionTitleClass}>Cobro</p>
-            <p className="mt-1 text-xs text-[#8a7667]">
+            <p className="mt-1 text-xs text-[#6E6558]">
               Importes administrativos del evento.
             </p>
           </div>
-          <div className="rounded-full border border-[#0BB3A6]/30 bg-[#0BB3A6]/10 px-4 py-2 text-xs font-bold text-[#087d75]">
+          <div className="rounded-full border border-calypso-700/30 bg-calypso-700/10 px-4 py-2 text-xs font-bold text-[#056D66]">
             Seña registrada: {formatMoney(depositPreview)}
           </div>
         </div>
@@ -293,7 +293,7 @@ export function ManualReservationForm({
           </label>
 
           <div className="flex items-end">
-            <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#2f241e]">
+            <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D8D2C5] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#1C1915]">
               <input
                 type="checkbox"
                 checked={form.deposit_paid}
@@ -303,7 +303,7 @@ export function ManualReservationForm({
                     deposit_paid: event.target.checked,
                   }))
                 }
-                className="h-3.5 w-3.5 accent-[#0BB3A6]"
+                className="h-3.5 w-3.5 accent-calypso-700"
               />
               Seña paga
             </label>
@@ -311,11 +311,11 @@ export function ManualReservationForm({
         </div>
       </section>
 
-      <section className={sectionClass}>
-        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+      <section className={`${sectionClass} xl:col-start-2 xl:row-start-1 xl:row-span-3`}>
+        <div className="mb-4 border-b border-[#E8DDC9] pb-3">
           <p className={sectionTitleClass}>Fecha y horario</p>
-          <p className="mt-1 text-xs text-[#8a7667]">
-            Disponibilidad del salón y horario acordado.
+          <p className="mt-1 text-xs text-[#6E6558]">
+            Disponibilidad del salón y horario acordado. Reservas con al menos 10 días de anticipación.
           </p>
         </div>
 
@@ -337,14 +337,14 @@ export function ManualReservationForm({
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className={fieldLabelClass}>Horarios sugeridos</span>
             {loadingSlots && (
-              <span className="text-xs font-semibold text-[#087d75]">
+              <span className="text-xs font-semibold text-[#056D66]">
                 Consultando...
               </span>
             )}
           </div>
 
           {manualSlots.length === 0 ? (
-            <div className="rounded-[1rem] border border-[#dfc8ab] bg-white/55 px-4 py-3 text-sm leading-relaxed text-[#5c473b]">
+            <div className="rounded-md border border-[#D8D2C5] bg-white/55 px-4 py-3 text-sm leading-relaxed text-[#4B443B]">
               No hay horarios sugeridos para esta fecha. Igual podés ingresar un
               horario libre abajo.
             </div>
@@ -360,10 +360,10 @@ export function ManualReservationForm({
                     type="button"
                     onClick={() => onApplySlot(slot)}
                     className={[
-                      "rounded-[1rem] border px-3 py-2 text-left text-sm font-semibold transition",
+                      "rounded-md border px-3 py-2 text-left text-sm font-semibold transition",
                       active
-                        ? "border-[#0BB3A6] bg-[#0BB3A6] text-white"
-                        : "border-[#dfc8ab] bg-white/65 text-[#2f241e] hover:bg-white",
+                        ? "border-calypso-700 bg-calypso-700 text-white"
+                        : "border-[#D8D2C5] bg-white/65 text-[#1C1915] hover:bg-white",
                     ].join(" ")}
                   >
                     {slot.label}
@@ -409,7 +409,7 @@ export function ManualReservationForm({
         </div>
 
         {manualEndsNextDay && (
-          <p className="mt-3 rounded-[0.9rem] border border-[#0BB3A6]/25 bg-[#0BB3A6]/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#087d75]">
+          <p className="mt-3 rounded-md border border-calypso-700/25 bg-calypso-700/10 px-4 py-3 text-xs font-semibold leading-relaxed text-[#056D66]">
             Este horario termina al día siguiente. Por ejemplo, 20:30 a 00:30 se
             interpreta como un evento de la fecha seleccionada que finaliza a
             las 00:30 del día siguiente.
@@ -417,10 +417,10 @@ export function ManualReservationForm({
         )}
       </section>
 
-      <section className={sectionClass}>
-        <div className="mb-4 border-b border-[#ead9c0] pb-3">
+      <section className={`${sectionClass} xl:col-span-2`}>
+        <div className="mb-4 border-b border-[#E8DDC9] pb-3">
           <p className={sectionTitleClass}>Notas</p>
-          <p className="mt-1 text-xs text-[#8a7667]">
+          <p className="mt-1 text-xs text-[#6E6558]">
             Detalles operativos o acuerdos especiales.
           </p>
         </div>
@@ -437,7 +437,7 @@ export function ManualReservationForm({
       <button
         type="submit"
         disabled={creating}
-        className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#0BB3A6] px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:-translate-y-0.5 hover:bg-[#099f94] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-3 xl:col-span-2 rounded-md bg-calypso-700 px-6 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_18px_42px_rgba(11,179,166,0.22)] transition hover:bg-calypso-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {creating ? (
           <Loader2 size={18} className="animate-spin" />
