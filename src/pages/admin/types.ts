@@ -7,6 +7,7 @@ export type ReservationStatus =
 
 export type AdminSection =
   | "reservations"
+  | "calendar"
   | "completed_events"
   | "disabled_dates"
   | "reviews";

@@ -7,14 +7,21 @@ import reunionesImg from "../assets/home/servicio-reuniones.webp";
 import corporativosImg from "../assets/home/servicio-corporativos.webp";
 import especialesImg from "../assets/home/servicio-especiales.webp";
 
+const INCLUDED = [
+  "Uso de las instalaciones",
+  "Pool, futbolito y cama elástica",
+  "Menú infantil",
+  "Mozos y Animadores",
+  "Uso del Proyector",
+  "Cobertura médica de emergencia",
+];
+
 const EXTRAS = [
-  "Bebidas a consignación",
   "Menú para adultos",
-  "Animador extra",
-  "Mozo extra",
+  "Horas extras",
+  "Animador o Mozo extra",
   "Uso del parrillero",
-  "Leña",
-  "Hielo",
+  "Leña y Hielo",
 ];
 
 const services = [
@@ -23,31 +30,19 @@ const services = [
     summary: "Infantiles y familiares, con juegos, animadores y menú para los chicos.",
     desc: "Celebraciones infantiles y familiares con espacios cómodos, juegos y asistencia para que el evento fluya sin complicaciones.",
     image: cumpleImg,
-    imageAlt: "Cumpleaños infantil alrededor de una mesa con torta y globos",
+    imageAlt: "Mesa de cumpleaños decorada con torta, globos y banderines en Calypso",
     highlight: "El más pedido",
-    included: [
-      "Uso de las instalaciones",
-      "Uso de juegos",
-      "Menú infantil",
-      "1 ayudante de cocina",
-      "1 mozo",
-      "2 animadores",
-    ],
+    included: INCLUDED,
+    extras: EXTRAS,
   },
   {
     title: "Reuniones",
     summary: "Encuentros familiares o entre amigos, con parrillero y lugar para todos.",
     desc: "Un entorno cálido para encuentros familiares o sociales, con buena distribución y opciones adaptables según la cantidad de invitados.",
     image: reunionesImg,
-    imageAlt: "Grupo de amigos jugando al pool en una reunión",
-    included: [
-      "Uso de las instalaciones",
-      "Uso de juegos",
-      "Menú infantil",
-      "1 ayudante de cocina",
-      "1 mozo",
-      "2 animadores si hay 25 niños o más",
-    ],
+    imageAlt: "Reunión familiar con invitados alrededor de las mesas del salón de Calypso",
+    included: INCLUDED,
+    extras: EXTRAS,
   },
   {
     title: "Eventos corporativos",
@@ -56,10 +51,19 @@ const services = [
     image: corporativosImg,
     imageAlt: "Equipo de trabajo reunido alrededor de una mesa larga con computadoras",
     included: [
-      "Uso de las instalaciones",
-      "Uso de juegos para adultos",
-      "1 ayudante de cocina",
-      "1 mozo",
+      "Uso de las instalaciones.",
+      "Juegos recreativos para adultos.",
+      "Cama elástica olímpica y pool.",
+      "Servicio de mozos.",
+      "Estacionamiento cómodo.",
+      "Cobertura médica de emergencia.",
+    ],
+    extras: [
+      "Menú para adultos",
+      "Horas extras",
+      "Mozo extra",
+      "Uso del parrillero",
+      "Leña y Hielo",
     ],
   },
   {
@@ -67,15 +71,9 @@ const services = [
     summary: "Bautismos, aniversarios y celebraciones privadas a medida.",
     desc: "Bautismos, aniversarios y celebraciones privadas con una propuesta flexible para adaptar el espacio al tipo de ocasión.",
     image: especialesImg,
-    imageAlt: "Celebración familiar en el jardín de noche, bajo guirnaldas de luces",
-    included: [
-      "Uso de las instalaciones",
-      "Uso de juegos para niños y adultos",
-      "Menú infantil",
-      "1 ayudante de cocina",
-      "1 mozo",
-      "2 animadores si hay 25 niños o más",
-    ],
+    imageAlt: "Celebración al aire libre con invitados reunidos en el jardín de Calypso",
+    included: INCLUDED,
+    extras: EXTRAS,
   },
 ];
 
@@ -127,7 +125,7 @@ export default function Services() {
                     aria-expanded={open}
                     aria-controls={panelId}
                     onClick={() => setOpenIndex(open ? null : index)}
-                    className="group grid w-full grid-cols-[2.5rem_1fr_auto] items-baseline gap-x-4 py-7 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso-700 sm:grid-cols-[3.5rem_1fr_auto] lg:py-8"
+                    className="group grid w-full grid-cols-[1.5rem_minmax(0,1fr)_auto] items-baseline gap-x-3 py-7 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-calypso-700 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] lg:py-8"
                   >
                     <span aria-hidden="true" className="font-titular text-xl text-ink-mute sm:text-2xl">
                       {String(index + 1).padStart(2, "0")}
@@ -174,13 +172,13 @@ export default function Services() {
                   ].join(" ")}
                 >
                   <div className="overflow-hidden">
-                    <div className="grid gap-8 pb-10 sm:grid-cols-[minmax(0,15rem)_1fr] sm:pl-[4.5rem] lg:gap-12">
+                    <div className="grid min-w-0 gap-6 pb-8 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] xl:gap-8">
                       <img
                         src={service.image}
                         alt={service.imageAlt}
                         loading="lazy"
                         decoding="async"
-                        className="aspect-[3/4] w-full max-w-[15rem] rounded-sm object-cover"
+                        className="aspect-[4/3] w-full max-w-none sm:aspect-[3/4] rounded-sm object-cover"
                       />
 
                       <div>
@@ -188,7 +186,7 @@ export default function Services() {
                           {service.desc}
                         </p>
 
-                        <div className="mt-8 grid gap-8 sm:grid-cols-2">
+                        <div className="mt-6 grid gap-6 min-[480px]:grid-cols-2 sm:grid-cols-1 2xl:grid-cols-2">
                           <div>
                             <h4 className="text-sm font-semibold text-ink-mute">
                               Incluye
@@ -208,7 +206,7 @@ export default function Services() {
                               Se puede sumar
                             </h4>
                             <ul className="mt-3 space-y-2">
-                              {EXTRAS.map((item) => (
+                              {service.extras.map((item) => (
                                 <li key={item} className="flex gap-3 text-[15px] leading-snug text-ink-soft">
                                   <span aria-hidden="true" className="w-1.5 shrink-0 text-center font-semibold text-ink-mute">
                                     +
@@ -220,7 +218,7 @@ export default function Services() {
                           </div>
                         </div>
 
-                        <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-7">
+                        <div className="mt-7 flex flex-col gap-4 2xl:flex-row 2xl:flex-wrap 2xl:items-center 2xl:gap-7">
                           <BudgetButton
                             className="group inline-flex items-center justify-center gap-3 rounded-md bg-calypso px-6 py-3.5 font-semibold text-ink transition-colors hover:bg-[#25c3b6]"
                           >

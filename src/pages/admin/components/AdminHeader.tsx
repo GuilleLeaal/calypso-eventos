@@ -14,39 +14,30 @@ export function AdminHeader({
   onLogout: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col gap-6 rounded-xl border border-night-line bg-night p-6 text-paper shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-8">
       <div>
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#087d75] transition hover:text-[#0BB3A6]"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-calypso-200 transition hover:text-white"
         >
           <ArrowLeft size={17} />
           Volver al sitio
         </Link>
 
-        <h1 className="mt-6 font-display text-4xl leading-tight text-[#2f241e] md:text-6xl">
-          Panel de{" "}
-          <span className="relative inline-block text-[#0BB3A6]">
-            administración
-            <span className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-gradient-to-r from-[#0BB3A6] via-[#e8c17f] to-transparent" />
-          </span>
-          .
+        <h1 className="mt-5 max-w-2xl font-titular text-3xl font-normal leading-tight text-paper sm:text-4xl">
+          Administración
         </h1>
 
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#5c473b] md:text-base">
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-paper/75">
           Administrá reservas, reseñas, señas, notas internas y métricas de
           origen de clientes.
         </p>
       </div>
 
-<<<<<<< Updated upstream
-      <div className="flex flex-wrap gap-3">
-=======
       <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-sm lg:justify-end">
         <MonthlySummaryButton />
->>>>>>> Stashed changes
         <details className="group relative">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/55 px-5 py-3 text-sm font-semibold text-[#2f241e] transition hover:bg-white [&::-webkit-details-marker]:hidden">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-md border border-night-line bg-night-soft px-4 py-3 text-sm font-semibold text-paper transition hover:bg-night-line [&::-webkit-details-marker]:hidden">
             <Download size={16} />
             Exportar Excel
             <ChevronDown
@@ -55,16 +46,16 @@ export function AdminHeader({
             />
           </summary>
 
-          <div className="absolute right-0 z-30 mt-2 w-72 overflow-hidden rounded-[1.2rem] border border-[#dfc8ab] bg-[#fff9f0] p-2 shadow-[0_18px_45px_rgba(90,64,50,0.16)]">
+          <div className="absolute left-0 z-30 mt-2 w-64 sm:left-auto sm:right-0 sm:w-72 overflow-hidden rounded-lg border border-[#D8D2C5] bg-[#FAF7F1] p-2 shadow-[0_18px_45px_rgba(90,64,50,0.16)]">
             <button
               type="button"
               onClick={onDownloadClients}
-              className="w-full rounded-[0.9rem] px-4 py-3 text-left transition hover:bg-white"
+              className="w-full rounded-md px-4 py-3 text-left transition hover:bg-white"
             >
-              <span className="block text-sm font-bold text-[#2f241e]">
+              <span className="block text-sm font-bold text-[#1C1915]">
                 Clientes
               </span>
-              <span className="mt-1 block text-xs leading-relaxed text-[#6d5748]">
+              <span className="mt-1 block text-xs leading-relaxed text-[#6E6558]">
                 Todos los clientes registrados, sin importar el estado del
                 evento.
               </span>
@@ -73,12 +64,12 @@ export function AdminHeader({
             <button
               type="button"
               onClick={onDownloadEvents}
-              className="w-full rounded-[0.9rem] px-4 py-3 text-left transition hover:bg-white"
+              className="w-full rounded-md px-4 py-3 text-left transition hover:bg-white"
             >
-              <span className="block text-sm font-bold text-[#2f241e]">
+              <span className="block text-sm font-bold text-[#1C1915]">
                 Eventos finalizados
               </span>
-              <span className="mt-1 block text-xs leading-relaxed text-[#6d5748]">
+              <span className="mt-1 block text-xs leading-relaxed text-[#6E6558]">
                 Cliente, evento, fecha, invitados, personal e ingreso total.
               </span>
             </button>
@@ -87,7 +78,7 @@ export function AdminHeader({
 
         <button
           onClick={onRefresh}
-          className="inline-flex items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/55 px-5 py-3 text-sm font-semibold text-[#2f241e] transition hover:bg-white"
+          className="inline-flex items-center gap-2 rounded-md border border-night-line bg-night-soft px-4 py-3 text-sm font-semibold text-paper transition hover:bg-night-line"
         >
           <RefreshCw size={16} />
           Actualizar
@@ -95,7 +86,7 @@ export function AdminHeader({
 
         <button
           onClick={onLogout}
-          className="inline-flex items-center gap-2 rounded-full bg-[#2f241e] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1d1511]"
+          className="inline-flex items-center gap-2 rounded-md border border-paper/25 px-4 py-3 text-sm font-semibold text-paper transition hover:bg-night-line"
         >
           <LogOut size={16} />
           Salir

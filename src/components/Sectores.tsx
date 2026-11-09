@@ -136,6 +136,7 @@ export default function Sectores() {
   const [loadedSrc, setLoadedSrc] = useState("");
   const triggerRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   const preview = items[previewIndex];
   const openSector = open ? items[open.sector] : null;
@@ -184,6 +185,15 @@ export default function Sectores() {
     closeButtonRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Tab") {
+        const controls = Array.from(galleryRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]") ?? [])
+          .filter((element) => element.getClientRects().length > 0);
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        return;
+      }
       if (event.key === "Escape") {
         setOpen(null);
         triggerRef.current?.focus();
@@ -347,6 +357,7 @@ export default function Sectores() {
 
       {open && openSector && (
         <div
+          ref={galleryRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="galeria-titulo"
@@ -361,7 +372,7 @@ export default function Sectores() {
             "--gallery-overlay": open.moment === "night" ? "#191e1bcc" : "#faf7efdd",
           } as CSSProperties}
         >
-          <div className="flex items-center justify-between gap-4 border-b border-[var(--gallery-line)] px-5 py-4 sm:px-8">
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--gallery-line)] px-5 py-4 sm:px-8">
             <div className="min-w-0">
               <h3 id="galeria-titulo" className="truncate font-titular text-2xl sm:text-3xl">
                 {openSector.title}
@@ -431,7 +442,7 @@ export default function Sectores() {
               )}
             </div>
 
-            <div className="flex flex-col gap-8 p-5 sm:p-8 lg:overflow-y-auto">
+            <div className="flex min-w-0 flex-col gap-6 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 lg:overflow-y-auto">
               <div>
                 {openSector.galleries.night?.length ? (
                   <div
@@ -455,7 +466,7 @@ export default function Sectores() {
                           open.moment === value ? (open.moment === "night" ? "bg-paper text-night" : "bg-ink text-paper") : "text-[var(--gallery-soft)] hover:text-[var(--gallery-text)]",
                         ].join(" ")}
                       >
-                        <Icon size={16} aria-hidden="true" />
+                        <Icon size={16} aria-hidden="true" className="shrink-0" />
                         {label}
                       </button>
                     ))}
@@ -485,22 +496,22 @@ export default function Sectores() {
                 Consultar por este sector
               </a>
 
-              <div className="mt-auto flex items-center justify-between gap-4 border-t border-[var(--gallery-line)] pt-6 text-sm font-semibold">
+              <div className="mt-auto grid grid-cols-2 items-center gap-4 border-t border-[var(--gallery-line)] pt-6 text-sm font-semibold">
                 <button
                   type="button"
                   onClick={() => stepSector(-1)}
-                  className="inline-flex items-center gap-2 text-[var(--gallery-soft)] transition-colors hover:text-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+                  className="inline-flex min-h-11 min-w-0 items-center gap-2 break-words text-[var(--gallery-soft)] transition-colors hover:text-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
                 >
-                  <ArrowLeft size={16} aria-hidden="true" />
+                  <ArrowLeft size={16} aria-hidden="true" className="shrink-0" />
                   {items[(open.sector - 1 + items.length) % items.length].title}
                 </button>
                 <button
                   type="button"
                   onClick={() => stepSector(1)}
-                  className="inline-flex items-center gap-2 text-right text-[var(--gallery-soft)] transition-colors hover:text-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
+                  className="inline-flex min-h-11 min-w-0 items-center justify-end gap-2 break-words text-right text-[var(--gallery-soft)] transition-colors hover:text-[var(--gallery-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-calypso"
                 >
                   {items[(open.sector + 1) % items.length].title}
-                  <ArrowRight size={16} aria-hidden="true" />
+                  <ArrowRight size={16} aria-hidden="true" className="shrink-0" />
                 </button>
               </div>
 

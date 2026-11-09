@@ -104,24 +104,24 @@ export function ReservationCalendar({
   };
 
   return (
-    <div className="rounded-[1.4rem] border border-[#d1af7e] bg-[#fff4df]/80 p-4 shadow-[0_14px_34px_rgba(90,64,50,0.07)]">
+    <div className="rounded-lg border border-[#d1af7e] bg-[#fff4df]/80 p-4 shadow-[0_14px_34px_rgba(90,64,50,0.07)]">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={previousMonth}
-          className="grid h-10 w-10 place-items-center rounded-full border border-[#d1af7e] bg-[#fff9f0] text-[#2f241e] transition hover:bg-white"
+          className="grid h-10 w-10 place-items-center rounded-full border border-[#d1af7e] bg-[#FAF7F1] text-[#1C1915] transition hover:bg-white"
           aria-label="Mes anterior"
         >
           <ChevronLeft size={18} />
         </button>
 
         <div className="text-center">
-          <p className="font-display text-xl capitalize text-[#2f241e]">
+          <p className="font-titular font-normal text-xl capitalize text-[#1C1915]">
             {getMonthLabel(calendarMonth)}
           </p>
 
           {loading && (
-            <p className="mt-1 text-xs font-semibold text-[#087d75]">
+            <p className="mt-1 text-xs font-semibold text-[#056D66]">
               Consultando disponibilidad...
             </p>
           )}
@@ -130,7 +130,7 @@ export function ReservationCalendar({
         <button
           type="button"
           onClick={nextMonth}
-          className="grid h-10 w-10 place-items-center rounded-full border border-[#d1af7e] bg-[#fff9f0] text-[#2f241e] transition hover:bg-white"
+          className="grid h-10 w-10 place-items-center rounded-full border border-[#d1af7e] bg-[#FAF7F1] text-[#1C1915] transition hover:bg-white"
           aria-label="Mes siguiente"
         >
           <ChevronRight size={18} />
@@ -172,7 +172,7 @@ export function ReservationCalendar({
                 "relative min-h-12 rounded-2xl border px-2 py-2 text-sm font-bold transition",
                 outsideMonth ? "opacity-35" : "",
                 selected
-                  ? "border-[#0BB3A6] bg-[#0BB3A6] text-white shadow-[0_12px_26px_rgba(11,179,166,0.20)]"
+                  ? "border-calypso-700 bg-calypso-700 text-white shadow-[0_12px_26px_rgba(11,179,166,0.20)]"
                   : availability === "closed"
                     ? "cursor-not-allowed border-red-300 bg-red-100 text-red-700"
                     : availability === "full"
@@ -181,7 +181,7 @@ export function ReservationCalendar({
                         ? "border-[#d89b38] bg-[#f4c76f]/45 text-[#6f4311] hover:bg-[#f4c76f]/60"
                         : availability === "disabled"
                           ? "cursor-not-allowed border-stone-300 bg-stone-200 text-stone-500"
-                          : "border-[#d1af7e] bg-[#fff0d2] text-[#2f241e] hover:-translate-y-0.5 hover:border-[#0BB3A6]/55 hover:bg-[#fff7eb]",
+                          : "border-[#d1af7e] bg-[#fff0d2] text-[#1C1915] hover:border-calypso-700/55 hover:bg-[#fff7eb]",
               ].join(" ")}
             >
               <span>{date.getDate()}</span>
@@ -192,7 +192,7 @@ export function ReservationCalendar({
                     <span className="h-1.5 w-1.5 rounded-full bg-red-700" />
                   )}
                   {hasReservation && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#2f241e]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#1C1915]" />
                   )}
                 </span>
               )}
@@ -201,7 +201,7 @@ export function ReservationCalendar({
         })}
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3 text-xs text-[#5c473b]">
+      <div className="mt-5 flex flex-wrap gap-3 text-xs text-[#4B443B]">
         <div className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-[#fff0d2] ring-1 ring-[#d1af7e]" />
           Disponible

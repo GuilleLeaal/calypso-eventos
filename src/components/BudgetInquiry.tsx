@@ -42,27 +42,27 @@ export function BudgetInquiryProvider({ children }: { children: ReactNode }) {
 
   return <BudgetContext.Provider value={() => { setError(""); setIsOpen(true); }}>
     {children}
-    <dialog ref={dialogRef} onClose={() => setIsOpen(false)} aria-labelledby="budget-title" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }} className={`m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl p-0 font-texto shadow-2xl backdrop:bg-black/60 ${night ? "bg-night text-paper" : "bg-paper text-ink"}`}>
+    <dialog ref={dialogRef} onClose={() => setIsOpen(false)} aria-labelledby="budget-title" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }} className={`m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl p-0 font-texto shadow-2xl backdrop:bg-black/60 ${night ? "bg-night text-paper" : "bg-paper text-ink"}`}>
       <div className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
-          <h2 id="budget-title" className="font-titular text-3xl font-normal">Consultar presupuesto</h2>
-          <button type="button" aria-label="Cerrar consulta" onClick={() => dialogRef.current?.close()} className="rounded-md border border-current/20 p-2"><X size={20} /></button>
+          <h2 id="budget-title" className="min-w-0 font-titular text-2xl font-normal sm:text-3xl">Consultar presupuesto</h2>
+          <button type="button" aria-label="Cerrar consulta" onClick={() => dialogRef.current?.close()} className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-current/20"><X size={20} /></button>
         </div>
         <p className="mt-3 text-sm leading-relaxed opacity-80">Contanos qué querés festejar y cuántos invitados van a venir. Las reservas se coordinan con al menos 10 días de anticipación.</p>
         <form onSubmit={submit} className="mt-6 space-y-5">
-          <label className="block text-sm font-medium">Tipo de evento
-            <select required autoFocus value={form.event} onChange={(event) => setForm({ ...form, event: event.target.value })} className="mt-2 w-full rounded-md border border-ink/25 bg-paper p-3 text-ink">
+          <label className="block min-w-0 text-sm font-medium">Tipo de evento
+            <select required autoFocus value={form.event} onChange={(event) => setForm({ ...form, event: event.target.value })} className="mt-2 min-w-0 w-full rounded-md border border-ink/25 bg-paper p-3 text-base text-ink">
               <option value="">Seleccioná una opción</option>
               {EVENT_TYPES.map((type) => <option key={type}>{type}</option>)}
             </select>
           </label>
-          <div className="grid grid-cols-2 gap-4">
-            <label className="block text-sm font-medium">Cantidad de niños
-              <input required type="number" inputMode="numeric" min={0} max={MAX_CHILDREN_COUNT} step={1} value={form.children} onChange={(event) => setForm({ ...form, children: event.target.value })} className="mt-2 w-full rounded-md border border-ink/25 bg-paper p-3 text-ink" />
+          <div className="grid gap-4 min-[360px]:grid-cols-2">
+            <label className="block min-w-0 text-sm font-medium">Cantidad de niños
+              <input required type="number" inputMode="numeric" min={0} max={MAX_CHILDREN_COUNT} step={1} value={form.children} onChange={(event) => setForm({ ...form, children: event.target.value })} className="mt-2 min-w-0 w-full rounded-md border border-ink/25 bg-paper p-3 text-base text-ink" />
               <span className="mt-1 block text-xs opacity-70">Máximo {MAX_CHILDREN_COUNT}</span>
             </label>
-            <label className="block text-sm font-medium">Cantidad de adultos
-              <input required type="number" inputMode="numeric" min={0} max={MAX_ADULTS_COUNT} step={1} value={form.adults} onChange={(event) => setForm({ ...form, adults: event.target.value })} className="mt-2 w-full rounded-md border border-ink/25 bg-paper p-3 text-ink" />
+            <label className="block min-w-0 text-sm font-medium">Cantidad de adultos
+              <input required type="number" inputMode="numeric" min={0} max={MAX_ADULTS_COUNT} step={1} value={form.adults} onChange={(event) => setForm({ ...form, adults: event.target.value })} className="mt-2 min-w-0 w-full rounded-md border border-ink/25 bg-paper p-3 text-base text-ink" />
               <span className="mt-1 block text-xs opacity-70">Máximo {MAX_ADULTS_COUNT}</span>
             </label>
           </div>
