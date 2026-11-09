@@ -249,8 +249,8 @@ export function ReservationCard({
       className={[
         "reservation-summary grid gap-3 break-words rounded-lg border p-3 md:grid-cols-[minmax(0,1.7fr)_minmax(15rem,1fr)] shadow-[0_2px_6px_rgba(13,29,30,0.05)]",
         isCompletedView
-          ? "border-[#BEB29F] bg-[#E4DCCD]"
-          : "border-[#BEB29F] bg-[#E4DCCD]",
+          ? "border-[#D7CFC1] bg-white"
+          : "border-[#D7CFC1] bg-white",
       ].join(" ")}
     >
       <div className="min-w-0 flex flex-col gap-2">
@@ -265,7 +265,7 @@ export function ReservationCard({
               {statusLabels[reservation.status]}
             </span>
 
-            <span className="rounded-full border border-[#D8D2C5] bg-[#DDD4C5] px-3 py-1 text-xs leading-4 font-bold uppercase tracking-[0.06em] text-[#6E6558]">
+            <span className="rounded-full border border-[#D8D2C5] bg-[#FAF7F1] px-3 py-1 text-xs leading-4 font-bold uppercase tracking-[0.06em] text-[#6E6558]">
               {reservation.source === "website" ? "Web" : "Admin"}
             </span>
 
@@ -293,7 +293,7 @@ export function ReservationCard({
             </div>
 
             {isCompletedView && (
-              <div className="w-fit rounded-md border border-[#1C1915]/10 bg-[#DDD4C5]/65 px-4 py-2 text-right">
+              <div className="w-fit rounded-md border border-[#1C1915]/10 bg-white/65 px-4 py-2 text-right">
                 <p className="text-xs leading-4 font-bold uppercase tracking-[0.06em] text-[#6E6558]">
                   Ingreso total
                 </p>
@@ -308,7 +308,7 @@ export function ReservationCard({
             <details
               open={clientInfoOpen}
               onToggle={(event) => setClientInfoOpen(event.currentTarget.open)}
-              className="group rounded-md border border-[#E2DBCF] bg-[#DDD4C5] p-3"
+              className="group rounded-md border border-[#E2DBCF] bg-[#F8F5EF] p-3"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[13px] leading-4 font-bold uppercase tracking-[0.06em] text-[#056D66] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-2">
@@ -343,7 +343,7 @@ export function ReservationCard({
               onToggle={(event) =>
                 setReservationInfoOpen(event.currentTarget.open)
               }
-              className="group rounded-md border border-[#E2DBCF] bg-[#DDD4C5] p-3"
+              className="group rounded-md border border-[#E2DBCF] bg-[#F8F5EF] p-3"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[13px] leading-4 font-bold uppercase tracking-[0.06em] text-[#8a5b1f] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-2">
@@ -394,14 +394,14 @@ export function ReservationCard({
               </div>
             </details>
 
-            <div className="rounded-lg border border-[#DDD5C6] bg-[#D8CEBC] p-3 xl:col-span-2">
+            <div className="rounded-lg border border-[#DDD5C6] bg-[#F3F0E8] p-3 xl:col-span-2">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="inline-flex items-center gap-2 text-[13px] leading-4 font-bold uppercase tracking-[0.06em] text-[#056D66]">
                   <WalletCards size={16} />
                   Resumen económico
                 </div>
 
-                <label className="inline-flex w-fit items-center gap-2 rounded-full border border-calypso-700/25 bg-[#DDD4C5]/75 px-3 py-1.5 text-xs leading-4 font-bold uppercase tracking-[0.04em] text-[#1C1915]">
+                <label className="inline-flex w-fit items-center gap-2 rounded-full border border-calypso-700/25 bg-white/75 px-3 py-1.5 text-xs leading-4 font-bold uppercase tracking-[0.04em] text-[#1C1915]">
                   <input
                     type="checkbox"
                     checked={reservation.deposit_paid}
@@ -440,7 +440,7 @@ export function ReservationCard({
                     </p>
                   </div>
                 )}
-                <div className="rounded-md bg-[#DDD4C5]/70 px-3 py-2">
+                <div className="rounded-md bg-white/70 px-3 py-2">
                   <p className="text-xs leading-4 font-bold uppercase tracking-[0.04em] text-[#056D66]">
                     Ingreso total
                   </p>
@@ -449,10 +449,10 @@ export function ReservationCard({
                   </p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#BEB29F] bg-[#DDD4C5] px-3 py-2" aria-label="Saldo de la reserva">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#DDD5C6] bg-white/70 px-3 py-2" aria-label="Saldo de la reserva">
                 <div>
                   <p className="text-xs leading-4 font-bold uppercase tracking-[0.04em] text-[#6E6558]">Saldo pendiente</p>
-                  <p className={`text-lg font-bold ${balance.pending === 0 ? "text-[#056D66]" : "text-[#7B481F]"}`}>
+                  <p className={`text-lg font-bold ${balance.pending === 0 ? "text-[#056D66]" : "text-[#8a5b1f]"}`}>
                     {balance.pending === null ? "Sin precio acordado" : formatMoney(balance.pending)}
                   </p>
                 </div>
@@ -482,7 +482,7 @@ export function ReservationCard({
           <button
             onClick={() => setIsEditing((prev) => !prev)}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-[#DDD4C5] px-4 py-2 text-[13px] leading-4 font-bold uppercase tracking-[0.04em] text-[#1C1915] transition hover:bg-[#DDD4C5] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-white px-4 py-2 text-[13px] leading-4 font-bold uppercase tracking-[0.04em] text-[#1C1915] transition hover:bg-[#FAF7F1] disabled:opacity-60"
           >
             <Pencil size={15} />
             {isEditing ? "Cerrar" : "Editar"}
@@ -490,13 +490,13 @@ export function ReservationCard({
 
           <details className="group relative">
             <summary
-              className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#D8D2C5] bg-[#DDD4C5] text-[#1C1915] transition hover:bg-[#DDD4C5] [&::-webkit-details-marker]:hidden"
+              className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full border border-[#D8D2C5] bg-white text-[#1C1915] transition hover:bg-[#FAF7F1] [&::-webkit-details-marker]:hidden"
               aria-label="Más acciones"
             >
               <MoreHorizontal size={17} />
             </summary>
 
-            <div className="absolute right-0 z-30 mt-2 min-w-40 rounded-md border border-[#D8D2C5] bg-[#DDD4C5] p-2 shadow-[0_18px_42px_rgba(90,64,50,0.16)]">
+            <div className="absolute right-0 z-30 mt-2 min-w-40 rounded-md border border-[#D8D2C5] bg-[#FAF7F1] p-2 shadow-[0_18px_42px_rgba(90,64,50,0.16)]">
               {reservation.status !== "rejected" &&
                 reservation.status !== "completed" && (
                   <button
@@ -531,7 +531,7 @@ export function ReservationCard({
       {isEditing && (
         <form
           onSubmit={handleSaveDetails}
-          className="min-w-0 rounded-lg border border-[#BEB29F] bg-[#D8CEBC] p-3 md:col-span-2"
+          className="min-w-0 rounded-lg border border-[#E2DBCF] bg-[#F8F5EF] p-3 md:col-span-2"
         >
           <div className="grid gap-5">
             <section>
@@ -892,7 +892,7 @@ export function ReservationCard({
                   </label>
                 )}
                 <div className="flex items-end">
-                  <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D8D2C5] bg-[#DDD4C5]/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#1C1915]">
+                  <label className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D8D2C5] bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#1C1915]">
                     <input
                       type="checkbox"
                       checked={editDraft.deposit_paid}
@@ -934,7 +934,7 @@ export function ReservationCard({
               type="button"
               onClick={cancelEdit}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-[#DDD4C5] px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#1C1915] transition hover:bg-[#DDD4C5] disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full border border-[#D8D2C5] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.09em] text-[#1C1915] transition hover:bg-[#FAF7F1] disabled:opacity-60"
             >
               <X size={15} />
               Cancelar
@@ -943,7 +943,7 @@ export function ReservationCard({
         </form>
       )}
 
-      <div className="flex min-w-0 flex-col rounded-lg border border-[#BEB29F] bg-[#D8CEBC] p-3 md:col-start-2 md:row-start-1">
+      <div className="flex min-w-0 flex-col rounded-lg border border-[#E2DBCF] bg-[#F8F5EF] p-3 md:col-start-2 md:row-start-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-[13px] leading-4 font-bold uppercase tracking-[0.06em] text-[#6E6558]">
@@ -956,7 +956,7 @@ export function ReservationCard({
             type="button"
             onClick={() => setNotesOpen((prev) => !prev)}
             aria-expanded={notesOpen}
-            className="shrink-0 rounded-full border border-[#D8D2C5] bg-[#DDD4C5]/80 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-[#1C1915] transition hover:bg-[#DDD4C5]"
+            className="shrink-0 rounded-full border border-[#D8D2C5] bg-white/80 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-[#1C1915] transition hover:bg-white"
           >
             {notesOpen
               ? "Cerrar"
@@ -984,7 +984,7 @@ export function ReservationCard({
               type="button"
               onClick={() => onSaveNotes(notesDraft)}
               disabled={loading}
-              className="mt-2 inline-flex shrink-0 self-start items-center gap-2 rounded-full border border-[#D8D2C5] bg-[#DDD4C5]/70 px-4 py-2 text-[13px] leading-4 font-bold uppercase tracking-[0.04em] text-[#1C1915] transition hover:bg-[#DDD4C5] disabled:opacity-60"
+              className="mt-2 inline-flex shrink-0 self-start items-center gap-2 rounded-full border border-[#D8D2C5] bg-white/70 px-4 py-2 text-[13px] leading-4 font-bold uppercase tracking-[0.04em] text-[#1C1915] transition hover:bg-white disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 size={15} className="animate-spin" />

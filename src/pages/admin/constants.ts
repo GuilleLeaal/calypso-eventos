@@ -3,7 +3,7 @@ import type { ReservationStatus } from "./types";
 export const FIRST_RESERVATION_DATE = "2026-07-01";
 export const MAX_CHILDREN_COUNT = 30;
 export const MAX_ADULTS_COUNT = 50;
-export const RESERVATIONS_PER_PAGE = 4;
+export const RESERVATIONS_PER_PAGE = 6;
 export const EXPORT_BATCH_SIZE = 500;
 
 export const RESERVATION_EXPORT_COLUMNS =

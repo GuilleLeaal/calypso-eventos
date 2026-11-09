@@ -57,11 +57,11 @@ export function ReservationListResults({
   }
 
   return (
-    <div ref={resultsRef} className={`reservation-results mt-6 scroll-mt-24 overflow-hidden rounded-lg border border-[#BEB29F] bg-[#CFC5B5] ${fullscreen ? "!m-0 flex h-dvh flex-col !rounded-none" : ""}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#BEB29F] bg-[#D8CEBC] px-4 py-3 text-[13px] font-semibold text-ink-soft" role="status" aria-live="polite" aria-atomic="true">
+    <div ref={resultsRef} className={`reservation-results mt-6 scroll-mt-24 overflow-hidden rounded-lg border border-[#D7CFC1] bg-[#EEEAE2] ${fullscreen ? "!m-0 flex h-dvh flex-col !rounded-none" : ""}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D7CFC1] bg-[#F5F1E9] px-4 py-3 text-[13px] font-semibold text-ink-soft" role="status" aria-live="polite" aria-atomic="true">
         <span>{loading ? "Cargando reservas…" : totalCount > 0 ? `Mostrando ${firstItem}–${lastItem} de ${totalCount}` : "Sin resultados"}</span>
         <span>Página {page} de {totalPages}</span>
-        <button type="button" onClick={toggleFullscreen} aria-pressed={fullscreen} className="inline-flex items-center gap-2 rounded-md border border-[#BEB29F] bg-[#D8CEBC] px-3 py-2 text-[#352F28]" aria-label={fullscreen ? "Salir de pantalla completa" : "Ver reservas en pantalla completa"}>
+        <button type="button" onClick={toggleFullscreen} aria-pressed={fullscreen} className="inline-flex items-center gap-2 rounded-md border border-[#D7CFC1] bg-white px-3 py-2 text-ink" aria-label={fullscreen ? "Salir de pantalla completa" : "Ver reservas en pantalla completa"}>
           {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           {fullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
         </button>
@@ -69,7 +69,7 @@ export function ReservationListResults({
       {fullscreenError && <p role="alert" className="px-4 py-2 text-sm text-red-800">{fullscreenError}</p>}
 
       <div ref={scrollRef} tabIndex={0} role="region" aria-label={isCompletedView ? "Resultados de eventos finalizados" : "Resultados de reservas"} aria-busy={loading}
-        className={`${fullscreen ? "min-h-0 flex-1" : "max-h-[calc(100dvh-9rem)]"} overflow-y-auto overscroll-contain bg-[#CFC5B5] p-3 shadow-inner [scrollbar-gutter:stable] [scrollbar-color:#8D806B_#CFC5B5]`}>
+        className={`${fullscreen ? "min-h-0 flex-1" : "max-h-[calc(100dvh-9rem)]"} overflow-y-auto overscroll-contain bg-[#EEEAE2] p-3 shadow-inner [scrollbar-gutter:stable] [scrollbar-color:#A99F8F_#EEEAE2]`}>
         {loading ? (
           <div className="grid h-full place-items-center">
             <div className="flex items-center gap-3 text-sm text-calypso-700">
@@ -103,11 +103,11 @@ export function ReservationListResults({
       </div>
 
       <nav aria-label={isCompletedView ? "Paginación de eventos finalizados" : "Paginación de reservas"}
-        className="flex flex-wrap items-center justify-between gap-3 border-t border-[#BEB29F] bg-[#D8CEBC] px-4 py-3">
+        className="flex flex-wrap items-center justify-between gap-3 border-t border-[#D7CFC1] bg-[#F5F1E9] px-4 py-3">
         <p className="text-[13px] text-ink-soft">Página <span className="font-semibold text-ink">{page}</span> de {totalPages}</p>
         <div className="flex gap-2">
           <button type="button" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-ink/20 bg-[#E4DCCD] px-3 py-2 text-sm font-semibold text-ink transition hover:bg-paper-deep disabled:cursor-not-allowed disabled:opacity-45 sm:px-4">
+            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-ink/20 bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:bg-paper-deep disabled:cursor-not-allowed disabled:opacity-45 sm:px-4">
             <ChevronLeft size={16} aria-hidden="true" />Anterior
           </button>
           <button type="button" disabled={page >= totalPages || loading} onClick={() => changePage(page + 1)}

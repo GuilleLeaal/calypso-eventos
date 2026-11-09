@@ -13,5 +13,8 @@ export function getMonthlySummary(reservations: Reservation[]) {
     paid: events.reduce((sum, item) => sum + cents(getReservationBalance(item).paid), 0) / 100,
     pending: events.reduce((sum, item) => sum + cents(getReservationBalance(item).pending ?? 0), 0) / 100,
     credit: events.reduce((sum, item) => sum + cents(getReservationBalance(item).credit), 0) / 100,
+    completedSurplus: events
+      .filter((item) => item.status === "completed" && item.agreed_price !== null)
+      .reduce((sum, item) => sum + cents(getReservationBalance(item).credit), 0) / 100,
   };
 }

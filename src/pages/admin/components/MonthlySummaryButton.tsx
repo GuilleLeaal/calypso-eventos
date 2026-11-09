@@ -81,6 +81,10 @@ export function MonthlySummaryButton() {
               { label: "Saldo pendiente", value: formatMoney(summary.pending), Icon: Clock3, style: "border-[#C3A373] bg-[#E0CCAA]", iconStyle: "bg-[#D0B58B] text-[#785226]" },
             ].map(({ label, value, Icon, style, iconStyle }) => <div key={label} className={`rounded-2xl border p-4 shadow-[0_3px_10px_rgba(55,44,25,0.04)] ${style}`}><div className={`mb-4 grid h-9 w-9 place-items-center rounded-xl ${iconStyle}`}><Icon size={19} aria-hidden="true" /></div><p className="text-xs font-medium text-[#5D5548]">{label}</p><p className="mt-1 break-words text-xl font-bold tracking-tight sm:text-2xl">{value}</p></div>)}
           </div>
+          <p className="mt-3 text-sm leading-relaxed text-[#5D5548]">
+            Diferencia a favor sobre lo acordado: <strong className="tabular-nums text-[#245F4C]">{summary.completedSurplus > 0 ? "+" : ""}{formatMoney(summary.completedSurplus)}</strong>
+            <span className="ml-2 inline-block text-xs text-[#6E6558]">Solo reservas finalizadas.</span>
+          </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#BDCDBF] px-3 py-1.5 text-[#325640]"><CheckCircle2 size={13} />{summary.completed} finalizados</span>
             <span className="rounded-full bg-[#C4CABA] px-3 py-1.5 text-[#45513B]">{summary.events.length - summary.completed} aprobados</span>
