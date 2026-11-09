@@ -166,6 +166,18 @@ export function getEventTotalIncome(
   );
 }
 
+export function getReservationBalance(
+  reservation: Pick<Reservation, "agreed_price" | "deposit_paid" | "deposit_amount" | "settlement_amount">,
+) {
+  const paid = Math.round(((reservation.deposit_paid ? Number(reservation.deposit_amount ?? 0) : 0) + Number(reservation.settlement_amount ?? 0)) * 100) / 100;
+  const difference = reservation.agreed_price === null ? null : Math.round((Number(reservation.agreed_price) - paid) * 100) / 100;
+  return {
+    paid,
+    pending: difference === null ? null : Math.max(0, difference),
+    credit: difference === null ? 0 : Math.max(0, -difference),
+  };
+}
+
 export async function fetchAllReservationPages(
   fetchPage: (from: number, to: number) => Promise<Reservation[]>,
 ) {

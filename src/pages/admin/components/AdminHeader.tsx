@@ -1,5 +1,6 @@
 import { ArrowLeft, ChevronDown, Download, LogOut, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { MonthlySummaryButton } from "./MonthlySummaryButton";
 
 export function AdminHeader({
   onDownloadClients,
@@ -38,7 +39,12 @@ export function AdminHeader({
         </p>
       </div>
 
+<<<<<<< Updated upstream
       <div className="flex flex-wrap gap-3">
+=======
+      <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-sm lg:justify-end">
+        <MonthlySummaryButton />
+>>>>>>> Stashed changes
         <details className="group relative">
           <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#dfc8ab] bg-white/55 px-5 py-3 text-sm font-semibold text-[#2f241e] transition hover:bg-white [&::-webkit-details-marker]:hidden">
             <Download size={16} />

@@ -1,4 +1,4 @@
-import { MAX_ADULTS_COUNT, MAX_CHILDREN_COUNT } from "../constants";
+
 import { parseOptionalCurrency, parseOptionalInteger } from "./exportHelpers";
 import { isValid24HourTime, normalizeTime, timeToMinutes } from "./timeHelpers";
 
@@ -36,19 +36,13 @@ export function validateContactAndGuests(values: {
     return { ok: false, error: "Ingresá la cantidad de niños." };
   }
 
-  if (!Number.isInteger(childrenCount)) {
+  if (!Number.isSafeInteger(childrenCount)) {
     return {
       ok: false,
       error: "La cantidad de niños debe ser un número entero.",
     };
   }
 
-  if (childrenCount > MAX_CHILDREN_COUNT) {
-    return {
-      ok: false,
-      error: `La cantidad máxima permitida es de ${MAX_CHILDREN_COUNT} niños.`,
-    };
-  }
 
   if (
     !values.adults_count.trim() ||
@@ -58,19 +52,13 @@ export function validateContactAndGuests(values: {
     return { ok: false, error: "Ingresá la cantidad de adultos." };
   }
 
-  if (!Number.isInteger(adultsCount)) {
+  if (!Number.isSafeInteger(adultsCount)) {
     return {
       ok: false,
       error: "La cantidad de adultos debe ser un número entero.",
     };
   }
 
-  if (adultsCount > MAX_ADULTS_COUNT) {
-    return {
-      ok: false,
-      error: `La cantidad máxima permitida es de ${MAX_ADULTS_COUNT} adultos.`,
-    };
-  }
 
   if (childrenCount + adultsCount <= 0) {
     return {
