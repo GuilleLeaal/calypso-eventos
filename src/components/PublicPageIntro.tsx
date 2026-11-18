@@ -125,8 +125,7 @@ export default function PublicPageIntro({ children }: { children: ReactNode }) {
         Math.max(localCenterX, bounds.width - localCenterX),
         Math.max(localCenterY, bounds.height - localCenterY),
       );
-      const finalRadius = Math.hypot(target.width, target.height) / 2 + 14;
-      const timing = { duration: 780, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "forwards" as const };
+      const timing = { duration: 760, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "forwards" as const };
 
       // El círculo tiene su propio centro en el logo, en coordenadas del overlay.
       // Escalamos esa figura sin trasladarla hacia la esquina de la pantalla.
@@ -147,10 +146,9 @@ export default function PublicPageIntro({ children }: { children: ReactNode }) {
         { transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`, filter: finalFilter, offset: 1 },
       ], timing));
       const curtain = backdrop!.animate([
-        { transform: "scale(1)", offset: 0, easing: "cubic-bezier(0.65, 0, 0.35, 1)" },
-        { transform: `scale(${finalRadius / radius})`, offset: 0.78, easing: "ease-in" },
-        { transform: "scale(0)", offset: 1 },
-      ], { duration: 1120, fill: "forwards" });
+        { transform: "scale(1)" },
+        { transform: "scale(0)" },
+      ], timing);
       animations.push(curtain);
       await curtain.finished;
       finish();
