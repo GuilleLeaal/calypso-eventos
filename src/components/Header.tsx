@@ -127,7 +127,10 @@ export default function Header() {
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 sm:px-10 lg:h-[72px] lg:px-14 xl:px-20">
         <a href="/" aria-label="Calypso Eventos, ir al inicio" className="shrink-0">
           <img
+            data-intro-logo
             src={logo}
+            width={6060}
+            height={1924}
             alt="Calypso Eventos"
             className={[
               "h-7 w-auto transition-[filter] duration-700 lg:h-8",

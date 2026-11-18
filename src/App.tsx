@@ -15,6 +15,7 @@ import AdminReservationsPage from "./pages/AdminReservationsPage";
 import VideoTour from "./components/VideoTour";
 import PrivacidadPage from "./pages/PrivacidadPage";
 import TerminosPage from "./pages/TerminosPage";
+import PublicPageIntro from "./components/PublicPageIntro";
 
 function Home() {
   return (
@@ -32,7 +33,7 @@ function Home() {
 
 export default function App() {
   return (
-    <BudgetInquiryProvider><div id="top" className="min-h-screen bg-rustic-ivory text-rustic-espresso">
+    <PublicPageIntro><BudgetInquiryProvider><div id="top" className="min-h-screen bg-rustic-ivory text-rustic-espresso">
       <Header />
 
       <Routes>
@@ -47,6 +48,6 @@ export default function App() {
       </Routes>
 
       <Footer />
-    </div></BudgetInquiryProvider>
+    </div></BudgetInquiryProvider></PublicPageIntro>
   );
 }

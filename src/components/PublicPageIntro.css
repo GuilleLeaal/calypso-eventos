@@ -1,0 +1,63 @@
+.public-intro-content {
+  display: contents;
+}
+
+.public-intro-content[inert] [data-intro-logo] {
+  visibility: hidden;
+}
+
+.public-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  cursor: wait;
+  touch-action: none;
+}
+
+.public-intro__backdrop {
+  position: absolute;
+  inset: 0;
+  background: #f3ecdf;
+}
+
+.public-intro[data-night="true"] .public-intro__backdrop {
+  background: #0d1d1e;
+}
+
+.public-intro__center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.public-intro__logo {
+  width: min(68vw, 380px, 65svh);
+  height: auto;
+  transform-origin: top left;
+  animation: calypso-intro-appear 600ms ease-out both;
+}
+
+.public-intro[data-night="true"] .public-intro__logo {
+  filter: invert(1);
+}
+
+.public-intro__handoff {
+  position: absolute;
+  opacity: 0;
+}
+
+@keyframes calypso-intro-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-intro {
+    display: none;
+  }
+
+  .public-intro__logo {
+    animation: none;
+  }
+}
