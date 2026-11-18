@@ -12,16 +12,14 @@
   z-index: 100;
   cursor: wait;
   touch-action: none;
+  overflow: hidden;
 }
 
 .public-intro__backdrop {
   position: absolute;
   inset: 0;
-  background: #f3ecdf;
-}
-
-.public-intro[data-night="true"] .public-intro__backdrop {
-  background: #0d1d1e;
+  background: #0bb3a6;
+  transform-origin: center;
 }
 
 .public-intro__center {
@@ -36,10 +34,6 @@
   height: auto;
   transform-origin: top left;
   animation: calypso-intro-appear 600ms ease-out both;
-}
-
-.public-intro[data-night="true"] .public-intro__logo {
-  filter: invert(1);
 }
 
 .public-intro__handoff {
