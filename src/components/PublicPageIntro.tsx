@@ -1,28 +1,37 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import logo from "../assets/Logo2.png";
 import headerBrand from "../assets/logo.png";
 import "./PublicPageIntro.css";
 
+// Coordenadas de Logo2: el texto coincide con logo.png desde la fila 1625.
+const PINES = [
+  { x: 2320, width: 450 },
+  { x: 2770, width: 380 },
+  { x: 3150, width: 380 },
+  { x: 3530, width: 450 },
+];
+
 export default function PublicPageIntro({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const clipId = useId();
   const [visible, setVisible] = useState(() =>
     !pathname.startsWith("/admin-calypso") &&
     !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
   const contentRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLImageElement>(null);
-  const handoffRef = useRef<HTMLImageElement>(null);
+  const logoRef = useRef<SVGSVGElement>(null);
+  const logoImageRef = useRef<HTMLImageElement>(null);
 
   useLayoutEffect(() => {
     if (!visible) return;
     const content = contentRef.current;
     const backdrop = backdropRef.current;
     const brand = logoRef.current;
-    const handoff = handoffRef.current;
+    const logoImage = logoImageRef.current;
     const headerLogo = content?.querySelector<HTMLImageElement>("[data-intro-logo]");
-    if (!content || !backdrop || !brand || !handoff || !headerLogo) return;
+    if (!content || !backdrop || !brand || !logoImage || !headerLogo) return;
 
     let cancelled = false;
     const animations: Animation[] = [];
@@ -59,7 +68,7 @@ export default function PublicPageIntro({ children }: { children: ReactNode }) {
       const heroPhoto = content!.querySelector<HTMLImageElement>("#inicio img:not([aria-hidden='true'])");
       await Promise.all([
         Promise.race([
-          Promise.allSettled([brand!.decode(), headerLogo!.decode()]),
+          Promise.allSettled([logoImage!.decode(), headerLogo!.decode()]),
           delay(5000),
         ]),
         Promise.race([
@@ -74,13 +83,41 @@ export default function PublicPageIntro({ children }: { children: ReactNode }) {
       await delay(1050);
       if (cancelled) return;
 
+      // Cada pino baja dentro de su máscara; la base se retira después.
+      brand!.querySelectorAll<SVGImageElement>("[data-intro-pine]").forEach((pine, index) => {
+        animations.push(pine.animate([
+          { transform: "translateY(0)" },
+          { transform: "translateY(1400px)" },
+        ], {
+          duration: 340,
+          delay: index * 40,
+          easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+          fill: "forwards",
+        }));
+      });
+      const base = brand!.querySelector<SVGGElement>("[data-intro-base]");
+      if (base) {
+        animations.push(base.animate([
+          { transform: "scaleX(1)", opacity: 1 },
+          { transform: "scaleX(0)", opacity: 0 },
+        ], {
+          duration: 180,
+          delay: 360,
+          easing: "ease-in-out",
+          fill: "forwards",
+        }));
+      }
+      await delay(540);
+      if (cancelled) return;
+
       const start = brand!.getBoundingClientRect();
       const target = headerLogo!.getBoundingClientRect();
       const centerX = target.left + target.width / 2;
       const centerY = target.top + target.height / 2;
-      const scale = Math.min(target.width / start.width, target.height / start.height);
-      const translateX = centerX - start.width * scale / 2 - start.left;
-      const translateY = centerY - start.height * scale / 2 - start.top;
+      const scale = target.width / start.width;
+      const textOffset = start.width * 1625 / 6060;
+      const translateX = target.left - start.left;
+      const translateY = target.top - start.top - textOffset * scale;
       const bounds = backdrop!.getBoundingClientRect();
       const localCenterX = centerX - bounds.left;
       const localCenterY = centerY - bounds.top;
@@ -102,24 +139,12 @@ export default function PublicPageIntro({ children }: { children: ReactNode }) {
         borderRadius: "50%",
       });
 
-      // El logo completo y la marca del encabezado tienen proporciones distintas.
-      // La escala es uniforme; el relevo se hace con un fundido entre las marcas.
-      Object.assign(handoff!.style, {
-        left: `${target.left}px`,
-        top: `${target.top}px`,
-        width: `${target.width}px`,
-        height: `${target.height}px`,
-        filter: window.getComputedStyle(headerLogo!).filter,
-      });
+      // El mismo texto llega al nav: alineamos su caja, no la del logo completo.
+      const finalFilter = window.getComputedStyle(headerLogo!).filter;
       animations.push(brand!.animate([
-        { transform: "translate(0, 0) scale(1)", opacity: 1, offset: 0 },
-        { opacity: 1, offset: 0.55 },
-        { transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`, opacity: 0, offset: 1 },
-      ], timing));
-      animations.push(handoff!.animate([
-        { opacity: 0, offset: 0 },
-        { opacity: 0, offset: 0.65 },
-        { opacity: 1, offset: 1 },
+        { transform: "translate(0, 0) scale(1)", filter: "none", offset: 0 },
+        { filter: "none", offset: 0.7 },
+        { transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`, filter: finalFilter, offset: 1 },
       ], timing));
       const curtain = backdrop!.animate([
         { transform: "scale(1)", offset: 0, easing: "cubic-bezier(0.65, 0, 0.35, 1)" },
@@ -158,9 +183,31 @@ export default function PublicPageIntro({ children }: { children: ReactNode }) {
         <div className="public-intro">
           <div ref={backdropRef} className="public-intro__backdrop" aria-hidden="true" />
           <div className="public-intro__center" aria-hidden="true">
-            <img ref={logoRef} src={logo} width={6060} height={3549} alt="" className="public-intro__logo" />
+            <svg ref={logoRef} viewBox="0 0 6060 3549" width={6060} height={3549} className="public-intro__logo" focusable="false">
+              <defs>
+                {PINES.map((pine, index) => (
+                  <clipPath key={index} id={`${clipId}-pine-${index}`}>
+                    <rect x={pine.x} y={0} width={pine.width} height={1375} />
+                  </clipPath>
+                ))}
+                <clipPath id={`${clipId}-base`}>
+                  <rect x={0} y={1375} width={6060} height={250} />
+                </clipPath>
+              </defs>
+              {PINES.map((_, index) => (
+                <g key={index} clipPath={`url(#${clipId}-pine-${index})`}>
+                  <image data-intro-pine href={logo} width={6060} height={3549} />
+                </g>
+              ))}
+              <g clipPath={`url(#${clipId}-base)`}>
+                <g data-intro-base className="public-intro__base">
+                  <image href={logo} width={6060} height={3549} />
+                </g>
+              </g>
+              <image data-intro-wordmark href={headerBrand} x={0} y={1625} width={6060} height={1924} />
+            </svg>
           </div>
-          <img ref={handoffRef} src={headerBrand} width={6060} height={1924} alt="" className="public-intro__handoff" aria-hidden="true" />
+          <img ref={logoImageRef} src={logo} width={6060} height={3549} alt="" className="public-intro__preload" aria-hidden="true" />
           <span role="status" className="sr-only">Cargando Calypso Eventos</span>
         </div>
       )}

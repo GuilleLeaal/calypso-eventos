@@ -36,9 +36,12 @@
   animation: calypso-intro-appear 600ms ease-out both;
 }
 
-.public-intro__handoff {
-  position: absolute;
-  opacity: 0;
+.public-intro__base {
+  transform-origin: 3030px 1440px;
+}
+
+.public-intro__preload {
+  display: none;
 }
 
 @keyframes calypso-intro-appear {

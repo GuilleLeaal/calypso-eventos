@@ -22,8 +22,10 @@ function intro({ ready = true } = {}) {
   const images = deferred();
   const animationDone = deferred();
   const animations = [];
+  const curtains = [];
   if (ready) images.resolve();
   const react = {
+    useId: () => "intro-test",
     useState(initial) { visible = initial(); return [visible, (value) => { visible = value; }]; },
     useRef() { const ref = { current: null }; refs.push(ref); return ref; },
     useLayoutEffect(callback) { effect = callback; },
@@ -40,7 +42,7 @@ function intro({ ready = true } = {}) {
     getComputedStyle: () => ({ filter: "none" }),
   };
   const rect = (left, top, width, height) => ({ left, top, width, height });
-  function node(bounds) {
+  function node(bounds, isCurtain = false) {
     return {
       style: {},
       getBoundingClientRect: () => bounds,
@@ -48,6 +50,7 @@ function intro({ ready = true } = {}) {
       animate() {
         const animation = { finished: animationDone.promise, cancel() {} };
         animations.push(animation);
+        if (isCurtain) curtains.push(animation);
         return animation;
       },
     };
@@ -67,8 +70,12 @@ function intro({ ready = true } = {}) {
   module.exports.default({ children: null });
   const nodes = [
     { querySelector: (selector) => selector === "[data-intro-logo]" ? header : null },
-    node(rect(0, 0, 1265, 720)),
-    node(rect(440, 250, 380, 223)),
+    node(rect(0, 0, 1265, 720), true),
+    {
+      ...node(rect(440, 250, 380, 223)),
+      querySelectorAll: () => Array.from({ length: 4 }, () => node(rect(0, 0, 0, 0))),
+      querySelector: () => node(rect(0, 0, 0, 0)),
+    },
     node(rect(0, 0, 0, 0)),
   ];
   refs.forEach((ref, index) => { ref.current = nodes[index]; });
@@ -76,6 +83,7 @@ function intro({ ready = true } = {}) {
   return {
     get visible() { return visible; },
     animations,
+    curtains,
     images,
     async tick(ms) {
       const until = now + ms;
@@ -112,7 +120,10 @@ test("a cold logo download gets a visible interval before the circle closes", as
   await page.tick(1049);
   assert.equal(page.animations.length, 0);
   await page.tick(1);
-  assert.equal(page.animations.length, 3);
+  assert.ok(page.animations.length > 0);
+  assert.equal(page.curtains.length, 0);
+  await page.tick(540);
+  assert.equal(page.curtains.length, 1);
   page.finish();
   await flush();
   assert.equal(page.visible, false);
@@ -122,8 +133,8 @@ test("a cold logo download gets a visible interval before the circle closes", as
 test("StrictMode cleanup leaves only the current intro running", async () => {
   const page = intro();
   page.restartEffect();
-  await page.tick(1050);
-  assert.equal(page.animations.length, 3);
+  await page.tick(1590);
+  assert.equal(page.curtains.length, 1);
   page.finish();
   await flush();
   assert.equal(page.visible, false);
